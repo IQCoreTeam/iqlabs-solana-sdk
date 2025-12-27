@@ -1,0 +1,1 @@
+{"version":3,"file":"consoleLogVisitor.d.ts","sourceRoot":"","sources":["../../src/consoleLogVisitor.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAGzC,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAEpC,wBAAgB,iBAAiB,CAAC,SAAS,SAAS,QAAQ,GAAG,QAAQ,EACnE,OAAO,EAAE,OAAO,CAAC,MAAM,EAAE,SAAS,CAAC,GACpC,OAAO,CAAC,IAAI,EAAE,SAAS,CAAC,CAE1B"}

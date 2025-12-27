@@ -1,0 +1,12 @@
+{
+  "name": "iqlabs-sdk",
+  "private": true,
+  "scripts": {
+    "gen": "codama run js"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.3.8",
+    "@codama/renderers-js": "^1.5.5",
+    "codama": "^1.5.0"
+  }
+}

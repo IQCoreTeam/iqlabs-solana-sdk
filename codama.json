@@ -1,0 +1,9 @@
+{
+  "idl": "idl/code_in.json",
+  "scripts": {
+    "js": {
+      "from": "@codama/renderers-js",
+      "args": ["src/contract/generated"]
+    }
+  }
+}
