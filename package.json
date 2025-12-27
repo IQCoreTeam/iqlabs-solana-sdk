@@ -2,11 +2,14 @@
   "name": "iqlabs-sdk",
   "private": true,
   "scripts": {
-    "gen": "codama run js"
+    "test:contract": "tsx tests/contract/smoke.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.98.0"
   },
   "devDependencies": {
-    "@codama/nodes-from-anchor": "^1.3.8",
-    "@codama/renderers-js": "^1.5.5",
-    "codama": "^1.5.0"
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   }
 }

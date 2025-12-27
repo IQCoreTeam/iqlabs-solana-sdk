@@ -1,118 +1,189 @@
-import {
-  addEncoderSizePrefix,
-  getAddressEncoder,
-  getBytesEncoder,
-  getProgramDerivedAddress,
-  getU32Encoder,
-  getU64Encoder,
-  getUtf8Encoder,
-  type Address,
-  type ProgramDerivedAddress,
-  type ReadonlyUint8Array,
-} from "@solana/kit";
+import { PublicKey } from "@solana/web3.js";
 import type { ProgramProfile } from "./profile";
+import {
+  SEED_BUNDLE,
+  SEED_CODE_ACCOUNT,
+  SEED_CONFIG,
+  SEED_CONNECTION,
+  SEED_DB_ACCOUNT,
+  SEED_DB_ROOT,
+  SEED_DB_ROOT_SALT,
+  SEED_INSTRUCTION,
+  SEED_TABLE,
+  SEED_TABLE_REF,
+  SEED_TARGET,
+  SEED_USER,
+} from "./constants";
 
-const bytesEncoder = getBytesEncoder();
-const bytesWithU32 = addEncoderSizePrefix(getBytesEncoder(), getU32Encoder());
-const addressEncoder = getAddressEncoder();
-const u64Encoder = getU64Encoder();
-const utf8Encoder = getUtf8Encoder();
+type Bytes = Uint8Array;
 
-const SEED_CONFIG = new Uint8Array([99, 111, 110, 102, 105, 103]);
-const SEED_DB_ROOT = new Uint8Array([105, 113, 100, 98, 45, 114, 111, 111, 116]);
-const SEED_DB_ROOT_SALT = new Uint8Array([
-  211, 224, 187, 191, 8, 213, 226, 2, 227, 246, 232, 81, 212, 209, 72, 205,
-  134, 90, 5, 53, 82, 224, 210, 56, 59, 10, 7, 236, 44, 102, 122, 211,
-]);
-const SEED_USER = new Uint8Array([117, 115, 101, 114]);
-const SEED_BUNDLE = new Uint8Array([98, 117, 110, 100, 108, 101]);
-const SEED_CODE_ACCOUNT = new Uint8Array([
-  109, 89, 125, 57, 79, 86, 53, 106, 65, 71, 66, 74, 105, 113, 54, 57,
-  48, 48,
-]);
-const SEED_DB_ACCOUNT = new Uint8Array([
-  100, 98, 109, 89, 125, 57, 79, 86, 53, 106, 65, 71, 66, 74, 105, 113,
-  54, 57, 48, 48,
-]);
+const SEED_CONFIG_BYTES = Buffer.from(SEED_CONFIG);
+const SEED_DB_ROOT_BYTES = Buffer.from(SEED_DB_ROOT);
+const SEED_TABLE_BYTES = Buffer.from(SEED_TABLE);
+const SEED_TABLE_REF_BYTES = Buffer.from(SEED_TABLE_REF);
+const SEED_INSTRUCTION_BYTES = Buffer.from(SEED_INSTRUCTION);
+const SEED_TARGET_BYTES = Buffer.from(SEED_TARGET);
+const SEED_USER_BYTES = Buffer.from(SEED_USER);
+const SEED_BUNDLE_BYTES = Buffer.from(SEED_BUNDLE);
+const SEED_CONNECTION_BYTES = Buffer.from(SEED_CONNECTION);
+const SEED_CODE_ACCOUNT_BYTES = Buffer.from(SEED_CODE_ACCOUNT);
+const SEED_DB_ACCOUNT_BYTES = Buffer.from(SEED_DB_ACCOUNT);
+const SEED_DB_ROOT_SALT_BYTES = Buffer.from(SEED_DB_ROOT_SALT);
 
-const encodeBytes = (value: Uint8Array) => bytesEncoder.encode(value);
+const encodeBytesSeed = (value: Bytes) => {
+  const data = Buffer.from(value);
+  const length = Buffer.alloc(4);
+  length.writeUInt32LE(data.length, 0);
+  return Buffer.concat([length, data]);
+};
 
-export async function derivePda(
-  profile: ProgramProfile,
-  seeds: ReadonlyUint8Array[],
-): Promise<ProgramDerivedAddress> {
-  return getProgramDerivedAddress({ programAddress: profile.programId, seeds });
-}
+const encodeU64Seed = (value: bigint | number) => {
+  const data = Buffer.alloc(8);
+  const numberValue = typeof value === "bigint" ? value : BigInt(value);
+  data.writeBigUInt64LE(numberValue, 0);
+  return data;
+};
 
-export async function getConfigPda(
-  profile: ProgramProfile,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [encodeBytes(SEED_CONFIG)]);
-}
+const findPda = (profile: ProgramProfile, seeds: Buffer[]) =>
+  PublicKey.findProgramAddressSync(seeds, profile.programId)[0];
 
-export async function getDbRootPda(
-  profile: ProgramProfile,
-  dbRootId: ReadonlyUint8Array,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [
-    encodeBytes(SEED_DB_ROOT),
-    encodeBytes(SEED_DB_ROOT_SALT),
-    bytesWithU32.encode(dbRootId),
+export const getConfigPda = (profile: ProgramProfile) =>
+  findPda(profile, [SEED_CONFIG_BYTES]);
+
+export const getDbRootPda = (profile: ProgramProfile, dbRootId: Bytes) =>
+  findPda(profile, [
+    SEED_DB_ROOT_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    encodeBytesSeed(dbRootId),
   ]);
-}
 
-export async function getUserStatePda(
+export const getTablePda = (
   profile: ProgramProfile,
-  user: Address,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [
-    encodeBytes(SEED_USER),
-    encodeBytes(SEED_DB_ROOT_SALT),
-    addressEncoder.encode(user),
+  dbRoot: PublicKey,
+  tableSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(tableSeed),
   ]);
-}
 
-export async function getSessionPda(
+export const getInstructionTablePda = (
   profile: ProgramProfile,
-  user: Address,
-  seq: number | bigint,
-): Promise<ProgramDerivedAddress> {
-  const seqValue = typeof seq === "bigint" ? seq : BigInt(seq);
-  return derivePda(profile, [
-    encodeBytes(SEED_BUNDLE),
-    encodeBytes(SEED_DB_ROOT_SALT),
-    addressEncoder.encode(user),
-    u64Encoder.encode(seqValue),
+  dbRoot: PublicKey,
+  tableSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(tableSeed),
+    SEED_INSTRUCTION_BYTES,
   ]);
-}
 
-export async function getCodeAccountPda(
+export const getConnectionTablePda = (
   profile: ProgramProfile,
-  user: Address,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [
-    encodeBytes(SEED_CODE_ACCOUNT),
-    addressEncoder.encode(user),
+  dbRoot: PublicKey,
+  connectionSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_CONNECTION_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(connectionSeed),
   ]);
-}
 
-export async function getDbAccountPda(
+export const getConnectionInstructionTablePda = (
   profile: ProgramProfile,
-  user: Address,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [
-    encodeBytes(SEED_DB_ACCOUNT),
-    addressEncoder.encode(user),
+  dbRoot: PublicKey,
+  connectionSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_CONNECTION_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(connectionSeed),
+    SEED_INSTRUCTION_BYTES,
   ]);
-}
 
-export async function getServerAccountPda(
+export const getTableRefPda = (
   profile: ProgramProfile,
+  dbRoot: PublicKey,
+  tableSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_REF_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(tableSeed),
+  ]);
+
+export const getConnectionTableRefPda = (
+  profile: ProgramProfile,
+  dbRoot: PublicKey,
+  connectionSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_REF_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(connectionSeed),
+  ]);
+
+export const getTargetTableRefPda = (
+  profile: ProgramProfile,
+  dbRoot: PublicKey,
+  tableSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_REF_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(tableSeed),
+    SEED_TARGET_BYTES,
+  ]);
+
+export const getTargetConnectionTableRefPda = (
+  profile: ProgramProfile,
+  dbRoot: PublicKey,
+  connectionSeed: Bytes,
+) =>
+  findPda(profile, [
+    SEED_TABLE_REF_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    dbRoot.toBuffer(),
+    encodeBytesSeed(connectionSeed),
+    SEED_TARGET_BYTES,
+  ]);
+
+export const getUserPda = (profile: ProgramProfile, user: PublicKey) =>
+  findPda(profile, [
+    SEED_USER_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    user.toBuffer(),
+  ]);
+
+export const getSessionPda = (
+  profile: ProgramProfile,
+  user: PublicKey,
+  seq: bigint | number,
+) =>
+  findPda(profile, [
+    SEED_BUNDLE_BYTES,
+    SEED_DB_ROOT_SALT_BYTES,
+    user.toBuffer(),
+    encodeU64Seed(seq),
+  ]);
+
+export const getCodeAccountPda = (profile: ProgramProfile, user: PublicKey) =>
+  findPda(profile, [SEED_CODE_ACCOUNT_BYTES, user.toBuffer()]);
+
+export const getDbAccountPda = (profile: ProgramProfile, user: PublicKey) =>
+  findPda(profile, [SEED_DB_ACCOUNT_BYTES, user.toBuffer()]);
+
+export const getServerAccountPda = (
+  profile: ProgramProfile,
+  user: PublicKey,
   serverId: string,
-  user: Address,
-): Promise<ProgramDerivedAddress> {
-  return derivePda(profile, [
-    utf8Encoder.encode(serverId),
-    addressEncoder.encode(user),
-  ]);
-}
+) => findPda(profile, [Buffer.from(serverId), user.toBuffer()]);

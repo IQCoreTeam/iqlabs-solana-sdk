@@ -1,29 +1,5 @@
 # TODO - Python SDK Structure (single package, two layers)
 
-## Proposed folders
-```
-sdk-py/
-  pyproject.toml
-  src/
-    iqlabs_sdk/
-      __init__.py
-      contract/
-        __init__.py
-        profile.py
-        discriminators.py
-        pda.py
-        generated/
-      sdk/
-        __init__.py
-        reader/
-        writer/
-        user/
-  idl/
-    iqlabs.json
-  tests/
-    contract/
-    sdk/
-```
 
 ## Contract layer responsibilities
 - Load Anchor profile from IDL metadata.
