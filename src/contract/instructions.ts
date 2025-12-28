@@ -120,16 +120,6 @@ export type TableCreateArgs = {
   writers_opt: OptionalPubkeyList;
 };
 
-export type TableUpdateArgs = {
-  db_root_id: Bytes;
-  table_seed: Bytes;
-  table_name: Bytes;
-  column_names: Bytes[];
-  id_col: Bytes;
-  ext_keys: Bytes[];
-  writers_opt: OptionalPubkeyList;
-};
-
 export type CreateAdminTableAccounts = {
   signer: PublicKey;
   db_root: PublicKey;
@@ -140,9 +130,6 @@ export type CreateAdminTableAccounts = {
   system_program?: PublicKey;
 };
 
-export type CreateExtTableAccounts = CreateAdminTableAccounts;
-export type CreatePrivateTableAccounts = CreateAdminTableAccounts;
-
 export const createAdminTableInstruction = (
   builder: InstructionBuilder,
   accounts: CreateAdminTableAccounts,
@@ -151,357 +138,295 @@ export const createAdminTableInstruction = (
 
 export const createExtTableInstruction = (
   builder: InstructionBuilder,
-  accounts: CreateExtTableAccounts,
+  accounts: CreateAdminTableAccounts,
   args: TableCreateArgs,
 ) => builder.build("create_ext_table", accounts, args);
 
 export const createPrivateTableInstruction = (
   builder: InstructionBuilder,
-  accounts: CreatePrivateTableAccounts,
+  accounts: CreateAdminTableAccounts,
   args: TableCreateArgs,
 ) => builder.build("create_private_table", accounts, args);
 
-export type CreateSessionAccounts = {
-  user: PublicKey;
-  user_state: PublicKey;
-  session: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type CreateSessionArgs = {
-  seq: BN;
-};
-
 export const createSessionInstruction = (
   builder: InstructionBuilder,
-  accounts: CreateSessionAccounts,
-  args: CreateSessionArgs,
+  accounts: {
+    user: PublicKey;
+    user_state: PublicKey;
+    session: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    seq: BN;
+  },
 ) => builder.build("create_session", accounts, args);
-
-export type CreateTableAccounts = {
-  db_root: PublicKey;
-  receiver: PublicKey;
-  signer: PublicKey;
-  table: PublicKey;
-  instruction_table: PublicKey;
-  table_ref: PublicKey;
-  target_table_ref: PublicKey;
-  system_program?: PublicKey;
-};
 
 export const createTableInstruction = (
   builder: InstructionBuilder,
-  accounts: CreateTableAccounts,
+  accounts: {
+    db_root: PublicKey;
+    receiver: PublicKey;
+    signer: PublicKey;
+    table: PublicKey;
+    instruction_table: PublicKey;
+    table_ref: PublicKey;
+    target_table_ref: PublicKey;
+    system_program?: PublicKey;
+  },
   args: TableCreateArgs,
 ) => builder.build("create_table", accounts, args);
 
-export type DatabaseInstructionAccounts = {
-  db_root: PublicKey;
-  table: PublicKey;
-  instruction_table: PublicKey;
-  table_ref: PublicKey;
-  target_table_ref: PublicKey;
-  signer_ata?: PublicKey;
-  signer: PublicKey;
-};
-
-export type DatabaseInstructionArgs = {
-  db_root_id: Bytes;
-  table_seed: Bytes;
-  table_name: Bytes;
-  target_tx: Bytes;
-  content_json_tx: Bytes;
-};
-
 export const databaseInstructionInstruction = (
   builder: InstructionBuilder,
-  accounts: DatabaseInstructionAccounts,
-  args: DatabaseInstructionArgs,
+  accounts: {
+    db_root: PublicKey;
+    table: PublicKey;
+    instruction_table: PublicKey;
+    table_ref: PublicKey;
+    target_table_ref: PublicKey;
+    signer_ata?: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    table_seed: Bytes;
+    table_name: Bytes;
+    target_tx: Bytes;
+    content_json_tx: Bytes;
+  },
 ) => builder.build("database_instruction", accounts, args);
-
-export type DbCodeInAccounts = {
-  user: PublicKey;
-  db_account: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type DbCodeInArgs = {
-  on_chain_path: string;
-  metadata: string;
-  session: SessionFinalize | null;
-};
 
 export const dbCodeInInstruction = (
   builder: InstructionBuilder,
-  accounts: DbCodeInAccounts,
-  args: DbCodeInArgs,
+  accounts: {
+    user: PublicKey;
+    db_account: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    on_chain_path: string;
+    metadata: string;
+    session: SessionFinalize | null;
+  },
 ) => builder.build("db_code_in", accounts, args);
-
-export type DbCodeInForFreeAccounts = {
-  user: PublicKey;
-  db_account: PublicKey;
-  config: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type DbCodeInForFreeArgs = {
-  on_chain_path: string;
-  metadata: string;
-  session: SessionFinalize | null;
-  proof: Bytes[];
-};
 
 export const dbCodeInForFreeInstruction = (
   builder: InstructionBuilder,
-  accounts: DbCodeInForFreeAccounts,
-  args: DbCodeInForFreeArgs,
+  accounts: {
+    user: PublicKey;
+    db_account: PublicKey;
+    config: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    on_chain_path: string;
+    metadata: string;
+    session: SessionFinalize | null;
+    proof: Bytes[];
+  },
 ) => builder.build("db_code_in_for_free", accounts, args);
-
-export type InitializeConfigAccounts = {
-  user: PublicKey;
-  config: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type InitializeConfigArgs = {
-  merkle_root: Bytes;
-};
 
 export const initializeConfigInstruction = (
   builder: InstructionBuilder,
-  accounts: InitializeConfigAccounts,
-  args: InitializeConfigArgs,
+  accounts: {
+    user: PublicKey;
+    config: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    merkle_root: Bytes;
+  },
 ) => builder.build("initialize_config", accounts, args);
-
-export type InitializeDbRootAccounts = {
-  db_root: PublicKey;
-  signer: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type InitializeDbRootArgs = {
-  db_root_id: Bytes;
-};
 
 export const initializeDbRootInstruction = (
   builder: InstructionBuilder,
-  accounts: InitializeDbRootAccounts,
-  args: InitializeDbRootArgs,
+  accounts: {
+    db_root: PublicKey;
+    signer: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+  },
 ) => builder.build("initialize_db_root", accounts, args);
-
-export type ManageConnectionAccounts = {
-  db_root: PublicKey;
-  connection_table: PublicKey;
-  signer: PublicKey;
-};
-
-export type ManageConnectionArgs = {
-  db_root_id: Bytes;
-  connection_seed: Bytes;
-  new_status: number;
-};
 
 export const manageConnectionInstruction = (
   builder: InstructionBuilder,
-  accounts: ManageConnectionAccounts,
-  args: ManageConnectionArgs,
+  accounts: {
+    db_root: PublicKey;
+    connection_table: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    connection_seed: Bytes;
+    new_status: number;
+  },
 ) => builder.build("manage_connection", accounts, args);
-
-export type PostChunkAccounts = {
-  user: PublicKey;
-  session: PublicKey;
-};
-
-export type PostChunkArgs = {
-  seq: BN;
-  index: number;
-  chunk: string;
-  method: number;
-  decode_break: number;
-};
 
 export const postChunkInstruction = (
   builder: InstructionBuilder,
-  accounts: PostChunkAccounts,
-  args: PostChunkArgs,
+  accounts: {
+    user: PublicKey;
+    session: PublicKey;
+  },
+  args: {
+    seq: BN;
+    index: number;
+    chunk: string;
+    method: number;
+    decode_break: number;
+  },
 ) => builder.build("post_chunk", accounts, args);
-
-export type RequestConnectionAccounts = {
-  requester: PublicKey;
-  db_root: PublicKey;
-  connection_table: PublicKey;
-  instruction_table: PublicKey;
-  requester_user: PublicKey;
-  receiver_user: PublicKey;
-  table_ref: PublicKey;
-  target_table_ref: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type RequestConnectionArgs = {
-  db_root_id: Bytes;
-  connection_seed: Bytes;
-  receiver: PublicKey;
-  table_name: Bytes;
-  column_names: Bytes[];
-  id_col: Bytes;
-  ext_keys: Bytes[];
-  user_payload: Bytes;
-};
 
 export const requestConnectionInstruction = (
   builder: InstructionBuilder,
-  accounts: RequestConnectionAccounts,
-  args: RequestConnectionArgs,
+  accounts: {
+    requester: PublicKey;
+    db_root: PublicKey;
+    connection_table: PublicKey;
+    instruction_table: PublicKey;
+    requester_user: PublicKey;
+    receiver_user: PublicKey;
+    table_ref: PublicKey;
+    target_table_ref: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    connection_seed: Bytes;
+    receiver: PublicKey;
+    table_name: Bytes;
+    column_names: Bytes[];
+    id_col: Bytes;
+    ext_keys: Bytes[];
+    user_payload: Bytes;
+  },
 ) => builder.build("request_connection", accounts, args);
-
-export type SendCodeAccounts = {
-  user: PublicKey;
-  code_account: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type SendCodeArgs = {
-  code: string;
-  before_tx: string;
-  method: number;
-  decode_break: number;
-};
 
 export const sendCodeInstruction = (
   builder: InstructionBuilder,
-  accounts: SendCodeAccounts,
-  args: SendCodeArgs,
+  accounts: {
+    user: PublicKey;
+    code_account: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    code: string;
+    before_tx: string;
+    method: number;
+    decode_break: number;
+  },
 ) => builder.build("send_code", accounts, args);
-
-export type ServerInitializeAccounts = {
-  user: PublicKey;
-  server_account: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type ServerInitializeArgs = {
-  server_id: string;
-  server_type: string;
-  allowed_merkle_root: string;
-};
 
 export const serverInitializeInstruction = (
   builder: InstructionBuilder,
-  accounts: ServerInitializeAccounts,
-  args: ServerInitializeArgs,
+  accounts: {
+    user: PublicKey;
+    server_account: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    server_id: string;
+    server_type: string;
+    allowed_merkle_root: string;
+  },
 ) => builder.build("server_initialize", accounts, args);
-
-export type SetMerkleRootAccounts = {
-  authority: PublicKey;
-  config: PublicKey;
-};
-
-export type SetMerkleRootArgs = {
-  new_root: Bytes;
-  new_authority: OptionalPubkey;
-};
 
 export const setMerkleRootInstruction = (
   builder: InstructionBuilder,
-  accounts: SetMerkleRootAccounts,
-  args: SetMerkleRootArgs,
+  accounts: {
+    authority: PublicKey;
+    config: PublicKey;
+  },
+  args: {
+    new_root: Bytes;
+    new_authority: OptionalPubkey;
+  },
 ) => builder.build("set_merkle_root", accounts, args);
-
-export type UpdateDbRootTableListAccounts = {
-  db_root: PublicKey;
-  signer: PublicKey;
-};
-
-export type UpdateDbRootTableListArgs = {
-  db_root_id: Bytes;
-  new_table_seeds: Bytes[];
-};
 
 export const updateDbRootTableListInstruction = (
   builder: InstructionBuilder,
-  accounts: UpdateDbRootTableListAccounts,
-  args: UpdateDbRootTableListArgs,
+  accounts: {
+    db_root: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    new_table_seeds: Bytes[];
+  },
 ) => builder.build("update_db_root_table_list", accounts, args);
-
-export type UpdateTableAccounts = {
-  db_root: PublicKey;
-  table: PublicKey;
-  signer: PublicKey;
-};
 
 export const updateTableInstruction = (
   builder: InstructionBuilder,
-  accounts: UpdateTableAccounts,
-  args: TableUpdateArgs,
+  accounts: {
+    db_root: PublicKey;
+    table: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    table_seed: Bytes;
+    table_name: Bytes;
+    column_names: Bytes[];
+    id_col: Bytes;
+    ext_keys: Bytes[];
+    writers_opt: OptionalPubkeyList;
+  },
 ) => builder.build("update_table", accounts, args);
-
-export type UpdateUserMetadataAccounts = {
-  user: PublicKey;
-  db_root: PublicKey;
-  signer: PublicKey;
-  system_program?: PublicKey;
-};
-
-export type UpdateUserMetadataArgs = {
-  db_root_id: Bytes;
-  meta: Bytes;
-};
 
 export const updateUserMetadataInstruction = (
   builder: InstructionBuilder,
-  accounts: UpdateUserMetadataAccounts,
-  args: UpdateUserMetadataArgs,
+  accounts: {
+    user: PublicKey;
+    db_root: PublicKey;
+    signer: PublicKey;
+    system_program?: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    meta: Bytes;
+  },
 ) => builder.build("update_user_metadata", accounts, args);
-
-export type UserInitializeAccounts = {
-  user: PublicKey;
-  code_account: PublicKey;
-  user_state: PublicKey;
-  db_account: PublicKey;
-  system_program?: PublicKey;
-};
 
 export const userInitializeInstruction = (
   builder: InstructionBuilder,
-  accounts: UserInitializeAccounts,
+  accounts: {
+    user: PublicKey;
+    code_account: PublicKey;
+    user_state: PublicKey;
+    db_account: PublicKey;
+    system_program?: PublicKey;
+  },
 ) => builder.build("user_initialize", accounts);
-
-export type WriteConnectionDataAccounts = {
-  db_root: PublicKey;
-  connection_table: PublicKey;
-  table_ref: PublicKey;
-  signer: PublicKey;
-};
-
-export type WriteConnectionDataArgs = {
-  db_root_id: Bytes;
-  connection_seed: Bytes;
-  row_json_tx: Bytes;
-};
 
 export const writeConnectionDataInstruction = (
   builder: InstructionBuilder,
-  accounts: WriteConnectionDataAccounts,
-  args: WriteConnectionDataArgs,
+  accounts: {
+    db_root: PublicKey;
+    connection_table: PublicKey;
+    table_ref: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    connection_seed: Bytes;
+    row_json_tx: Bytes;
+  },
 ) => builder.build("write_connection_data", accounts, args);
-
-export type WriteDataAccounts = {
-  db_root: PublicKey;
-  table: PublicKey;
-  table_ref: PublicKey;
-  signer_ata?: PublicKey;
-  signer: PublicKey;
-};
-
-export type WriteDataArgs = {
-  db_root_id: Bytes;
-  table_seed: Bytes;
-  row_json_tx: Bytes;
-};
 
 export const writeDataInstruction = (
   builder: InstructionBuilder,
-  accounts: WriteDataAccounts,
-  args: WriteDataArgs,
+  accounts: {
+    db_root: PublicKey;
+    table: PublicKey;
+    table_ref: PublicKey;
+    signer_ata?: PublicKey;
+    signer: PublicKey;
+  },
+  args: {
+    db_root_id: Bytes;
+    table_seed: Bytes;
+    row_json_tx: Bytes;
+  },
 ) => builder.build("write_data", accounts, args);

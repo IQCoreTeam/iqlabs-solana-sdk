@@ -6,19 +6,13 @@ import {
     type Signer,
 } from "@solana/web3.js";
 
-
 import {
     createAnchorProfile,
     createInstructionBuilder,
-    createSessionInstruction,
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
-    getSessionPda,
     getUserPda,
-    postChunkInstruction,
-    sendCodeInstruction,
-    userInitializeInstruction,
 } from "../../contract";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
@@ -26,11 +20,13 @@ import {
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
 import {readMagicBytes} from "../utils/magic_bytes";
-import {sendTx} from "./writer_utils";
+import {ensureUserInitialized, sendTx} from "./writer_utils";
+import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
-export async function write(
+
+export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
     isAnchor = true,
@@ -54,17 +50,13 @@ export async function write(
     const dbAccount = getDbAccountPda(profile, user);
 
     // Ensure user/db accounts exist
-    const dbInfo = await connection.getAccountInfo(dbAccount);
-    if (!dbInfo) {
-        const initIx = userInitializeInstruction(builder, {
-            user,
-            code_account: codeAccount,
-            user_state: userState,
-            db_account: dbAccount,
-            system_program: SystemProgram.programId,
-        });
-        await sendTx(connection, signer, initIx);
-    }
+    await ensureUserInitialized(connection, signer, builder, {
+        user,
+        code_account: codeAccount,
+        user_state: userState,
+        db_account: dbAccount,
+        system_program: SystemProgram.programId,
+    });
 
     // Anchor flow: resolve session sequence
     let seq = BigInt(0);
@@ -94,57 +86,27 @@ export async function write(
     let onChainPath = "";
 
     if (totalChunks < DEFAULT_LINKED_LIST_THRESHOLD) {
-        let beforeTx = "Genesis";
-        for (const chunk of chunks) {
-            const ix = sendCodeInstruction(
-                builder,
-                {
-                    user,
-                    code_account: codeAccount,
-                    system_program: SystemProgram.programId,
-                },
-                {
-                    code: chunk,
-                    before_tx: beforeTx,
-                    method,
-                    decode_break: 0,
-                },
-            );
-            beforeTx = await sendTx(connection, signer, ix);
-        }
-        onChainPath = beforeTx;
+        onChainPath = await uploadLinkedList(
+            connection,
+            signer,
+            builder,
+            user,
+            codeAccount,
+            chunks,
+            method,
+        );
     } else {
-        const session = getSessionPda(profile, user, seq);
-        const sessionInfo = await connection.getAccountInfo(session);
-        if (!sessionInfo) {
-            const createIx = createSessionInstruction(
-                builder,
-                {
-                    user,
-                    user_state: userState,
-                    session,
-                    system_program: SystemProgram.programId,
-                },
-                {seq: new BN(seq.toString())},
-            );
-            await sendTx(connection, signer, createIx);
-        }
-
-        for (let index = 0; index < totalChunks; index += 1) {
-            const ix = postChunkInstruction(
-                builder,
-                {user, session},
-                {
-                    seq: new BN(seq.toString()),
-                    index,
-                    chunk: chunks[index],
-                    method,
-                    decode_break: 0,
-                },
-            );
-            await sendTx(connection, signer, ix);
-        }
-        onChainPath = session.toBase58();
+        onChainPath = await uploadSession(
+            connection,
+            signer,
+            builder,
+            profile,
+            user,
+            userState,
+            seq,
+            chunks,
+            method,
+        );
     }
 
     // Finalize with fee transfer + db_code_in
