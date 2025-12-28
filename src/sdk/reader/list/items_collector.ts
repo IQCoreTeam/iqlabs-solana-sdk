@@ -7,11 +7,11 @@
 // 0) fetchAccountTransactions(pubkey): collect transactions by account
 //    All list readers below should use this.
 //
-// 1) listUserSessions(userPubkey, totalSessionFiles)
-//    - Role: build session PDA list by seq.
+// 1) listUserSessions(userPubkey)
+//    - Role: derive total_session_files internally and build session PDA list by seq.
 //    - Used by: follow-up after readUserState.
 //
-// 2) listSessionChunks(sessionPubkey, opts)
+// 2) listSessionChunks(sessionPubkey)
 //    - Role: collect session chunk transactions.
 //    - Used by: readSession reconstruction flow.
 //
@@ -23,19 +23,19 @@
 //    - Role: decode write_data + database_instruction to reconstruct rows.
 //    - Note: filter by table_seed + merge by target_tx.
 //
-// 5) readRowsBySeed(partyA, partyB, opts)
+// 5) readRowsBySeed(partyA, partyB)
 //    - Role: take both pubkeys, derive seed, and return list.
 //    - Note: unifies the old readRowsByDmSeed concept.
-// 6) readConnectionList(partyA, partyB, opts)
+// 6) readConnectionList(partyA, partyB)
 //    - Role: read userPda and fetch only request_connection entries.
 //    - Note: prefer the account-transaction utility.
 //
-// 7) listDbAccountTransactions(dbPda, opts)
+// 7) listDbAccountTransactions(dbPda)
 //    - Role: collect db_account related transactions.
 //    - Used by: readDbEntry linked list/inscription helpers.
 // ----- rent data -----
 //
-// 8) listTableSeedsFromDbRoot(rootId, opts)
+// 8) listTableSeedsFromDbRoot(rootId)
 //    - Role: get table seed list from DbRoot (meta/table list).
 //    - Note: split into its own section because this is meta/structure.
 //

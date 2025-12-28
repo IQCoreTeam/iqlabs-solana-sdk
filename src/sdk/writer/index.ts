@@ -1,1 +1,2 @@
-// Writer should be simpler than reader; decide how to plan it.
+// writer: high-level flows only
+export * from "./write";

@@ -43,6 +43,7 @@ type IdlAccount = {
   writable?: boolean;
   signer?: boolean;
   address?: string;
+  optional?: boolean;
 };
 
 type IdlInstruction = {
@@ -62,12 +63,15 @@ export type InstructionBuilder = {
 const toAccountMeta = (
   account: IdlAccount,
   accounts: Record<string, PublicKey | undefined>,
-): AccountMeta => {
+): AccountMeta | null => {
   const pubkey = account.address
     ? new PublicKey(account.address)
     : accounts[account.name];
 
   if (!pubkey) {
+    if (account.optional) {
+      return null;
+    }
     throw new Error(`Missing account: ${account.name}`);
   }
 
@@ -94,9 +98,9 @@ export const createInstructionBuilder = (
       throw new Error(`Unknown instruction: ${name}`);
     }
 
-    const keys = instruction.accounts.map((account) =>
-      toAccountMeta(account, accounts),
-    );
+    const keys = instruction.accounts
+      .map((account) => toAccountMeta(account, accounts))
+      .filter((account): account is AccountMeta => Boolean(account));
     const data = coder.encode(name, args ?? {});
 
     return new TransactionInstruction({ programId, keys, data });
@@ -197,7 +201,7 @@ export type DatabaseInstructionAccounts = {
   instruction_table: PublicKey;
   table_ref: PublicKey;
   target_table_ref: PublicKey;
-  signer_ata: PublicKey;
+  signer_ata?: PublicKey;
   signer: PublicKey;
 };
 
@@ -219,7 +223,6 @@ export type DbCodeInAccounts = {
   user: PublicKey;
   db_account: PublicKey;
   system_program?: PublicKey;
-  session: PublicKey;
 };
 
 export type DbCodeInArgs = {
@@ -239,7 +242,6 @@ export type DbCodeInForFreeAccounts = {
   db_account: PublicKey;
   config: PublicKey;
   system_program?: PublicKey;
-  session: PublicKey;
 };
 
 export type DbCodeInForFreeArgs = {
@@ -488,7 +490,7 @@ export type WriteDataAccounts = {
   db_root: PublicKey;
   table: PublicKey;
   table_ref: PublicKey;
-  signer_ata: PublicKey;
+  signer_ata?: PublicKey;
   signer: PublicKey;
 };
 

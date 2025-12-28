@@ -3,10 +3,10 @@
 //   - should load reader profile settings
 /// The items below live in read/reading_flow.ts; call into that.
 //// Everything should now live under read/.
-// - readSession(sessionPubkey, opts): session read entry
-// - readDbEntry(dbPda, opts): DB path read entry
-// - readUserState(userPubkey, opts): user read entry
-// - readConnection(partyA, partyB, opts): connection read entry
+// - readSession(sessionPubkey): session read entry
+// - readDbEntry(txSignature): DB path read entry
+// - readUserState(userPubkey): user read entry
+// - readConnection(partyA, partyB): connection read entry
 // - No Reader object; export functions.
 
 export {};

@@ -25,39 +25,34 @@
 //
 // Candidate functions for reading_flow.ts (rough draft)
 //
-// 1) readSession(sessionPubkey, opts)
+
+// 1) readDbEntry(txSignature)
+//    - Role: read by decoding instructions from transactions.
+//    - Used by: DB-related API in read/index.ts.
+//
+// 2) resolveOnChainPath(onChainPath) /// rename to decideSessionOrLinkedList
+//    - Role: split on_chain_path into "session" / "tailTx".
+//    - Rule: if PDA exists -> session, if tail tx exists -> linked list, else error.
+//    - Used by: readDbEntry internals.
+// 3) readSession(sessionPubkey)
 //    - Role: read the session PDA and reconstruct chunks.
 //    - Used by: read(...) / readDbEntry(...).
 //    - Note: session chunk list is collected in list/items_collector.ts.
 //
-// 2) readDbAccount(dbPda)
-//    - Role: read db_account to extract on_chain_path/metadata.
-//    - Note: tx list/listing is handled in list/items_collector.ts.
-//    - Used by: readDbEntry.
-//
-// 3) readDbEntry(dbPda, opts)
-//    - Role: read based on resolveOnChainPath result.
-//    - Used by: DB-related API in read/index.ts.
-//
-// 4) resolveOnChainPath(onChainPath) /// rename to decideSessionOrLinkedList
-//    - Role: split on_chain_path into "session" / "tailTx".
-//    - Rule: if PDA exists -> session, if tail tx exists -> linked list, else error.
-//    - Used by: readDbEntry internals.
-//
-// 5) readLinkedListFromTail(tailTx, opts)
+// 4) readLinkedListFromTail(tailTx)
 //    - Role: traverse linked list from tail tx and reconstruct data.
 //    - Used by: readDbEntry internals.
 //
-// 6) readUserState(userPubkey, opts)
+// 5) readUserState(userPubkey)
 //    - Role: parse user_state + total_session_files.
 //    - Note: session/connection lists are handled in list/items_collector.ts.
 //    - Used by: user API in read/index.ts.
 //
-// 7) readProfileMetadataInscription(txid)
+// 6) readProfileMetadataInscription(txid)
 //    - Role: read metadata inscription tx and reconstruct profile.
 //    - Used by: readUserState internals.
 //
-// 8) readConnection(partyA, partyB, opts)
+// 7) readConnection(partyA, partyB)
 //    - Role: derive connection seed -> parse connection account.
 //    - Note: prefer account-transaction utility.
 //
