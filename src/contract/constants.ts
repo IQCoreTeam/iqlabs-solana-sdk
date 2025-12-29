@@ -17,3 +17,8 @@ export const SEED_DB_ROOT_SALT = new Uint8Array([
   205, 134, 90, 5, 53, 82, 224, 210, 56, 59, 10, 7, 236, 44, 102, 122,
   211,
 ]);
+
+export const CONNECTION_STATUS_PENDING = 0;
+export const CONNECTION_STATUS_APPROVED = 1;
+export const CONNECTION_STATUS_BLOCKED = 2;
+export const CONNECTION_BLOCKER_NONE = 255;

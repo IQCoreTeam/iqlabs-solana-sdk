@@ -17,3 +17,7 @@ export function deriveDmSeed(userA: string, userB: string): Uint8Array {
   const [sortedA, sortedB] = sortPubkeys(userA, userB);
   return deriveSeedBytes(`${sortedA}:${sortedB}`);
 }
+
+export function toSeedBytes(value: Uint8Array | string): Uint8Array {
+  return typeof value === "string" ? deriveSeedBytes(value) : value;
+}
