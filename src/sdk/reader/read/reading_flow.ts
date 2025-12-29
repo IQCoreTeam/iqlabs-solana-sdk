@@ -23,39 +23,93 @@
 // - Mode decision (decideReadMode) moves to read/reader_profile.ts.
 // - reading_flow.ts only documents the "path" of reading.
 //
-// Candidate functions for reading_flow.ts (rough draft)
+// Candidate functions for reading_flow.ts (draft)
+// 0) readDBMetadata(txSignature)
+//    Role:
+//      - read db_code_in args only (no result reconstruction)
+//    Input:
+//      - txSignature: string (db_code_in tx signature)
+//    Output:
+//      - { onChainPath, metadata }
 //
-
-// 1) readDbEntry(txSignature)
-//    - Role: read by decoding instructions from transactions.
-//    - Used by: DB-related API in read/index.ts.
+// 1) readInscription(txSignature) // this is the main read function for the file
+//    Role:
+//      - follow on_chain_path and return the fully reconstructed result
+//    Input:
+//      - txSignature: string (db_code_in tx signature)
+//    Output:
+//      - { result }
+//    Steps:
+//      - extract on_chain_path and metadata via readDBMetadata(txSignature)
+//      - readOption = reader_profile.decideReadMode(txSignature)
+//        (uses profile settings + tx blocktime/slot)
+//      - if reader_profile.decideSessionOrLinkedList(on_chain_path) == "session":
+//        - readSession(on_chain_path, readOption)
+//      - else:
+//        - readLinkedListFromTail(on_chain_path, readOption)
+//      - return result
 //
-// 2) resolveOnChainPath(onChainPath) /// rename to decideSessionOrLinkedList
-//    - Role: split on_chain_path into "session" / "tailTx".
-//    - Rule: if PDA exists -> session, if tail tx exists -> linked list, else error.
-//    - Used by: readDbEntry internals.
-// 3) readSession(sessionPubkey)
-//    - Role: read the session PDA and reconstruct chunks.
-//    - Used by: read(...) / readDbEntry(...).
-//    - Note: session chunk list is collected in list/items_collector.ts.
+// 3) readSession(sessionPubkey, readOption)
+//    Input:
+//      - sessionPubkey: string (base58)
+//      - readOption: ReadOption
+//    Output:
+//      - { result }
+//    Steps:
+//      - validate session account (discriminator/owner/size)
+//      - if valid, call reading_methods.readSessionResult(sessionPubkey, readOption)
+//      - return result
+//    Notes:
+//      - SessionAccount does not store chunks; read from tx ix args
+//      - method: compression/encryption hint
+//      - decode_break: split marker for compression/encryption
 //
-// 4) readLinkedListFromTail(tailTx)
-//    - Role: traverse linked list from tail tx and reconstruct data.
-//    - Used by: readDbEntry internals.
+// 4) readLinkedListFromTail(tailTx, readOption)
+//    Input:
+//      - tailTx: string (tx signature)
+//      - readOption: ReadOption
+//    Output:
+//      - { result }
+//    Steps:
+//      - fetch tail tx; validate it is a send_code tail
+//      - if valid, call reading_methods.readLinkedListResult(tailTx, readOption)
+//      - return result
+//    Notes:
+//      - linked-list does not use replay
+//      - RPC choice: <=24h -> zeroblock, else -> helius
 //
 // 5) readUserState(userPubkey)
-//    - Role: parse user_state + total_session_files.
-//    - Note: session/connection lists are handled in list/items_collector.ts.
-//    - Used by: user API in read/index.ts.
+//    Input:
+//      - userPubkey: string (base58)
+//    Output:
+//      - { owner, metadata, totalSessionFiles }
+//    Steps:
+//      - derive user_state PDA, fetch, decode UserState
+//      - if metadata present, call readProfileMetadataInscription(txid)
+//      - return user_state (profile data is read separately)
+//    Notes:
+//      - listUserSessions / readConnectionList live in list/items_collector.ts
 //
 // 6) readProfileMetadataInscription(txid)
-//    - Role: read metadata inscription tx and reconstruct profile.
-//    - Used by: readUserState internals.
+//    Input:
+//      - txid: string (tx signature)
+//    Output:
+//      - { profileData }
+//    Steps:
+//      - fetch tx; decode profile-related instruction
+//      - reconstruct/decode metadata result
+//      - return profile data
 //
 // 7) readConnection(partyA, partyB)
-//    - Role: derive connection seed -> parse connection account.
-//    - Note: prefer account-transaction utility.
-//
+//    Input:
+//      - partyA: string (base58)
+//      - partyB: string (base58)
+//    Output:
+//      - { status }
+//    Steps:
+//      - derive connection seed (sorted rule)
+//      - fetch/parse connection PDA
+//      - return status
 // Reference priority:
 // - Rustrover contract marked with /// (highest priority)
 // - new_backend/core/reader
