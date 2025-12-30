@@ -167,7 +167,7 @@ export async function readSessionResult(
 
 export async function readLinkedListResult(
     tailTx: string,
-    readOption: {freshness?: "fresh" | "recent"},
+    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const chunks: string[] = [];
