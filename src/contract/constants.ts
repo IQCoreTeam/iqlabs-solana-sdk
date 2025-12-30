@@ -1,5 +1,8 @@
 export const DEFAULT_ANCHOR_PROGRAM_ID =
   "FG5nDUjz4S1FBs2rZrXsKsa7J34e21WF17F8nFL9uwWi";
+export const DEFAULT_PINOCCHIO_PROGRAM_ID =
+  "4jB7tZybufNfgs8HRj9DiSCMYfEqb8jWkxKcnZnA1vBt";
+export const DEFAULT_REPLAY_BASE_URL = "";
 
 export const SEED_CONFIG = "config";
 export const SEED_DB_ROOT = "iqdb-root";
