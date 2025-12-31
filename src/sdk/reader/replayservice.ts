@@ -14,6 +14,7 @@ export interface ReplayService {
         retryAfter?: number;
         estimatedWaitMs?: number;
     }>;
+
     getReplayStatus(jobId: string): Promise<{
         jobId: string;
         status: string;
@@ -22,7 +23,9 @@ export interface ReplayService {
         hasArtifact: boolean;
         downloadUrl?: string;
     }>;
+
     getReplayLogs(jobId: string): Promise<Record<string, unknown>>;
+
     downloadReplay(jobId: string): Promise<{
         data: Uint8Array;
         contentType?: string;
@@ -32,7 +35,7 @@ export interface ReplayService {
 
 const resolveBrowserOrigin = (): string | null => {
     const globalWithLocation = globalThis as {
-        location?: {origin?: string};
+        location?: { origin?: string };
     };
     const origin = globalWithLocation.location?.origin;
     return origin && origin.length > 0 ? origin : null;
@@ -98,7 +101,7 @@ export class ReplayServiceClient implements ReplayService {
         this.headers = {...(config.headers ?? {})};
     }
 
-    async enqueueReplay(request: {sessionPubkey: string}): Promise<{
+    async enqueueReplay(request: { sessionPubkey: string }): Promise<{
         jobId: string;
         status: string;
         retryAfter?: number;

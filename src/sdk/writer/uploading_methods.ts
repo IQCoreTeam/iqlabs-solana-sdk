@@ -16,17 +16,17 @@ import {
 import {sendTx} from "./writer_utils";
 
 export async function uploadLinkedList(
-  connection: Connection,
-  signer: Signer,
-  builder: InstructionBuilder,
-  user: PublicKey,
-  codeAccount: PublicKey,
-  chunks: string[],
-  method: number,
+    connection: Connection,
+    signer: Signer,
+    builder: InstructionBuilder,
+    user: PublicKey,
+    codeAccount: PublicKey,
+    chunks: string[],
+    method: number,
 ) {
-  let beforeTx = "Genesis";
-  for (const chunk of chunks) {
-    const ix = sendCodeInstruction(
+    let beforeTx = "Genesis";
+    for (const chunk of chunks) {
+        const ix = sendCodeInstruction(
             builder,
             {
                 user,
@@ -42,21 +42,21 @@ export async function uploadLinkedList(
         );
         beforeTx = await sendTx(connection, signer, ix);
     }
-  return beforeTx;
+    return beforeTx;
 }
 
 export async function uploadSession(
-  connection: Connection,
-  signer: Signer,
-  builder: InstructionBuilder,
-  profile: ProgramProfile,
-  user: PublicKey,
-  userState: PublicKey,
-  seq: bigint,
-  chunks: string[],
-  method: number,
+    connection: Connection,
+    signer: Signer,
+    builder: InstructionBuilder,
+    profile: ProgramProfile,
+    user: PublicKey,
+    userState: PublicKey,
+    seq: bigint,
+    chunks: string[],
+    method: number,
 ) {
-  const session = getSessionPda(profile, user, seq);
+    const session = getSessionPda(profile, user, seq);
     const sessionInfo = await connection.getAccountInfo(session);
     if (!sessionInfo) {
         const createIx = createSessionInstruction(

@@ -134,7 +134,7 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
 
 export async function readSessionResult(
     sessionPubkey: string,
-    readOption: {isReplay: boolean; freshness?: "fresh" | "recent" | "archive"},
+    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const signatures = await connection.getSignaturesForAddress(

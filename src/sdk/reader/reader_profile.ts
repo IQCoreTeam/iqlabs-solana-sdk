@@ -1,6 +1,7 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
 import {getConnection} from "../utils/connection_helper";
 import {readerContext} from "./reader_context";
+
 const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
 
 const DAY_SECONDS = 86_400;
@@ -41,7 +42,7 @@ const resolveOnChainPath = (tx: VersionedTransactionResponse): string => {
 
 export async function decideReadMode(
     txSignature: string,
-): Promise<{isReplay: boolean; freshness?: "fresh" | "recent" | "archive"}> {
+): Promise<{ isReplay: boolean; freshness?: "fresh" | "recent" | "archive" }> {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
         maxSupportedTransactionVersion: 0,

@@ -146,8 +146,8 @@ export async function fetchConnectionMeta(
 
 export function evaluateConnectionAccess(
     meta: ReturnType<typeof decodeConnectionMeta>,
-    signer: PublicKey,
-    status: "pending" | "approved" | "blocked") {
+    signer: PublicKey) {
+    let status: string = '';
     if (meta.status === CONNECTION_STATUS_PENDING) {
         status = "pending";
     } else if (meta.status === CONNECTION_STATUS_APPROVED) {
