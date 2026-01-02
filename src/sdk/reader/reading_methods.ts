@@ -146,6 +146,7 @@ export async function readSessionResult(
         const tx = await connection.getTransaction(entry.signature, {
             maxSupportedTransactionVersion: 0,
         });
+
         if (!tx) {
             continue;
         }

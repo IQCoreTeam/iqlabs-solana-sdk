@@ -16,7 +16,6 @@ import {
   getUserPda,
   userInitializeInstruction,
 } from "../../src/contract";
-import { resolveProfileByOwner } from "../../src/sdk";
 
 const loadIdl = (): Idl => {
   const idlPath = path.resolve(process.cwd(), "idl", "code_in.json");
@@ -68,15 +67,18 @@ const userInitIx = userInitializeInstruction(builder, {
 assert.equal(userInitIx.programId.toBase58(), programId.toBase58());
 
 const pinocchioId = Keypair.generate().publicKey;
-const resolvedPinocchio = resolveProfileByOwner({
-  owner: pinocchioId,
-  pinocchioProgramId: pinocchioId,
-});
-
-assert.equal(resolvedPinocchio.runtime, "pinocchio");
-assert.equal(resolvedPinocchio.programId.toBase58(), pinocchioId.toBase58());
-
 const explicitPinocchio = createPinocchioProfile(pinocchioId);
 assert.equal(explicitPinocchio.runtime, "pinocchio");
+assert.equal(
+  explicitPinocchio.programId.toBase58(),
+  pinocchioId.toBase58(),
+);
+
+const defaultAnchor = createAnchorProfile();
+assert.equal(defaultAnchor.runtime, "anchor");
+assert.equal(
+  defaultAnchor.programId.toBase58(),
+  DEFAULT_ANCHOR_PROGRAM_ID,
+);
 
 console.log("contract smoke test ok");
