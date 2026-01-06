@@ -67,17 +67,15 @@ export async function codein(
         system_program: SystemProgram.programId,
     });
 
-    // Anchor flow: resolve session sequence
+    // Resolve session sequence from userState
     let seq = BigInt(0);
-    if (isAnchor) {
-        const accountCoder = new BorshAccountsCoder(IDL);
-        const info = await connection.getAccountInfo(userState);
-        if (info) {
-            const decoded = accountCoder.decode("UserState", info.data) as {
-                total_session_files: BN;
-            };
-            seq = BigInt(decoded.total_session_files.toString());
-        }
+    const accountCoder = new BorshAccountsCoder(IDL);
+    const info = await connection.getAccountInfo(userState);
+    if (info) {
+        const decoded = accountCoder.decode("UserState", info.data) as {
+            total_session_files: BN;
+        };
+        seq = BigInt(decoded.total_session_files.toString());
     }
 
     // File metadata payload
@@ -144,10 +142,11 @@ export async function codein(
             user,
             db_account: dbAccount,
             system_program: SystemProgram.programId,
-            session: sessionAccount ?? undefined,
+            session: sessionAccount,
         },
         {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
+    // Add feeReceiver as remaining account - must come after all IDL accounts
     dbIx.keys.push({
         pubkey: feeReceiver,
         isSigner: false,
