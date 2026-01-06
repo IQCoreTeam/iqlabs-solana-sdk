@@ -158,7 +158,7 @@ export async function writeRow(
         },
     );
 
-    return sendTx(connection, signer, ix);
+    return sendTx(connection, signer, ix, {label: "write_data"});
 }
 
 export async function writeConnectionRow(
@@ -234,7 +234,7 @@ export async function writeConnectionRow(
         },
     );
 
-    return sendTx(connection, signer, ix);
+    return sendTx(connection, signer, ix, {label: "write_connection_data"});
 }
 
 export async function manageRowData(

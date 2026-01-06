@@ -9,6 +9,7 @@ import {
 import {
     createAnchorProfile,
     createInstructionBuilder,
+    createPinocchioProfile,
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
@@ -16,15 +17,27 @@ import {
 } from "../../contract";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
+    DEFAULT_SESSION_WRITE_FEE_LAMPORTS,
     DEFAULT_WRITE_FEE_LAMPORTS,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
+import {DEFAULT_PINOCCHIO_PROGRAM_ID} from "../../contract/constants";
 import {readMagicBytes} from "../utils/magic_bytes";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
+export type CodeInOptions = {
+    programId?: PublicKey;
+    runtime?: "anchor" | "pinocchio";
+    feeLamports?: number;
+    sessionFeeLamports?: number;
+    logTransactions?: boolean;
+    uploadConcurrency?: number;
+    uploadRps?: number;
+    sessionReadOnly?: boolean;
+};
 
 export async function codein(
     input: { connection: Connection; signer: Signer },
@@ -33,6 +46,7 @@ export async function codein(
     filename?: string,
     method = 0,
     filetype = "",
+    options?: CodeInOptions,
 ) {
     // Basic validation and input setup
     const totalChunks = chunks.length;
@@ -42,7 +56,13 @@ export async function codein(
     const {connection, signer} = input;
 
     // Program context + PDAs
-    const profile = createAnchorProfile();
+    const runtime = options?.runtime ?? "anchor";
+    const profile =
+        runtime === "pinocchio"
+            ? createPinocchioProfile(
+                  options?.programId ?? new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
+              )
+            : createAnchorProfile(options?.programId);
     const builder = createInstructionBuilder(IDL, profile.programId);
     const user = signer.publicKey;
     const userState = getUserPda(profile, user);
@@ -84,8 +104,12 @@ export async function codein(
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
+    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    const logTransactions = options?.logTransactions ?? false;
+    const uploadConcurrency = options?.uploadConcurrency;
+    const uploadRps = options?.uploadRps;
 
-    if (totalChunks < DEFAULT_LINKED_LIST_THRESHOLD) {
+    if (!useSession) {
         onChainPath = await uploadLinkedList(
             connection,
             signer,
@@ -94,6 +118,7 @@ export async function codein(
             codeAccount,
             chunks,
             method,
+            logTransactions,
         );
     } else {
         onChainPath = await uploadSession(
@@ -106,20 +131,45 @@ export async function codein(
             seq,
             chunks,
             method,
+            {
+                logTransactions,
+                maxConcurrency: uploadConcurrency,
+                maxRps: uploadRps,
+                sessionReadOnly: options?.sessionReadOnly,
+            },
         );
     }
 
     // Finalize with fee transfer + db_code_in
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
+    const linkedListFeeLamports =
+        options?.feeLamports ?? DEFAULT_WRITE_FEE_LAMPORTS;
+    const sessionFeeLamports =
+        options?.sessionFeeLamports ??
+        options?.feeLamports ??
+        DEFAULT_SESSION_WRITE_FEE_LAMPORTS;
+    const feeLamports = useSession ? sessionFeeLamports : linkedListFeeLamports;
+    const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
+    const sessionFinalize = useSession
+        ? {
+              seq: new BN(seq.toString()),
+              total_chunks: totalChunks,
+          }
+        : null;
     const feeIx = SystemProgram.transfer({
         fromPubkey: user,
         toPubkey: dbAccount,
-        lamports: DEFAULT_WRITE_FEE_LAMPORTS,
+        lamports: feeLamports,
     });
     const dbIx = dbCodeInInstruction(
         builder,
-        {user, db_account: dbAccount, system_program: SystemProgram.programId},
-        {on_chain_path: onChainPath, metadata, session: null},
+        {
+            user,
+            db_account: dbAccount,
+            system_program: SystemProgram.programId,
+            session: sessionAccount ?? undefined,
+        },
+        {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
     dbIx.keys.push({
         pubkey: feeReceiver,
@@ -127,5 +177,8 @@ export async function codein(
         isWritable: true,
     });
 
-    return sendTx(connection, signer, [feeIx, dbIx]);
+    return sendTx(connection, signer, [feeIx, dbIx], {
+        label: "db_code_in",
+        log: logTransactions,
+    });
 }

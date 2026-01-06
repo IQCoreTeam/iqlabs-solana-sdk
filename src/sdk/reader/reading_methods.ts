@@ -44,6 +44,62 @@ import {readerContext} from "./reader_context";
 
 const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
 
+type ReadSessionFetchConfig = {
+    maxRps?: number;
+    maxConcurrency?: number;
+};
+
+const toPositiveInt = (value?: number) => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+    return Math.floor(value);
+};
+
+const createRateLimiter = (maxRps?: number) => {
+    const normalized = toPositiveInt(maxRps);
+    if (!normalized) {
+        return null;
+    }
+    const minDelayMs = Math.max(1, Math.ceil(1000 / normalized));
+    let nextTime = 0;
+
+    return {
+        wait: async () => {
+            const now = Date.now();
+            const scheduled = Math.max(now, nextTime);
+            nextTime = scheduled + minDelayMs;
+            const delay = scheduled - now;
+            if (delay > 0) {
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        },
+    };
+};
+
+const runWithConcurrency = async <T>(
+    items: T[],
+    limit: number,
+    worker: (item: T, index: number) => Promise<void>,
+) => {
+    if (items.length === 0) {
+        return;
+    }
+    const concurrency = Math.max(1, Math.min(limit, items.length));
+    let cursor = 0;
+    const runners = Array.from({length: concurrency}, async () => {
+        while (true) {
+            const index = cursor;
+            cursor += 1;
+            if (index >= items.length) {
+                return;
+            }
+            await worker(items[index], index);
+        }
+    });
+    await Promise.all(runners);
+};
+
 
 const extractAnchorInstruction = (
     tx: VersionedTransactionResponse,
@@ -54,7 +110,14 @@ const extractAnchorInstruction = (
 
     for (const ix of message.compiledInstructions) {
         const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId || !programId.equals(anchorProfile.programId)) {
+        if (!programId) {
+            continue;
+        }
+        const isAnchor = programId.equals(anchorProfile.programId);
+        const isPinocchio =
+            pinocchioProfile !== null &&
+            programId.equals(pinocchioProfile.programId);
+        if (!isAnchor && !isPinocchio) {
             continue;
         }
         const decoded = instructionCoder.decode(Buffer.from(ix.data));
@@ -102,19 +165,22 @@ const extractPostChunk = (tx: VersionedTransactionResponse) => {
             continue;
         }
 
-        if (programId.equals(anchorProfile.programId)) {
+        const isAnchor = programId.equals(anchorProfile.programId);
+        const isPinocchio =
+            pinocchioProfile !== null &&
+            programId.equals(pinocchioProfile.programId);
+        if (isAnchor || isPinocchio) {
             const decoded = instructionCoder.decode(Buffer.from(ix.data));
             if (decoded && decoded.name === "post_chunk") {
                 const data = decoded.data as { index: number; chunk: string };
                 chunks.push({index: data.index, chunk: data.chunk});
+                continue;
             }
-            continue;
-        }
-
-        if (programId.equals(pinocchioProfile.programId)) {
-            const parsed = extractPinocchioPostChunk(Buffer.from(ix.data));
-            if (parsed) {
-                chunks.push(parsed);
+            if (isPinocchio) {
+                const parsed = extractPinocchioPostChunk(Buffer.from(ix.data));
+                if (parsed) {
+                    chunks.push(parsed);
+                }
             }
         }
     }
@@ -135,26 +201,32 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
 export async function readSessionResult(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    fetchConfig?: ReadSessionFetchConfig,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const signatures = await connection.getSignaturesForAddress(
         new PublicKey(sessionPubkey),
     );
     const chunkMap = new Map<number, string>();
+    const limiter = createRateLimiter(fetchConfig?.maxRps);
+    const maxConcurrency = toPositiveInt(fetchConfig?.maxConcurrency) ?? 1;
 
-    for (const entry of signatures) {
+    await runWithConcurrency(signatures, maxConcurrency, async (entry) => {
+        if (limiter) {
+            await limiter.wait();
+        }
         const tx = await connection.getTransaction(entry.signature, {
             maxSupportedTransactionVersion: 0,
         });
 
         if (!tx) {
-            continue;
+            return;
         }
         const chunks = extractPostChunk(tx);
         for (const chunk of chunks) {
             chunkMap.set(chunk.index, chunk.chunk);
         }
-    }
+    });
     if (chunkMap.size === 0) {
         throw new Error("no session chunks found");
     }
