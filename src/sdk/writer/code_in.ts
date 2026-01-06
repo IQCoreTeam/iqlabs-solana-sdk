@@ -70,17 +70,15 @@ export async function codein(
         system_program: SystemProgram.programId,
     });
 
-    // Anchor flow: resolve session sequence
+    // Resolve session sequence from userState
     let seq = BigInt(0);
-    if (isAnchor) {
-        const accountCoder = new BorshAccountsCoder(IDL);
-        const info = await connection.getAccountInfo(userState);
-        if (info) {
-            const decoded = accountCoder.decode("UserState", info.data) as {
-                total_session_files: BN;
-            };
-            seq = BigInt(decoded.total_session_files.toString());
-        }
+    const accountCoder = new BorshAccountsCoder(IDL);
+    const info = await connection.getAccountInfo(userState);
+    if (info) {
+        const decoded = accountCoder.decode("UserState", info.data) as {
+            total_session_files: BN;
+        };
+        seq = BigInt(decoded.total_session_files.toString());
     }
 
     // File metadata payload

@@ -19,7 +19,7 @@ export async function fetchAccountTransactions( // this use for bringing the db 
 export async function getSessionPdaList(userPubkey: string): Promise<string[]> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const userState = getUserPda(readerContext.anchorProfile, user);
+    const userState = getUserPda(readerContext.pinocchioProfile, user);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
         throw new Error("user_state not found");
@@ -31,7 +31,7 @@ export async function getSessionPdaList(userPubkey: string): Promise<string[]> {
     const sessions: string[] = [];
 
     for (let seq = BigInt(0); seq < totalSessionFiles; seq += BigInt(1)) {
-        const session = getSessionPda(readerContext.anchorProfile, user, seq);
+        const session = getSessionPda(readerContext.pinocchioProfile, user, seq);
         sessions.push(session.toBase58());
     }
 
