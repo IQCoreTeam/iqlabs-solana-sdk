@@ -23,30 +23,20 @@ import {
 } from "../constants";
 import {DEFAULT_PINOCCHIO_PROGRAM_ID} from "../../contract/constants";
 import {readMagicBytes} from "../utils/magic_bytes";
+import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
-export type CodeInOptions = {
-    programId?: PublicKey;
-    runtime?: "anchor" | "pinocchio";
-    feeLamports?: number;
-    sessionFeeLamports?: number;
-    logTransactions?: boolean;
-    uploadConcurrency?: number;
-    uploadRps?: number;
-    sessionReadOnly?: boolean;
-};
-
 export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
-    isAnchor = true,
+    isAnchor = false,
     filename?: string,
     method = 0,
     filetype = "",
-    options?: CodeInOptions,
+    speed: string = DEFAULT_SESSION_SPEED,
 ) {
     // Basic validation and input setup
     const totalChunks = chunks.length;
@@ -56,13 +46,12 @@ export async function codein(
     const {connection, signer} = input;
 
     // Program context + PDAs
-    const runtime = options?.runtime ?? "anchor";
     const profile =
-        runtime === "pinocchio"
-            ? createPinocchioProfile(
-                  options?.programId ?? new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
-              )
-            : createAnchorProfile(options?.programId);
+        isAnchor
+            ? createAnchorProfile()
+            : createPinocchioProfile(
+                  new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
+              );
     const builder = createInstructionBuilder(IDL, profile.programId);
     const user = signer.publicKey;
     const userState = getUserPda(profile, user);
@@ -105,10 +94,6 @@ export async function codein(
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
     const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
-    const logTransactions = options?.logTransactions ?? false;
-    const uploadConcurrency = options?.uploadConcurrency;
-    const uploadRps = options?.uploadRps;
-
     if (!useSession) {
         onChainPath = await uploadLinkedList(
             connection,
@@ -118,7 +103,6 @@ export async function codein(
             codeAccount,
             chunks,
             method,
-            logTransactions,
         );
     } else {
         onChainPath = await uploadSession(
@@ -132,22 +116,15 @@ export async function codein(
             chunks,
             method,
             {
-                logTransactions,
-                maxConcurrency: uploadConcurrency,
-                maxRps: uploadRps,
-                sessionReadOnly: options?.sessionReadOnly,
+                speed,
             },
         );
     }
 
     // Finalize with fee transfer + db_code_in
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
-    const linkedListFeeLamports =
-        options?.feeLamports ?? DEFAULT_WRITE_FEE_LAMPORTS;
-    const sessionFeeLamports =
-        options?.sessionFeeLamports ??
-        options?.feeLamports ??
-        DEFAULT_SESSION_WRITE_FEE_LAMPORTS;
+    const linkedListFeeLamports = DEFAULT_WRITE_FEE_LAMPORTS;
+    const sessionFeeLamports = DEFAULT_SESSION_WRITE_FEE_LAMPORTS;
     const feeLamports = useSession ? sessionFeeLamports : linkedListFeeLamports;
     const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
     const sessionFinalize = useSession
@@ -177,8 +154,5 @@ export async function codein(
         isWritable: true,
     });
 
-    return sendTx(connection, signer, [feeIx, dbIx], {
-        label: "db_code_in",
-        log: logTransactions,
-    });
+    return sendTx(connection, signer, [feeIx, dbIx]);
 }

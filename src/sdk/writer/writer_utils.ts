@@ -12,7 +12,6 @@ export async function sendTx(
     connection: Connection,
     signer: Signer,
     instructions: TransactionInstruction | TransactionInstruction[],
-    options?: { label?: string; log?: boolean },
 ) {
     const tx = new Transaction();
     if (Array.isArray(instructions)) {
@@ -20,14 +19,7 @@ export async function sendTx(
     } else {
         tx.add(instructions);
     }
-    const signature = await sendAndConfirmTransaction(connection, tx, [signer]);
-    const shouldLog =
-        options?.log || process.env.IQLABS_LOG_TX === "1" || false;
-    if (shouldLog) {
-        const label = options?.label ? ` ${options.label}` : "";
-        console.log(`[tx]${label} ${signature}`);
-    }
-    return signature;
+    return sendAndConfirmTransaction(connection, tx, [signer]);
 }
 
 export async function ensureUserInitialized(
@@ -47,5 +39,5 @@ export async function ensureUserInitialized(
         return;
     }
     const ix = userInitializeInstruction(builder, accounts);
-    await sendTx(connection, signer, ix, {label: "user_initialize"});
+    await sendTx(connection, signer, ix);
 }

@@ -21,45 +21,6 @@ const {instructionCoder, accountCoder, anchorProfile, pinocchioProfile} =
 const SIG_MIN_LEN = 80;
 const replayService = new ReplayServiceClient();
 
-export type ReadSessionSpeed = "light" | "medium" | "heavy" | "extreme";
-
-export type ReadSessionOptions = {
-    speed?: ReadSessionSpeed;
-    maxRps?: number;
-    maxConcurrency?: number;
-};
-
-type SessionReadConfig = {
-    maxRps: number;
-    maxConcurrency: number;
-};
-
-const DEFAULT_SESSION_SPEED: ReadSessionSpeed = "light";
-const SESSION_SPEED_PROFILES: Record<ReadSessionSpeed, SessionReadConfig> = {
-    light: {maxRps: 10, maxConcurrency: 10},
-    medium: {maxRps: 50, maxConcurrency: 50},
-    heavy: {maxRps: 100, maxConcurrency: 100},
-    extreme: {maxRps: 250, maxConcurrency: 250},
-};
-
-const toPositiveInt = (value?: number) => {
-    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-        return null;
-    }
-    return Math.floor(value);
-};
-
-const resolveSessionReadConfig = (
-    options?: ReadSessionOptions,
-): SessionReadConfig => {
-    const speed = options?.speed ?? DEFAULT_SESSION_SPEED;
-    const base = SESSION_SPEED_PROFILES[speed];
-    const maxRps = toPositiveInt(options?.maxRps) ?? base.maxRps;
-    const maxConcurrency =
-        toPositiveInt(options?.maxConcurrency) ?? base.maxConcurrency;
-    return {maxRps, maxConcurrency};
-};
-
 const decodeDbCodeIn = (
     tx: VersionedTransactionResponse,
 ): { onChainPath: string; metadata: string } => {
@@ -106,13 +67,13 @@ const resolveConnectionStatus = (status: number) => {
 
 export async function readInscription(
     txSignature: string,
-    sessionOptions?: ReadSessionOptions,
+    speed?: string,
 ): Promise<{ result: string | null }> {
     const {onChainPath} = await readDBMetadata(txSignature);
     const readOption = await decideReadMode(txSignature);
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
     if (kind === "session") {
-        return readSession(onChainPath, readOption, sessionOptions);
+        return readSession(onChainPath, readOption, speed);
     }
     return readLinkedListFromTail(onChainPath, readOption);
 }
@@ -134,7 +95,7 @@ export async function readDBMetadata(txSignature: string): Promise<{
 export async function readSession(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
-    sessionOptions?: ReadSessionOptions,
+    speed?: string,
 ): Promise<{ result: string | null }> {
     if (readOption.isReplay || readOption.freshness === "archive") {
         await replayService.enqueueReplay({sessionPubkey});
@@ -145,8 +106,7 @@ export async function readSession(
     if (!info) {
         throw new Error("session account not found");
     }
-    const sessionConfig = resolveSessionReadConfig(sessionOptions);
-    return readSessionResult(sessionPubkey, readOption, sessionConfig);
+    return readSessionResult(sessionPubkey, readOption, speed);
 }
 
 export async function readLinkedListFromTail(

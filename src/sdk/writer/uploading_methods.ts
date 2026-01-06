@@ -13,28 +13,14 @@ import {
     type InstructionBuilder,
     type ProgramProfile,
 } from "../../contract";
+import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import {sendTx} from "./writer_utils";
 
-type UploadSessionOptions = {
-    logTransactions?: boolean;
-    maxConcurrency?: number;
-    maxRps?: number;
-    sessionReadOnly?: boolean;
-};
-
-const toPositiveInt = (value?: number) => {
-    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+const createRateLimiter = (maxRps: number) => {
+    if (maxRps <= 0) {
         return null;
     }
-    return Math.floor(value);
-};
-
-const createRateLimiter = (maxRps?: number) => {
-    const normalized = toPositiveInt(maxRps);
-    if (!normalized) {
-        return null;
-    }
-    const minDelayMs = Math.max(1, Math.ceil(1000 / normalized));
+    const minDelayMs = Math.max(1, Math.ceil(1000 / maxRps));
     let nextTime = 0;
 
     return {
@@ -73,16 +59,14 @@ const runWithConcurrency = async <T>(
     await Promise.all(runners);
 };
 
-const resolveUploadConfig = (
-    profile: ProgramProfile,
-    options?: UploadSessionOptions,
-) => ({
-    logTransactions: options?.logTransactions ?? false,
-    maxConcurrency: toPositiveInt(options?.maxConcurrency) ?? 1,
-    maxRps: toPositiveInt(options?.maxRps) ?? undefined,
-    sessionReadOnly:
-        options?.sessionReadOnly ?? profile.runtime === "pinocchio",
-});
+const resolveUploadConfig = (options?: { speed?: string }) => {
+    const resolvedSpeed = resolveSessionSpeed(options?.speed);
+    const profile = SESSION_SPEED_PROFILES[resolvedSpeed];
+    return {
+        maxConcurrency: profile.maxConcurrency,
+        maxRps: profile.maxRps,
+    };
+};
 
 export async function uploadLinkedList(
     connection: Connection,
@@ -92,7 +76,6 @@ export async function uploadLinkedList(
     codeAccount: PublicKey,
     chunks: string[],
     method: number,
-    logTransactions = false,
 ) {
     let beforeTx = "Genesis";
     for (let index = 0; index < chunks.length; index += 1) {
@@ -111,10 +94,7 @@ export async function uploadLinkedList(
                 decode_break: 0,
             },
         );
-        beforeTx = await sendTx(connection, signer, ix, {
-            label: `send_code:${index}`,
-            log: logTransactions,
-        });
+        beforeTx = await sendTx(connection, signer, ix);
     }
     return beforeTx;
 }
@@ -129,9 +109,9 @@ export async function uploadSession(
     seq: bigint,
     chunks: string[],
     method: number,
-    options?: UploadSessionOptions,
+    options?: { speed?: string },
 ) {
-    const config = resolveUploadConfig(profile, options);
+    const config = resolveUploadConfig(options);
     const session = getSessionPda(profile, user, seq);
     const sessionInfo = await connection.getAccountInfo(session);
     if (!sessionInfo) {
@@ -145,10 +125,7 @@ export async function uploadSession(
             },
             {seq: new BN(seq.toString())},
         );
-        await sendTx(connection, signer, createIx, {
-            label: "create_session",
-            log: config.logTransactions,
-        });
+        await sendTx(connection, signer, createIx);
     }
 
     const limiter = createRateLimiter(config.maxRps);
@@ -169,18 +146,7 @@ export async function uploadSession(
                 decode_break: 0,
             },
         );
-        if (config.sessionReadOnly) {
-            const sessionMeta = ix.keys.find((key) =>
-                key.pubkey.equals(session),
-            );
-            if (sessionMeta) {
-                sessionMeta.isWritable = false;
-            }
-        }
-        await sendTx(connection, signer, ix, {
-            label: `post_chunk:${payload.index}`,
-            log: config.logTransactions,
-        });
+        await sendTx(connection, signer, ix);
     });
 
     return session.toBase58();

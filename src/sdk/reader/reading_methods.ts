@@ -6,10 +6,11 @@
 // - isReplay: boolean (true = replay, false = rpc)
 // - freshness: "fresh" | "recent" | "archive"
 //
-// 1) readSessionResult(sessionPubkey, readOption)
+// 1) readSessionResult(sessionPubkey, readOption, speed?)
 //    Input:
 //      - sessionPubkey: string (base58)
 //      - readOption: ReadOption
+//      - speed?: string
 //    Output:
 //      - { result }
 //    Steps:
@@ -40,28 +41,21 @@
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
 import {getReaderConnection} from "../utils/connection_helper";
+import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import {readerContext} from "./reader_context";
 
 const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
 
-type ReadSessionFetchConfig = {
-    maxRps?: number;
-    maxConcurrency?: number;
+const resolveSessionConfig = (speed?: string) => {
+    const resolvedSpeed = resolveSessionSpeed(speed);
+    return SESSION_SPEED_PROFILES[resolvedSpeed];
 };
 
-const toPositiveInt = (value?: number) => {
-    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+const createRateLimiter = (maxRps: number) => {
+    if (maxRps <= 0) {
         return null;
     }
-    return Math.floor(value);
-};
-
-const createRateLimiter = (maxRps?: number) => {
-    const normalized = toPositiveInt(maxRps);
-    if (!normalized) {
-        return null;
-    }
-    const minDelayMs = Math.max(1, Math.ceil(1000 / normalized));
+    const minDelayMs = Math.max(1, Math.ceil(1000 / maxRps));
     let nextTime = 0;
 
     return {
@@ -201,15 +195,16 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
 export async function readSessionResult(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
-    fetchConfig?: ReadSessionFetchConfig,
+    speed?: string,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const signatures = await connection.getSignaturesForAddress(
         new PublicKey(sessionPubkey),
     );
     const chunkMap = new Map<number, string>();
-    const limiter = createRateLimiter(fetchConfig?.maxRps);
-    const maxConcurrency = toPositiveInt(fetchConfig?.maxConcurrency) ?? 1;
+    const sessionConfig = resolveSessionConfig(speed);
+    const limiter = createRateLimiter(sessionConfig.maxRps);
+    const maxConcurrency = sessionConfig.maxConcurrency;
 
     await runWithConcurrency(signatures, maxConcurrency, async (entry) => {
         if (limiter) {
