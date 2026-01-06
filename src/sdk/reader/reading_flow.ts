@@ -67,12 +67,13 @@ const resolveConnectionStatus = (status: number) => {
 
 export async function readInscription(
     txSignature: string,
+    speed?: string,
 ): Promise<{ result: string | null }> {
     const {onChainPath} = await readDBMetadata(txSignature);
     const readOption = await decideReadMode(txSignature);
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
     if (kind === "session") {
-        return readSession(onChainPath, readOption);
+        return readSession(onChainPath, readOption, speed);
     }
     return readLinkedListFromTail(onChainPath, readOption);
 }
@@ -94,6 +95,7 @@ export async function readDBMetadata(txSignature: string): Promise<{
 export async function readSession(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    speed?: string,
 ): Promise<{ result: string | null }> {
     if (readOption.isReplay || readOption.freshness === "archive") {
         await replayService.enqueueReplay({sessionPubkey});
@@ -104,7 +106,7 @@ export async function readSession(
     if (!info) {
         throw new Error("session account not found");
     }
-    return readSessionResult(sessionPubkey, readOption);
+    return readSessionResult(sessionPubkey, readOption, speed);
 }
 
 export async function readLinkedListFromTail(

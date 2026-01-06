@@ -9,6 +9,7 @@ import {
 import {
     createAnchorProfile,
     createInstructionBuilder,
+    createPinocchioProfile,
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
@@ -16,23 +17,26 @@ import {
 } from "../../contract";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
+    DEFAULT_SESSION_WRITE_FEE_LAMPORTS,
     DEFAULT_WRITE_FEE_LAMPORTS,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
+import {DEFAULT_PINOCCHIO_PROGRAM_ID} from "../../contract/constants";
 import {readMagicBytes} from "../utils/magic_bytes";
+import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
-
 export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
-    isAnchor = true,
+    isAnchor = false,
     filename?: string,
     method = 0,
     filetype = "",
+    speed: string = DEFAULT_SESSION_SPEED,
 ) {
     // Basic validation and input setup
     const totalChunks = chunks.length;
@@ -42,7 +46,12 @@ export async function codein(
     const {connection, signer} = input;
 
     // Program context + PDAs
-    const profile = createAnchorProfile();
+    const profile =
+        isAnchor
+            ? createAnchorProfile()
+            : createPinocchioProfile(
+                  new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
+              );
     const builder = createInstructionBuilder(IDL, profile.programId);
     const user = signer.publicKey;
     const userState = getUserPda(profile, user);
@@ -84,8 +93,8 @@ export async function codein(
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
-
-    if (totalChunks < DEFAULT_LINKED_LIST_THRESHOLD) {
+    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    if (!useSession) {
         onChainPath = await uploadLinkedList(
             connection,
             signer,
@@ -106,20 +115,38 @@ export async function codein(
             seq,
             chunks,
             method,
+            {
+                speed,
+            },
         );
     }
 
     // Finalize with fee transfer + db_code_in
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
+    const linkedListFeeLamports = DEFAULT_WRITE_FEE_LAMPORTS;
+    const sessionFeeLamports = DEFAULT_SESSION_WRITE_FEE_LAMPORTS;
+    const feeLamports = useSession ? sessionFeeLamports : linkedListFeeLamports;
+    const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
+    const sessionFinalize = useSession
+        ? {
+              seq: new BN(seq.toString()),
+              total_chunks: totalChunks,
+          }
+        : null;
     const feeIx = SystemProgram.transfer({
         fromPubkey: user,
         toPubkey: dbAccount,
-        lamports: DEFAULT_WRITE_FEE_LAMPORTS,
+        lamports: feeLamports,
     });
     const dbIx = dbCodeInInstruction(
         builder,
-        {user, db_account: dbAccount, system_program: SystemProgram.programId},
-        {on_chain_path: onChainPath, metadata, session: null},
+        {
+            user,
+            db_account: dbAccount,
+            system_program: SystemProgram.programId,
+            session: sessionAccount ?? undefined,
+        },
+        {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
     dbIx.keys.push({
         pubkey: feeReceiver,
