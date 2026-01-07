@@ -16,7 +16,6 @@ import {
     getDbRootPda,
     getInstructionTablePda,
     getTargetConnectionTableRefPda,
-    getTargetTableRefPda,
     getUserPda,
     getTablePda,
     requestConnectionInstruction,
@@ -33,9 +32,18 @@ import {
     ensureTableExists,
     fetchTableMeta,
 } from "../utils/global_fetch";
+import {DIRECT_METADATA_MAX_BYTES} from "../constants";
+import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
+
+const buildTableTrailPayload = (rowJson: string, txid: string) => {
+    const payload = JSON.stringify({data: rowJson, tx: txid});
+    return Buffer.byteLength(payload, "utf8") <= DIRECT_METADATA_MAX_BYTES
+        ? payload
+        : txid;
+};
 
 export async function validateRowJson(
     connection: Connection,
@@ -81,22 +89,12 @@ export async function resolveSignerAta(
         return null;
     }
 
-    const tokenProgram = new PublicKey(
-        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    return resolveAssociatedTokenAccount(
+        connection,
+        signer.publicKey,
+        gateMint,
+        true,
     );
-    const associatedTokenProgram = new PublicKey(
-        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efT62Jw",
-    );
-    const [ata] = PublicKey.findProgramAddressSync(
-        [signer.publicKey.toBuffer(), tokenProgram.toBuffer(), gateMint.toBuffer()],
-        associatedTokenProgram,
-    );
-    const info = await connection.getAccountInfo(ata);
-    if (!info) {
-        throw new Error("missing signer_ata");
-    }
-
-    return ata;
 }
 
 export async function writeRow(
@@ -113,7 +111,7 @@ export async function writeRow(
     const dbRoot = getDbRootPda(profile, dbRootSeed);
 
     await ensureDbRootExists(connection, profile, dbRootSeed);
-    const {tablePda, tableRefPda} = await ensureTableExists(
+    const {tablePda} = await ensureTableExists(
         connection,
         profile,
         dbRootSeed,
@@ -142,19 +140,19 @@ export async function writeRow(
 
     const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
     const txid = await codein({connection, signer}, [rowJson]);
+    const payload = buildTableTrailPayload(rowJson, txid);
     const ix = writeDataInstruction(
         builder,
         {
             db_root: dbRoot,
             table: tablePda,
-            table_ref: tableRefPda,
             signer: signer.publicKey,
             signer_ata: signerAta ?? undefined,
         },
         {
             db_root_id: dbRootSeed,
             table_seed: tableSeedBytes,
-            row_json_tx: Buffer.from(txid, "utf8"),
+            row_json_tx: Buffer.from(payload, "utf8"),
         },
     );
 
@@ -266,23 +264,15 @@ export async function manageRowData(
             throw new Error("tableName and targetTx are required for table edits");
         }
 
-        const {tablePda: table, tableRefPda: tableRef} =
+        const {tablePda: table} =
             await ensureTableExists(connection, profile, dbRootSeed, seedBytes);
         const instructionTable = getInstructionTablePda(
             profile,
             dbRoot,
             seedBytes,
         );
-        const targetTableRef = getTargetTableRefPda(
-            profile,
-            dbRoot,
-            seedBytes,
-        );
-        const [instructionInfo, targetRefInfo] = await Promise.all([
-            connection.getAccountInfo(instructionTable),
-            connection.getAccountInfo(targetTableRef),
-        ]);
-        if (!instructionInfo || !targetRefInfo) {
+        const instructionInfo = await connection.getAccountInfo(instructionTable);
+        if (!instructionInfo) {
             throw new Error("instruction table not found");
         }
 
@@ -296,14 +286,13 @@ export async function manageRowData(
 
         const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
         const contentTx = await codein({connection, signer}, [rowJson]);
+        const payload = buildTableTrailPayload(rowJson, contentTx);
         const ix = databaseInstructionInstruction(
             builder,
             {
                 db_root: dbRoot,
                 table,
                 instruction_table: instructionTable,
-                table_ref: tableRef,
-                target_table_ref: targetTableRef,
                 signer_ata: signerAta ?? undefined,
                 signer: signer.publicKey,
             },
@@ -318,7 +307,7 @@ export async function manageRowData(
                     typeof targetTx === "string"
                         ? Buffer.from(targetTx, "utf8")
                         : targetTx,
-                content_json_tx: Buffer.from(contentTx, "utf8"),
+                content_json_tx: Buffer.from(payload, "utf8"),
             },
         );
 

@@ -7,6 +7,11 @@ import {
     type Signer,
 } from "@solana/web3.js";
 import {userInitializeInstruction, type InstructionBuilder} from "../../contract";
+import {
+    getCachedAccountExists,
+    markAccountExists,
+    refreshAccountExists,
+} from "../utils/account_cache";
 
 export async function sendTx(
     connection: Connection,
@@ -34,10 +39,14 @@ export async function ensureUserInitialized(
         system_program?: PublicKey;
     },
 ) {
-    const info = await connection.getAccountInfo(accounts.db_account);
-    if (info) {
+    let exists = await getCachedAccountExists(connection, accounts.db_account);
+    if (!exists) {
+        exists = await refreshAccountExists(connection, accounts.db_account);
+    }
+    if (exists) {
         return;
     }
     const ix = userInitializeInstruction(builder, accounts);
     await sendTx(connection, signer, ix);
+    markAccountExists(accounts.db_account, true);
 }

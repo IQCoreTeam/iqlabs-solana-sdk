@@ -10,7 +10,6 @@ import {
     getConnectionTablePda,
     getDbRootPda,
     getTablePda,
-    getTableRefPda,
     type ProgramProfile,
 } from "../../contract";
 import {toSeedBytes} from "./seed";
@@ -91,17 +90,13 @@ export async function ensureTableExists(
     const dbRoot = getDbRootPda(profile, dbRootSeed);
     const tableSeedBytes = toSeedBytes(tableSeed);
     const tablePda = getTablePda(profile, dbRoot, tableSeedBytes);
-    const tableRefPda = getTableRefPda(profile, dbRoot, tableSeedBytes);
-    const [tableInfo, tableRefInfo] = await Promise.all([
-        connection.getAccountInfo(tablePda),
-        connection.getAccountInfo(tableRefPda),
-    ]);
+    const tableInfo = await connection.getAccountInfo(tablePda);
 
-    if (!tableInfo || !tableRefInfo) {
+    if (!tableInfo) {
         throw new Error("table not found");
     }
 
-    return {tablePda, tableRefPda};
+    return {tablePda};
 }
 
 export async function fetchTableMeta(
