@@ -40,7 +40,8 @@ export function detectConnectionSettings(): {
         nextPublic.rpcEndpoint ??
         env("SOLANA_RPC") ??
         env("RPC_ENDPOINT") ??
-        env("RPC_URL");
+        env("RPC_URL") ??
+        "https://api.devnet.solana.com";
 
     console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
 
