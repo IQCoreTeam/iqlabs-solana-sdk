@@ -1,10 +1,5 @@
 import {BN} from "@coral-xyz/anchor";
-import {
-    Connection,
-    SystemProgram,
-    type PublicKey,
-    type Signer,
-} from "@solana/web3.js";
+import {Connection, SystemProgram, type PublicKey} from "@solana/web3.js";
 import {
     createSessionInstruction,
     getSessionPda,
@@ -14,6 +9,7 @@ import {
     type ProgramProfile,
 } from "../../contract";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
+import type {SignerInput} from "../utils/wallet";
 import {sendTx} from "./writer_utils";
 
 const createRateLimiter = (maxRps: number) => {
@@ -70,7 +66,7 @@ const resolveUploadConfig = (options?: { speed?: string }) => {
 
 export async function uploadLinkedList(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     builder: InstructionBuilder,
     user: PublicKey,
     codeAccount: PublicKey,
@@ -101,7 +97,7 @@ export async function uploadLinkedList(
 
 export async function uploadSession(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     builder: InstructionBuilder,
     profile: ProgramProfile,
     user: PublicKey,
@@ -109,7 +105,7 @@ export async function uploadSession(
     seq: bigint,
     chunks: string[],
     method: number,
-    options?: { speed?: string },
+    options?: {speed?: string},
 ) {
     const config = resolveUploadConfig(options);
     const session = getSessionPda(profile, user, seq);
