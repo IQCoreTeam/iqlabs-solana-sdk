@@ -1,5 +1,6 @@
 {
   "name": "iqlabs-sdk",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "test:contract": "tsx tests/contract/smoke.ts",

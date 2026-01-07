@@ -1,5 +1,13 @@
 import {Connection, type Commitment} from "@solana/web3.js";
 
+// Runtime config that can be set by the consuming app
+let runtimeRpcUrl: string | undefined;
+
+export function setRpcUrl(url: string) {
+    runtimeRpcUrl = url;
+    console.log(`[SDK] setRpcUrl(${url})`);
+}
+
 const env = (key: string) => {
     const value = process.env[key];
     if (!value) {
@@ -9,6 +17,14 @@ const env = (key: string) => {
     return trimmed.length > 0 ? trimmed : undefined;
 };
 
+// Next.js requires static access for NEXT_PUBLIC_ vars, so check them explicitly
+function getNextPublicEnvVars() {
+    return {
+        rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT,
+        heliusRpc: process.env.NEXT_PUBLIC_HELIUS_RPC_URL,
+    };
+}
+
 export function detectConnectionSettings(): {
     rpcUrl: string;
     heliusRpcUrl?: string;
@@ -16,14 +32,21 @@ export function detectConnectionSettings(): {
     freshRpcUrl?: string;
     recentRpcUrl?: string;
 } {
+    const nextPublic = getNextPublicEnvVars();
+    const rpcUrl =
+        runtimeRpcUrl ??
+        env("IQLABS_RPC_ENDPOINT") ??
+        env("SOLANA_RPC_ENDPOINT") ??
+        nextPublic.rpcEndpoint ??
+        env("SOLANA_RPC") ??
+        env("RPC_ENDPOINT") ??
+        env("RPC_URL");
+
+    console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
+
     return {
-        rpcUrl:
-            env("IQLABS_RPC_ENDPOINT") ??
-            env("SOLANA_RPC_ENDPOINT") ??
-            env("SOLANA_RPC") ??
-            env("RPC_ENDPOINT") ??
-            env("RPC_URL"),
-        heliusRpcUrl: env("HELIUS_RPC_URL"),
+        rpcUrl,
+        heliusRpcUrl: env("HELIUS_RPC_URL") ?? nextPublic.heliusRpc,
         zeroBlockRpcUrl: env("ZEROBLOCK_RPC_URL"),
         freshRpcUrl: env("FRESH_RPC_URL"),
         recentRpcUrl: env("RECENT_RPC_URL"),
@@ -31,7 +54,9 @@ export function detectConnectionSettings(): {
 }
 
 export function getRpcUrl(): string {
-    return detectConnectionSettings().rpcUrl;
+    const url = detectConnectionSettings().rpcUrl;
+    console.log(`[SDK] getRpcUrl() = ${url}`);
+    return url;
 }
 
 export function chooseRpcUrlForFreshness(
