@@ -39,22 +39,18 @@ const resolveOnChainPath = (tx: VersionedTransactionResponse): string => {
     throw new Error("db_code_in instruction not found");
 };
 
-
-export async function decideReadMode(
-    txSignature: string,
-): Promise<{ isReplay: boolean; freshness?: "fresh" | "recent" | "archive" }> {
-    const connection = getConnection();
-    const tx = await connection.getTransaction(txSignature, {
-        maxSupportedTransactionVersion: 0,
-    });
-    if (!tx) {
-        throw new Error("transaction not found");
-    }
-    const blockTime = tx.blockTime;
+export const resolveReadMode = (
+    onChainPath: string,
+    blockTime?: number | null,
+): { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" } => {
     const now = Math.floor(Date.now() / 1000);
     const ageSeconds =
         typeof blockTime === "number" ? Math.max(0, now - blockTime) : null;
-    const onChainPath = resolveOnChainPath(tx);
+    if (onChainPath.length === 0) {
+        const freshness =
+            ageSeconds !== null && ageSeconds <= DAY_SECONDS ? "fresh" : "recent";
+        return {isReplay: false, freshness};
+    }
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
 
     if (kind === "linked_list") {
@@ -69,4 +65,18 @@ export async function decideReadMode(
         return {isReplay: false, freshness: "recent"};
     }
     return {isReplay: true, freshness: "archive"};
+};
+
+export async function decideReadMode(
+    txSignature: string,
+): Promise<{ isReplay: boolean; freshness?: "fresh" | "recent" | "archive" }> {
+    const connection = getConnection();
+    const tx = await connection.getTransaction(txSignature, {
+        maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) {
+        throw new Error("transaction not found");
+    }
+    const onChainPath = resolveOnChainPath(tx);
+    return resolveReadMode(onChainPath, tx.blockTime);
 }

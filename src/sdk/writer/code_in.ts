@@ -16,23 +16,26 @@ import {
     getUserPda,
 } from "../../contract";
 import {
+    DIRECT_METADATA_MAX_BYTES,
+    DEFAULT_IQ_MINT,
     DEFAULT_LINKED_LIST_THRESHOLD,
-    DEFAULT_SESSION_WRITE_FEE_LAMPORTS,
-    DEFAULT_WRITE_FEE_LAMPORTS,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
 import {DEFAULT_PINOCCHIO_PROGRAM_ID} from "../../contract/constants";
+import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {readMagicBytes} from "../utils/magic_bytes";
 import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
+const IQ_MINT = new PublicKey(DEFAULT_IQ_MINT);
 
 export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
     isAnchor = false,
+
     filename?: string,
     method = 0,
     filetype = "",
@@ -84,48 +87,57 @@ export async function codein(
     const magic = readMagicBytes(chunks[0]);
     const resolvedFiletype = filetype || magic.mime;
     const safeFilename = filename ?? `${seq}.${magic.ext}`;
-    const metadata = JSON.stringify({
+    const metadataPayload = {
         filetype: resolvedFiletype,
         method,
         filename: safeFilename,
         total_chunks: totalChunks,
+    };
+    const dataPayload = chunks.join("");
+    const directMetadata = JSON.stringify({
+        ...metadataPayload,
+        data: dataPayload,
     });
+    const useDirectPath =
+        Buffer.byteLength(directMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
-    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
-    if (!useSession) {
-        onChainPath = await uploadLinkedList(
-            connection,
-            signer,
-            builder,
-            user,
-            codeAccount,
-            chunks,
-            method,
-        );
-    } else {
-        onChainPath = await uploadSession(
-            connection,
-            signer,
-            builder,
-            profile,
-            user,
-            userState,
-            seq,
-            chunks,
-            method,
-            {
-                speed,
-            },
-        );
+    let metadata = directMetadata;
+    let useSession = false;
+    if (!useDirectPath) {
+        metadata = JSON.stringify(metadataPayload);
+        useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+        if (!useSession) {
+            onChainPath = await uploadLinkedList(
+                connection,
+                signer,
+                builder,
+                user,
+                codeAccount,
+                chunks,
+                method,
+            );
+        } else {
+            onChainPath = await uploadSession(
+                connection,
+                signer,
+                builder,
+                profile,
+                user,
+                userState,
+                seq,
+                chunks,
+                method,
+                {
+                    speed,
+                },
+            );
+        }
     }
 
-    // Finalize with fee transfer + db_code_in
+    // Finalize with db_code_in (fees are handled by the program)
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
-    const linkedListFeeLamports = DEFAULT_WRITE_FEE_LAMPORTS;
-    const sessionFeeLamports = DEFAULT_SESSION_WRITE_FEE_LAMPORTS;
-    const feeLamports = useSession ? sessionFeeLamports : linkedListFeeLamports;
     const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
     const sessionFinalize = useSession
         ? {
@@ -133,26 +145,27 @@ export async function codein(
               total_chunks: totalChunks,
           }
         : null;
-    const feeIx = SystemProgram.transfer({
-        fromPubkey: user,
-        toPubkey: dbAccount,
-        lamports: feeLamports,
-    });
+    let iqAtaAccount: PublicKey | null | undefined;
+    if (useDirectPath) {
+        iqAtaAccount = await resolveAssociatedTokenAccount(
+            connection,
+            user,
+            IQ_MINT,
+            false,
+        );
+    }
     const dbIx = dbCodeInInstruction(
         builder,
         {
             user,
             db_account: dbAccount,
+            receiver: feeReceiver,
             system_program: SystemProgram.programId,
             session: sessionAccount ?? undefined,
+            iq_ata: iqAtaAccount ?? undefined,
         },
         {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
-    dbIx.keys.push({
-        pubkey: feeReceiver,
-        isSigner: false,
-        isWritable: true,
-    });
 
-    return sendTx(connection, signer, [feeIx, dbIx]);
+    return sendTx(connection, signer, dbIx);
 }
