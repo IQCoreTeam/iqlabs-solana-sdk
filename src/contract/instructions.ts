@@ -202,6 +202,9 @@ export const dbCodeInInstruction = (
         user: PublicKey;
         db_account: PublicKey;
         system_program?: PublicKey;
+        receiver: PublicKey;
+        session?: PublicKey;
+        iq_ata?: PublicKey;
     },
     args: {
         on_chain_path: string;
@@ -217,6 +220,7 @@ export const dbCodeInForFreeInstruction = (
         db_account: PublicKey;
         config: PublicKey;
         system_program?: PublicKey;
+        session?: PublicKey;
     },
     args: {
         on_chain_path: string;

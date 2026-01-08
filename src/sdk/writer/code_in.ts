@@ -12,13 +12,15 @@ import {
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
+    getSessionPda,
     getUserPda,
 } from "../../contract";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
-    DEFAULT_WRITE_FEE_LAMPORTS,
+    DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
+import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {readMagicBytes} from "../utils/magic_bytes";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
@@ -84,8 +86,11 @@ export async function codein(
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
+    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    let sessionAccount: PublicKey | undefined;
+    let sessionFinalize: { seq: BN; total_chunks: number } | null = null;
 
-    if (totalChunks < DEFAULT_LINKED_LIST_THRESHOLD) {
+    if (!useSession) {
         onChainPath = await uploadLinkedList(
             connection,
             signer,
@@ -107,25 +112,36 @@ export async function codein(
             chunks,
             method,
         );
+        sessionAccount = getSessionPda(profile, user, seq);
+        sessionFinalize = {
+            seq: new BN(seq.toString()),
+            total_chunks: totalChunks,
+        };
     }
 
-    // Finalize with fee transfer + db_code_in
+    // Finalize with db_code_in (fee handled on-chain)
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
-    const feeIx = SystemProgram.transfer({
-        fromPubkey: user,
-        toPubkey: dbAccount,
-        lamports: DEFAULT_WRITE_FEE_LAMPORTS, //we can delete it because i changed this to charge from contract , but we need to add ata
-    });
+    const isDirectPath = !useSession && onChainPath.length === 0;
+    const iqAta = isDirectPath
+        ? await resolveAssociatedTokenAccount(
+              connection,
+              user,
+              new PublicKey(DEFAULT_IQ_MINT),
+              false,
+          )
+        : null;
     const dbIx = dbCodeInInstruction(
         builder,
-        {user, db_account: dbAccount, system_program: SystemProgram.programId},
-        {on_chain_path: onChainPath, metadata, session: null},
+        {
+            user,
+            db_account: dbAccount,
+            system_program: SystemProgram.programId,
+            receiver: feeReceiver,
+            session: sessionAccount,
+            iq_ata: iqAta ?? undefined,
+        },
+        {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
-    dbIx.keys.push({
-        pubkey: feeReceiver,
-        isSigner: false,
-        isWritable: true,
-    });
 
-    return sendTx(connection, signer, [feeIx, dbIx]);
+    return sendTx(connection, signer, dbIx);
 }
