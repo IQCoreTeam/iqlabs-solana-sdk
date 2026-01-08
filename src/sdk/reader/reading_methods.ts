@@ -41,6 +41,7 @@
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
 import {getReaderConnection} from "../utils/connection_helper";
+import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import {readerContext} from "./reader_context";
 
@@ -49,26 +50,6 @@ const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
 const resolveSessionConfig = (speed?: string) => {
     const resolvedSpeed = resolveSessionSpeed(speed);
     return SESSION_SPEED_PROFILES[resolvedSpeed];
-};
-
-const createRateLimiter = (maxRps: number) => {
-    if (maxRps <= 0) {
-        return null;
-    }
-    const minDelayMs = Math.max(1, Math.ceil(1000 / maxRps));
-    let nextTime = 0;
-
-    return {
-        wait: async () => {
-            const now = Date.now();
-            const scheduled = Math.max(now, nextTime);
-            nextTime = scheduled + minDelayMs;
-            const delay = scheduled - now;
-            if (delay > 0) {
-                await new Promise((resolve) => setTimeout(resolve, delay));
-            }
-        },
-    };
 };
 
 const runWithConcurrency = async <T>(

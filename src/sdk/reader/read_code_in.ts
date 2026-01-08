@@ -1,5 +1,5 @@
 import {getConnection} from "../utils/connection_helper";
-import {extractCodeInPayload, resolveTableTrailPayload} from "./reader_utils";
+import {resolveTableTrailPayload} from "./reader_utils";
 import {readDbCodeInFromTx, readDbRowContent} from "./reading_flow";
 
 export async function readCodeIn(

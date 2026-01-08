@@ -15,7 +15,7 @@ import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
 import {readerContext} from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
-import {decodeDbCodeIn, extractCodeInPayload, resolveTableTrailPayload} from "./reader_utils";
+import {decodeDbCodeIn, extractCodeInPayload} from "./reader_utils";
 
 const {accountCoder, anchorProfile} = readerContext;
 const SIG_MIN_LEN = 80;
@@ -169,7 +169,7 @@ export async function readUserState(userPubkey: string): Promise<{
 }
 
 export async function readConnection(
-    dbRootId: Uint8Array | string,
+    dbRootId: Uint8Array<any> | string,
     partyA: string,
     partyB: string,
 ): Promise<{ status: string }> {
