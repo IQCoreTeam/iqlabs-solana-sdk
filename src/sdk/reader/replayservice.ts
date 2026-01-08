@@ -154,7 +154,7 @@ export class ReplayServiceClient implements ReplayService {
     }
 
     async downloadReplay(jobId: string): Promise<{
-        data: Uint8Array;
+        data: Uint8Array<any>;
         contentType?: string;
         filename?: string;
     }> {

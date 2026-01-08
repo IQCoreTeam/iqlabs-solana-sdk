@@ -4,19 +4,17 @@ import {Connection, PublicKey, SystemProgram} from "@solana/web3.js";
 import {
     createAnchorProfile,
     createInstructionBuilder,
-    createPinocchioProfile,
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
+    getSessionPda,
     getUserPda,
 } from "../../contract";
 import {
-    DIRECT_METADATA_MAX_BYTES,
-    DEFAULT_IQ_MINT,
     DEFAULT_LINKED_LIST_THRESHOLD,
+    DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
-import {DEFAULT_PINOCCHIO_PROGRAM_ID} from "../../contract/constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {readMagicBytes} from "../utils/magic_bytes";
 import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
@@ -25,17 +23,15 @@ import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
-const IQ_MINT = new PublicKey(DEFAULT_IQ_MINT);
+
 
 export async function codein(
     input: {connection: Connection; signer: SignerInput},
     chunks: string[],
     isAnchor = false,
-
     filename?: string,
     method = 0,
     filetype = "",
-    speed: string = DEFAULT_SESSION_SPEED,
 ) {
     // Basic validation and input setup
     const totalChunks = chunks.length;
@@ -46,12 +42,7 @@ export async function codein(
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
-    const profile =
-        isAnchor
-            ? createAnchorProfile()
-            : createPinocchioProfile(
-                  new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
-              );
+    const profile = createAnchorProfile();
     const builder = createInstructionBuilder(IDL, profile.programId);
     const user = wallet.publicKey;
     const userState = getUserPda(profile, user);
@@ -82,82 +73,68 @@ export async function codein(
     const magic = readMagicBytes(chunks[0]);
     const resolvedFiletype = filetype || magic.mime;
     const safeFilename = filename ?? `${seq}.${magic.ext}`;
-    const metadataPayload = {
+    const metadata = JSON.stringify({
         filetype: resolvedFiletype,
         method,
         filename: safeFilename,
         total_chunks: totalChunks,
-    };
-    const dataPayload = chunks.join("");
-    const directMetadata = JSON.stringify({
-        ...metadataPayload,
-        data: dataPayload,
     });
-    const useDirectPath =
-        Buffer.byteLength(directMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
-    let metadata = directMetadata;
-    let useSession = false;
-    if (!useDirectPath) {
-        metadata = JSON.stringify(metadataPayload);
-        useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
-        if (!useSession) {
-            onChainPath = await uploadLinkedList(
-                connection,
-                signer,
-                builder,
-                user,
-                codeAccount,
-                chunks,
-                method,
-            );
-        } else {
-            onChainPath = await uploadSession(
-                connection,
-                signer,
-                builder,
-                profile,
-                user,
-                userState,
-                seq,
-                chunks,
-                method,
-                {
-                    speed,
-                },
-            );
-        }
+    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    let sessionAccount: PublicKey | undefined;
+    let sessionFinalize: { seq: BN; total_chunks: number } | null = null;
+
+    if (!useSession) {
+        onChainPath = await uploadLinkedList(
+            connection,
+            signer,
+            builder,
+            user,
+            codeAccount,
+            chunks,
+            method,
+        );
+    } else {
+        onChainPath = await uploadSession(
+            connection,
+            signer,
+            builder,
+            profile,
+            user,
+            userState,
+            seq,
+            chunks,
+            method,
+        );
+        sessionAccount = getSessionPda(profile, user, seq);
+        sessionFinalize = {
+            seq: new BN(seq.toString()),
+            total_chunks: totalChunks,
+        };
     }
 
-    // Finalize with db_code_in (fees are handled by the program)
+    // Finalize with db_code_in (fee handled on-chain)
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
-    const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
-    const sessionFinalize = useSession
-        ? {
-              seq: new BN(seq.toString()),
-              total_chunks: totalChunks,
-          }
+    const isDirectPath = !useSession && onChainPath.length === 0;
+    const iqAta = isDirectPath
+        ? await resolveAssociatedTokenAccount(
+              connection,
+              user,
+              new PublicKey(DEFAULT_IQ_MINT),
+              false,
+          )
         : null;
-    let iqAtaAccount: PublicKey | null | undefined;
-    if (useDirectPath) {
-        iqAtaAccount = await resolveAssociatedTokenAccount(
-            connection,
-            user,
-            IQ_MINT,
-            false,
-        );
-    }
     const dbIx = dbCodeInInstruction(
         builder,
         {
             user,
             db_account: dbAccount,
-            receiver: feeReceiver,
             system_program: SystemProgram.programId,
-            session: sessionAccount ?? undefined,
-            iq_ata: iqAtaAccount ?? undefined,
+            receiver: feeReceiver,
+            session: sessionAccount,
+            iq_ata: iqAta ?? undefined,
         },
         {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );

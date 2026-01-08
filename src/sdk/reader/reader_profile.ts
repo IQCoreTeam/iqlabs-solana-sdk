@@ -1,8 +1,6 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
 import {getConnection} from "../utils/connection_helper";
-import {readerContext} from "./reader_context";
-
-const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
+import {decodeReaderInstruction} from "./reader_utils";
 
 const DAY_SECONDS = 86_400;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
@@ -17,19 +15,11 @@ const resolveOnChainPath = (tx: VersionedTransactionResponse): string => {
     );
 
     for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId) {
+        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        if (!decodedResult || !decodedResult.decoded) {
             continue;
         }
-        const isAnchor = programId.equals(anchorProfile.programId);
-        const isPinocchio = programId.equals(pinocchioProfile.programId);
-        if (!isAnchor && !isPinocchio) {
-            continue;
-        }
-        const decoded = instructionCoder.decode(Buffer.from(ix.data));
-        if (!decoded) {
-            continue;
-        }
+        const {decoded} = decodedResult;
         if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
             const data = decoded.data as { on_chain_path: string };
             return data.on_chain_path;
