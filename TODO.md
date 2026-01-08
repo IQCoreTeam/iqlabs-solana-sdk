@@ -2,6 +2,7 @@ TODO
 - `src/sdk/reader/reading_methods.ts`: `readSessionResult` still ignores `method`/`decode_break` and does not validate the session account discriminator/owner/size. Add proper decode/decrypt/decompress handling and account validation.
 - `src/contract/constants.ts`: set replay service base URL (and reader base URL if needed) once final endpoints are decided.
 - Consider folding whitelist checks into `db_code_in` so whitelisted users can be free automatically later; plan to remove `db_code_in_for_free`.
+- 테이블 row 입력은 생성된 테이블 스키마(컬럼 + id_col)에 맞춘 JSON이어야 함을 문서로 명시.
 
 ----
 We switched only the table path (database) to emit, removing the 100-character limit, and kept connections as-is.

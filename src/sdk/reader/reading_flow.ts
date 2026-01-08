@@ -1,4 +1,4 @@
-import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
+import {PublicKey, VersionedTransactionResponse} from "@solana/web3.js";
 
 import {
     CONNECTION_STATUS_APPROVED,
@@ -15,58 +15,12 @@ import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
 import {readerContext} from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
-import {parseTableTrailEventsFromLogs} from "./table_trail";
+import {decodeDbCodeIn, extractCodeInPayload, resolveTableTrailPayload} from "./reader_utils";
 
-const {instructionCoder, accountCoder, anchorProfile, pinocchioProfile} =
-    readerContext;
+const {accountCoder, anchorProfile} = readerContext;
 const SIG_MIN_LEN = 80;
-const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const EMPTY_METADATA = "{}";
 const replayService = new ReplayServiceClient();
-
-const decodeDbCodeIn = (
-    tx: VersionedTransactionResponse,
-): { onChainPath: string; metadata: string } => {
-    const message = tx.transaction.message;
-    const accountKeys = message.getAccountKeys();
-
-    for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId) {
-            continue;
-        }
-        const isAnchor = programId.equals(anchorProfile.programId);
-        const isPinocchio =
-            pinocchioProfile !== null &&
-            programId.equals(pinocchioProfile.programId);
-        if (!isAnchor && !isPinocchio) {
-            continue;
-        }
-        const decoded = instructionCoder.decode(Buffer.from(ix.data));
-        if (!decoded) {
-            continue;
-        }
-        if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
-            const data = decoded.data as { on_chain_path: string; metadata: string };
-            return {onChainPath: data.on_chain_path, metadata: data.metadata};
-        }
-    }
-    throw new Error("db_code_in instruction not found");
-};
-
-const decodeEventValue = (value: Uint8Array) =>
-    Buffer.from(value).toString("utf8").replace(/\0+$/, "");
-
-const isSignature = (value: string) =>
-    value.length >= SIG_MIN_LEN && BASE58_RE.test(value);
-
-const parseTableTrailLogs = (logs: string[]) => {
-    const anchorEvents = parseTableTrailEventsFromLogs(logs, "anchor");
-    if (anchorEvents.length > 0) {
-        return anchorEvents;
-    }
-    return parseTableTrailEventsFromLogs(logs, "pinocchio");
-};
 
 const resolveConnectionStatus = (status: number) => {
     if (status === CONNECTION_STATUS_PENDING) {
@@ -80,119 +34,6 @@ const resolveConnectionStatus = (status: number) => {
     }
     return "unknown";
 };
-const readInscriptionInternal = async (
-    txSignature: string,
-    speed: string | undefined,
-    visited: Set<string>,
-): Promise<{ metadata: string; data: string | null }> => {
-    if (visited.has(txSignature)) {
-        throw new Error("table trail recursion detected");
-    }
-    visited.add(txSignature);
-
-    const connection = getConnection();
-    const tx = await connection.getTransaction(txSignature, {
-        maxSupportedTransactionVersion: 0,
-    });
-    if (!tx) {
-        throw new Error("transaction not found");
-    }
-
-    const tableEvents = parseTableTrailLogs(tx.meta?.logMessages ?? []);
-    if (tableEvents.length > 0) {
-        const event = tableEvents[tableEvents.length - 1];
-        const dataValue = decodeEventValue(event.data);
-        const pathValue = decodeEventValue(event.path);
-        let inlineData: string | null = null;
-        let inlineTx: string | null = null;
-
-        if (dataValue) {
-            try {
-                const parsed = JSON.parse(dataValue) as Record<string, unknown>;
-                if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-                    if (Object.prototype.hasOwnProperty.call(parsed, "data")) {
-                        const dataField = parsed.data;
-                        if (typeof dataField === "string") {
-                            inlineData = dataField;
-                        } else if (dataField !== undefined && dataField !== null) {
-                            inlineData = JSON.stringify(dataField);
-                        }
-                    }
-                    if (Object.prototype.hasOwnProperty.call(parsed, "tx")) {
-                        const txField = parsed.tx;
-                        if (typeof txField === "string") {
-                            inlineTx = txField;
-                        }
-                    }
-                }
-            } catch {
-                // ignore malformed inline payload
-            }
-        }
-        const dataIsSig = isSignature(dataValue);
-        const pathIsSig = isSignature(pathValue);
-        const inlineTxIsSig = inlineTx ? isSignature(inlineTx) : false;
-
-        if (inlineData !== null) {
-            return {metadata: EMPTY_METADATA, data: inlineData};
-        }
-        if (dataValue && !dataIsSig && !inlineTx) {
-            return {metadata: EMPTY_METADATA, data: dataValue};
-        }
-
-        const fallbackSig = inlineTxIsSig
-            ? inlineTx!
-            : pathIsSig
-                ? pathValue
-                : dataIsSig
-                    ? dataValue
-                    : "";
-        if (!fallbackSig) {
-            return {metadata: EMPTY_METADATA, data: dataValue || null};
-        }
-        return readInscriptionInternal(fallbackSig, speed, visited);
-    }
-
-    const {onChainPath, metadata} = decodeDbCodeIn(tx);
-    if (onChainPath.length === 0) {
-        let data: string | null = null;
-        let cleanedMetadata = metadata;
-        try {
-            const parsed = JSON.parse(metadata) as Record<string, unknown>;
-            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-                if (Object.prototype.hasOwnProperty.call(parsed, "data")) {
-                    const dataValue = parsed.data;
-                    delete parsed.data;
-                    cleanedMetadata = JSON.stringify(parsed);
-                    if (typeof dataValue === "string") {
-                        data = dataValue;
-                    } else if (dataValue !== undefined && dataValue !== null) {
-                        data = JSON.stringify(dataValue);
-                    }
-                }
-            }
-        } catch {
-            // ignore malformed metadata
-        }
-        return {metadata: cleanedMetadata, data};
-    }
-
-    const readOption = resolveReadMode(onChainPath, tx.blockTime);
-    const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
-    if (kind === "session") {
-        const {result} = await readSession(onChainPath, readOption, speed);
-        return {metadata, data: result};
-    }
-    const {result} = await readLinkedListFromTail(onChainPath, readOption);
-    return {metadata, data: result};
-};
-
-export async function readInscription(
-    txSignature: string,
-    speed?: string,
-): Promise<{ metadata: string; data: string | null }> {
-    return readInscriptionInternal(txSignature, speed, new Set());
-}
 
 export async function readDBMetadata(txSignature: string): Promise<{
     onChainPath: string;
@@ -240,6 +81,54 @@ export async function readLinkedListFromTail(
     return readLinkedListResult(tailTx, readOption);
 }
 
+export async function readDbCodeInFromTx(
+    tx: VersionedTransactionResponse,
+    speed?: string,
+): Promise<{ metadata: string; data: string | null }> {
+    const blockTime = tx.blockTime;
+
+    const {onChainPath, metadata, inlineData} = extractCodeInPayload(tx);
+    if (onChainPath.length === 0) {
+        return {metadata, data: inlineData};
+    }
+
+    const readOption = resolveReadMode(onChainPath, blockTime);
+    const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
+    if (kind === "session") {
+        const {result} = await readSession(onChainPath, readOption, speed);
+        return {metadata, data: result};
+    }
+    const {result} = await readLinkedListFromTail(onChainPath, readOption);
+    return {metadata, data: result};
+}
+
+export async function readDbRowContent(
+    tablePayload: { inlineData?: string | null; targetSignature?: string },
+    speed?: string,
+): Promise<{ metadata: string; data: string | null }> {
+    if (tablePayload.inlineData !== undefined) {
+        return {
+            metadata: EMPTY_METADATA,
+            data: tablePayload.inlineData ?? null,
+        };
+    }
+
+    const targetSignature = tablePayload.targetSignature;
+    if (!targetSignature) {
+        return {metadata: EMPTY_METADATA, data: null};
+    }
+
+    const connection = getConnection();
+    const tx = await connection.getTransaction(targetSignature, {
+        maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) {
+        throw new Error("transaction not found");
+    }
+
+    return await readDbCodeInFromTx(tx, speed);
+}
+
 export async function readUserState(userPubkey: string): Promise<{
     owner: string;
     metadata: string | null;
@@ -255,14 +144,15 @@ export async function readUserState(userPubkey: string): Promise<{
     }
     const decoded = accountCoder.decode("UserState", info.data) as {
         owner: PublicKey;
-        metadata: Uint8Array;
+        metadata: Uint8Array<any>;
         total_session_files: { toString(): string };
     };
     const rawMetadata = Buffer.from(decoded.metadata).toString("utf8");
     const metadata = rawMetadata.replace(/\0+$/, "").trim() || null;
     const totalSessionFiles = BigInt(decoded.total_session_files.toString());
     if (metadata) {
-        const {data} = await readInscription(metadata);
+        const {readCodeIn} = await import("./read_code_in");
+        const {data} = await readCodeIn(metadata);
         const profileData = data ?? undefined;
         return {
             owner: decoded.owner.toBase58(),

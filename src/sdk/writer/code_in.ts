@@ -31,7 +31,7 @@ const IDL = require("../../../idl/code_in.json") as Idl;
 export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
-    isAnchor = true,
+    isAnchor = false,
     filename?: string,
     method = 0,
     filetype = "",

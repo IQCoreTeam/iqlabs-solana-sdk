@@ -39,7 +39,7 @@ import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 const IDL = require("../../../idl/code_in.json") as Idl;
 
 const buildTableTrailPayload = (rowJson: string, txid: string) => {
-    const payload = JSON.stringify({data: rowJson, tx: txid});
+    const payload = JSON.stringify({data: rowJson, source_tx: txid});
     return Buffer.byteLength(payload, "utf8") <= DIRECT_METADATA_MAX_BYTES
         ? payload
         : txid;
