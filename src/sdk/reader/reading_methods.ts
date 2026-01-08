@@ -44,9 +44,7 @@ import {getReaderConnection} from "../utils/connection_helper";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
-import {readerContext} from "./reader_context";
-
-const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
+import {decodeReaderInstruction} from "./reader_utils";
 
 const resolveSessionConfig = (speed?: string) => {
     const resolvedSpeed = resolveSessionSpeed(speed);
@@ -62,19 +60,12 @@ const extractAnchorInstruction = (
     const accountKeys = message.getAccountKeys();
 
     for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId) {
+        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        if (!decodedResult || !decodedResult.decoded) {
             continue;
         }
-        const isAnchor = programId.equals(anchorProfile.programId);
-        const isPinocchio =
-            pinocchioProfile !== null &&
-            programId.equals(pinocchioProfile.programId);
-        if (!isAnchor && !isPinocchio) {
-            continue;
-        }
-        const decoded = instructionCoder.decode(Buffer.from(ix.data));
-        if (decoded && decoded.name === expectedName) {
+        const {decoded} = decodedResult;
+        if (decoded.name === expectedName) {
             return decoded.data as Record<string, unknown>;
         }
     }
@@ -113,27 +104,20 @@ const extractPostChunk = (tx: VersionedTransactionResponse) => {
     const chunks: Array<{ index: number; chunk: string }> = [];
 
     for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId) {
+        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        if (!decodedResult) {
             continue;
         }
-
-        const isAnchor = programId.equals(anchorProfile.programId);
-        const isPinocchio =
-            pinocchioProfile !== null &&
-            programId.equals(pinocchioProfile.programId);
-        if (isAnchor || isPinocchio) {
-            const decoded = instructionCoder.decode(Buffer.from(ix.data));
-            if (decoded && decoded.name === "post_chunk") {
-                const data = decoded.data as { index: number; chunk: string };
-                chunks.push({index: data.index, chunk: data.chunk});
-                continue;
-            }
-            if (isPinocchio) {
-                const parsed = extractPinocchioPostChunk(Buffer.from(ix.data));
-                if (parsed) {
-                    chunks.push(parsed);
-                }
+        const {decoded, isPinocchio} = decodedResult;
+        if (decoded && decoded.name === "post_chunk") {
+            const data = decoded.data as { index: number; chunk: string };
+            chunks.push({index: data.index, chunk: data.chunk});
+            continue;
+        }
+        if (isPinocchio) {
+            const parsed = extractPinocchioPostChunk(Buffer.from(ix.data));
+            if (parsed) {
+                chunks.push(parsed);
             }
         }
     }

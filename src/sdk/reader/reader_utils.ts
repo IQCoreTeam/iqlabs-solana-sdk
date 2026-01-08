@@ -1,5 +1,10 @@
 import {BorshCoder, EventParser, type Idl} from "@coral-xyz/anchor";
-import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
+import {
+    PublicKey,
+    type MessageAccountKeys,
+    type MessageCompiledInstruction,
+    type VersionedTransactionResponse,
+} from "@solana/web3.js";
 import {getSessionPda, getUserPda} from "../../contract";
 import {getConnection} from "../utils/connection_helper";
 import {readerContext} from "./reader_context";
@@ -9,6 +14,29 @@ const SIG_MIN_LEN = 80;
 const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const EVENT_CODER = new BorshCoder(idl as Idl);
 
+export const decodeReaderInstruction = (
+    ix: MessageCompiledInstruction,
+    accountKeys: MessageAccountKeys,
+): {
+    decoded: ReturnType<typeof instructionCoder.decode>;
+    isAnchor: boolean;
+    isPinocchio: boolean;
+} | null => {
+    const programId = accountKeys.get(ix.programIdIndex);
+    if (!programId) {
+        return null;
+    }
+    const isAnchor = programId.equals(anchorProfile.programId);
+    const isPinocchio =
+        pinocchioProfile !== null &&
+        programId.equals(pinocchioProfile.programId);
+    if (!isAnchor && !isPinocchio) {
+        return null;
+    }
+    const decoded = instructionCoder.decode(Buffer.from(ix.data));
+    return {decoded, isAnchor, isPinocchio};
+};
+
 // ----- db_code_in decoding -----
 export const decodeDbCodeIn = (
     tx: VersionedTransactionResponse,
@@ -17,21 +45,11 @@ export const decodeDbCodeIn = (
     const accountKeys = message.getAccountKeys();
 
     for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
-        if (!programId) {
+        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        if (!decodedResult || !decodedResult.decoded) {
             continue;
         }
-        const isAnchor = programId.equals(anchorProfile.programId);
-        const isPinocchio =
-            pinocchioProfile !== null &&
-            programId.equals(pinocchioProfile.programId);
-        if (!isAnchor && !isPinocchio) {
-            continue;
-        }
-        const decoded = instructionCoder.decode(Buffer.from(ix.data));
-        if (!decoded) {
-            continue;
-        }
+        const {decoded} = decodedResult;
         if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
             const data = decoded.data as { on_chain_path: string; metadata: string };
             return {onChainPath: data.on_chain_path, metadata: data.metadata};
