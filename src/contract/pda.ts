@@ -14,8 +14,7 @@ import {
     SEED_USER,
 } from "./constants";
 
-type Bytes = Uint8Array;
-type Seed = Buffer | Uint8Array;
+type Bytes = Uint8Array<any>;
 
 const SEED_CONFIG_BYTES = Buffer.from(SEED_CONFIG);
 const SEED_DB_ROOT_BYTES = Buffer.from(SEED_DB_ROOT);
@@ -43,10 +42,17 @@ const encodeU64Seed = (value: bigint | number) => {
     return data;
 };
 
-const findPda = (profile: ProgramProfile, seeds: ReadonlyArray<Seed>) =>
-    PublicKey.findProgramAddressSync(seeds, profile.programId)[0];
+const findPda = (
+    profile: ProgramProfile,
+    seeds: any,
+) =>
+    PublicKey.findProgramAddressSync(
+        seeds as Array<Buffer | Uint8Array<any>>,
+        profile.programId,
+    )[0];
 
-const getProgramIdSeed = (profile: ProgramProfile) => profile.programId.toBuffer();
+const getProgramIdSeed = (profile: ProgramProfile): Buffer =>
+    profile.programId.toBuffer() as Buffer;
 
 export const getConfigPda = (profile: ProgramProfile) =>
     findPda(profile, [SEED_CONFIG_BYTES]);
