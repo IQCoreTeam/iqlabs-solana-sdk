@@ -30,7 +30,12 @@ const SEED_CODE_ACCOUNT_BYTES = Buffer.from(SEED_CODE_ACCOUNT);
 const SEED_DB_ACCOUNT_BYTES = Buffer.from(SEED_DB_ACCOUNT);
 const SEED_DB_ROOT_SALT_BYTES = Buffer.from(SEED_DB_ROOT_SALT);
 
-const encodeBytesSeed = (value: Bytes) => Buffer.from(value);
+const encodeBytesSeed = (value: Bytes) => {
+    const data = Buffer.from(value);
+    const length = Buffer.alloc(4);
+    length.writeUInt32LE(data.length, 0);
+    return Buffer.concat([length, data]);
+};
 
 const encodeU64Seed = (value: bigint | number) => {
     const data = Buffer.alloc(8);
@@ -42,18 +47,13 @@ const encodeU64Seed = (value: bigint | number) => {
 const findPda = (profile: ProgramProfile, seeds: Buffer[]) =>
     PublicKey.findProgramAddressSync(seeds, profile.programId)[0];
 
-const resolveProgramSeed = (profile: ProgramProfile) =>
-    profile.runtime === "pinocchio"
-        ? profile.programId.toBuffer()
-        : SEED_DB_ROOT_SALT_BYTES;
-
 export const getConfigPda = (profile: ProgramProfile) =>
     findPda(profile, [SEED_CONFIG_BYTES]);
 
 export const getDbRootPda = (profile: ProgramProfile, dbRootId: Bytes) =>
     findPda(profile, [
         SEED_DB_ROOT_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         encodeBytesSeed(dbRootId),
     ]);
 
@@ -64,7 +64,7 @@ export const getTablePda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
     ]);
@@ -76,7 +76,7 @@ export const getInstructionTablePda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
         SEED_INSTRUCTION_BYTES,
@@ -89,7 +89,7 @@ export const getConnectionTablePda = (
 ) =>
     findPda(profile, [
         SEED_CONNECTION_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
     ]);
@@ -101,7 +101,7 @@ export const getConnectionInstructionTablePda = (
 ) =>
     findPda(profile, [
         SEED_CONNECTION_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
         SEED_INSTRUCTION_BYTES,
@@ -114,7 +114,7 @@ export const getTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
     ]);
@@ -126,7 +126,7 @@ export const getConnectionTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
     ]);
@@ -138,7 +138,7 @@ export const getTargetTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
         SEED_TARGET_BYTES,
@@ -151,7 +151,7 @@ export const getTargetConnectionTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
         SEED_TARGET_BYTES,
@@ -160,7 +160,7 @@ export const getTargetConnectionTableRefPda = (
 export const getUserPda = (profile: ProgramProfile, user: PublicKey) =>
     findPda(profile, [
         SEED_USER_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         user.toBuffer(),
     ]);
 
@@ -171,7 +171,7 @@ export const getSessionPda = (
 ) =>
     findPda(profile, [
         SEED_BUNDLE_BYTES,
-        resolveProgramSeed(profile),
+        SEED_DB_ROOT_SALT_BYTES,
         user.toBuffer(),
         encodeU64Seed(seq),
     ]);
