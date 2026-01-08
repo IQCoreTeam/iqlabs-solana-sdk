@@ -63,14 +63,22 @@ export type InstructionBuilder = {
 const toAccountMeta = (
     account: IdlAccount,
     accounts: Record<string, PublicKey | undefined>,
-): AccountMeta | null => {
+    programId: PublicKey,
+): AccountMeta => {
     const pubkey = account.address
         ? new PublicKey(account.address)
         : accounts[account.name];
 
     if (!pubkey) {
         if (account.optional) {
-            return null;
+            // For optional accounts, pass the program ID as a placeholder
+            // This is how Anchor handles optional accounts - they expect the
+            // program ID to signal "None" rather than omitting the account
+            return {
+                pubkey: programId,
+                isSigner: false,
+                isWritable: false,
+            };
         }
         throw new Error(`Missing account: ${account.name}`);
     }
@@ -98,9 +106,9 @@ export const createInstructionBuilder = (
             throw new Error(`Unknown instruction: ${name}`);
         }
 
-        const keys = instruction.accounts
-            .map((account) => toAccountMeta(account, accounts))
-            .filter((account): account is AccountMeta => Boolean(account));
+        const keys = instruction.accounts.map((account) =>
+            toAccountMeta(account, accounts, programId),
+        );
         const data = coder.encode(name, args ?? {});
 
         return new TransactionInstruction({programId, keys, data});
