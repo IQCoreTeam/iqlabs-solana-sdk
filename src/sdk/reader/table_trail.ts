@@ -22,8 +22,8 @@ export const parseTableTrailEventsFromLogs = (
     const events: Array<{
         table: PublicKey;
         signer: PublicKey;
-        data: Uint8Array;
-        path: Uint8Array;
+        data: Uint8Array<any>;
+        path: Uint8Array<any>;
     }> = [];
 
     for (const event of parser.parseLogs(logs)) {
@@ -33,9 +33,9 @@ export const parseTableTrailEventsFromLogs = (
         const eventData = event.data as {
             table: PublicKey;
             signer: PublicKey;
-            data: Uint8Array;
-            target?: Uint8Array;
-            path?: Uint8Array;
+            data: Uint8Array<any>;
+            target?: Uint8Array<any>;
+            path?: Uint8Array<any>;
         };
         events.push({
             table: eventData.table,

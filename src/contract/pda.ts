@@ -7,7 +7,6 @@ import {
     SEED_CONNECTION,
     SEED_DB_ACCOUNT,
     SEED_DB_ROOT,
-    SEED_DB_ROOT_SALT,
     SEED_INSTRUCTION,
     SEED_TABLE,
     SEED_TABLE_REF,
@@ -16,6 +15,7 @@ import {
 } from "./constants";
 
 type Bytes = Uint8Array;
+type Seed = Buffer | Uint8Array;
 
 const SEED_CONFIG_BYTES = Buffer.from(SEED_CONFIG);
 const SEED_DB_ROOT_BYTES = Buffer.from(SEED_DB_ROOT);
@@ -28,7 +28,6 @@ const SEED_BUNDLE_BYTES = Buffer.from(SEED_BUNDLE);
 const SEED_CONNECTION_BYTES = Buffer.from(SEED_CONNECTION);
 const SEED_CODE_ACCOUNT_BYTES = Buffer.from(SEED_CODE_ACCOUNT);
 const SEED_DB_ACCOUNT_BYTES = Buffer.from(SEED_DB_ACCOUNT);
-const SEED_DB_ROOT_SALT_BYTES = Buffer.from(SEED_DB_ROOT_SALT);
 
 const encodeBytesSeed = (value: Bytes) => {
     const data = Buffer.from(value);
@@ -44,8 +43,10 @@ const encodeU64Seed = (value: bigint | number) => {
     return data;
 };
 
-const findPda = (profile: ProgramProfile, seeds: Buffer[]) =>
+const findPda = (profile: ProgramProfile, seeds: ReadonlyArray<Seed>) =>
     PublicKey.findProgramAddressSync(seeds, profile.programId)[0];
+
+const getProgramIdSeed = (profile: ProgramProfile) => profile.programId.toBuffer();
 
 export const getConfigPda = (profile: ProgramProfile) =>
     findPda(profile, [SEED_CONFIG_BYTES]);
@@ -53,7 +54,7 @@ export const getConfigPda = (profile: ProgramProfile) =>
 export const getDbRootPda = (profile: ProgramProfile, dbRootId: Bytes) =>
     findPda(profile, [
         SEED_DB_ROOT_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         encodeBytesSeed(dbRootId),
     ]);
 
@@ -64,7 +65,7 @@ export const getTablePda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
     ]);
@@ -76,7 +77,7 @@ export const getInstructionTablePda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
         SEED_INSTRUCTION_BYTES,
@@ -89,7 +90,7 @@ export const getConnectionTablePda = (
 ) =>
     findPda(profile, [
         SEED_CONNECTION_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
     ]);
@@ -101,7 +102,7 @@ export const getConnectionInstructionTablePda = (
 ) =>
     findPda(profile, [
         SEED_CONNECTION_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
         SEED_INSTRUCTION_BYTES,
@@ -114,7 +115,7 @@ export const getTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
     ]);
@@ -126,7 +127,7 @@ export const getConnectionTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
     ]);
@@ -138,7 +139,7 @@ export const getTargetTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(tableSeed),
         SEED_TARGET_BYTES,
@@ -151,7 +152,7 @@ export const getTargetConnectionTableRefPda = (
 ) =>
     findPda(profile, [
         SEED_TABLE_REF_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         dbRoot.toBuffer(),
         encodeBytesSeed(connectionSeed),
         SEED_TARGET_BYTES,
@@ -160,7 +161,7 @@ export const getTargetConnectionTableRefPda = (
 export const getUserPda = (profile: ProgramProfile, user: PublicKey) =>
     findPda(profile, [
         SEED_USER_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         user.toBuffer(),
     ]);
 
@@ -171,7 +172,7 @@ export const getSessionPda = (
 ) =>
     findPda(profile, [
         SEED_BUNDLE_BYTES,
-        SEED_DB_ROOT_SALT_BYTES,
+        getProgramIdSeed(profile),
         user.toBuffer(),
         encodeU64Seed(seq),
     ]);

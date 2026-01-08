@@ -213,6 +213,7 @@ export const dbCodeInInstruction = (
     },
 ) => builder.build("db_code_in", accounts, args);
 
+// SDK writer does not wrap this instruction yet; add a helper if needed.
 export const dbCodeInForFreeInstruction = (
     builder: InstructionBuilder,
     accounts: {
