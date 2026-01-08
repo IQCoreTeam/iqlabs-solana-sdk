@@ -133,8 +133,6 @@ export type CreateAdminTableAccounts = {
     db_root: PublicKey;
     table: PublicKey;
     instruction_table: PublicKey;
-    table_ref: PublicKey;
-    target_table_ref: PublicKey;
     system_program?: PublicKey;
 };
 
@@ -177,8 +175,6 @@ export const createTableInstruction = (
         signer: PublicKey;
         table: PublicKey;
         instruction_table: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         system_program?: PublicKey;
     },
     args: TableCreateArgs,
@@ -190,8 +186,6 @@ export const databaseInstructionInstruction = (
         db_root: PublicKey;
         table: PublicKey;
         instruction_table: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         signer_ata?: PublicKey;
         signer: PublicKey;
     },
@@ -301,8 +295,6 @@ export const requestConnectionInstruction = (
         instruction_table: PublicKey;
         requester_user: PublicKey;
         receiver_user: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         system_program?: PublicKey;
     },
     args: {
@@ -418,7 +410,6 @@ export const writeConnectionDataInstruction = (
     accounts: {
         db_root: PublicKey;
         connection_table: PublicKey;
-        table_ref: PublicKey;
         signer: PublicKey;
     },
     args: {
@@ -433,7 +424,6 @@ export const writeDataInstruction = (
     accounts: {
         db_root: PublicKey;
         table: PublicKey;
-        table_ref: PublicKey;
         signer_ata?: PublicKey;
         signer: PublicKey;
     },
