@@ -63,14 +63,22 @@ export type InstructionBuilder = {
 const toAccountMeta = (
     account: IdlAccount,
     accounts: Record<string, PublicKey | undefined>,
-): AccountMeta | null => {
+    programId: PublicKey,
+): AccountMeta => {
     const pubkey = account.address
         ? new PublicKey(account.address)
         : accounts[account.name];
 
     if (!pubkey) {
         if (account.optional) {
-            return null;
+            // For optional accounts, pass the program ID as a placeholder
+            // This is how Anchor handles optional accounts - they expect the
+            // program ID to signal "None" rather than omitting the account
+            return {
+                pubkey: programId,
+                isSigner: false,
+                isWritable: false,
+            };
         }
         throw new Error(`Missing account: ${account.name}`);
     }
@@ -98,9 +106,9 @@ export const createInstructionBuilder = (
             throw new Error(`Unknown instruction: ${name}`);
         }
 
-        const keys = instruction.accounts
-            .map((account) => toAccountMeta(account, accounts))
-            .filter((account): account is AccountMeta => Boolean(account));
+        const keys = instruction.accounts.map((account) =>
+            toAccountMeta(account, accounts, programId),
+        );
         const data = coder.encode(name, args ?? {});
 
         return new TransactionInstruction({programId, keys, data});
@@ -125,8 +133,6 @@ export type CreateAdminTableAccounts = {
     db_root: PublicKey;
     table: PublicKey;
     instruction_table: PublicKey;
-    table_ref: PublicKey;
-    target_table_ref: PublicKey;
     system_program?: PublicKey;
 };
 
@@ -169,8 +175,6 @@ export const createTableInstruction = (
         signer: PublicKey;
         table: PublicKey;
         instruction_table: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         system_program?: PublicKey;
     },
     args: TableCreateArgs,
@@ -182,8 +186,6 @@ export const databaseInstructionInstruction = (
         db_root: PublicKey;
         table: PublicKey;
         instruction_table: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         signer_ata?: PublicKey;
         signer: PublicKey;
     },
@@ -293,8 +295,6 @@ export const requestConnectionInstruction = (
         instruction_table: PublicKey;
         requester_user: PublicKey;
         receiver_user: PublicKey;
-        table_ref: PublicKey;
-        target_table_ref: PublicKey;
         system_program?: PublicKey;
     },
     args: {
@@ -410,7 +410,6 @@ export const writeConnectionDataInstruction = (
     accounts: {
         db_root: PublicKey;
         connection_table: PublicKey;
-        table_ref: PublicKey;
         signer: PublicKey;
     },
     args: {
@@ -425,7 +424,6 @@ export const writeDataInstruction = (
     accounts: {
         db_root: PublicKey;
         table: PublicKey;
-        table_ref: PublicKey;
         signer_ata?: PublicKey;
         signer: PublicKey;
     },

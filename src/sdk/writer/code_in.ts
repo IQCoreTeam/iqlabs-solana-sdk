@@ -1,10 +1,5 @@
 import {BN, BorshAccountsCoder, type Idl} from "@coral-xyz/anchor";
-import {
-    Connection,
-    PublicKey,
-    SystemProgram,
-    type Signer,
-} from "@solana/web3.js";
+import {Connection, PublicKey, SystemProgram} from "@solana/web3.js";
 
 import {
     createAnchorProfile,
@@ -22,6 +17,8 @@ import {
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {readMagicBytes} from "../utils/magic_bytes";
+import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
+import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
@@ -29,7 +26,7 @@ const IDL = require("../../../idl/code_in.json") as Idl;
 
 
 export async function codein(
-    input: { connection: Connection; signer: Signer },
+    input: {connection: Connection; signer: SignerInput},
     chunks: string[],
     isAnchor = false,
     filename?: string,
@@ -42,11 +39,12 @@ export async function codein(
         throw new Error("chunks is empty");
     }
     const {connection, signer} = input;
+    const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
     const profile = createAnchorProfile();
     const builder = createInstructionBuilder(IDL, profile.programId);
-    const user = signer.publicKey;
+    const user = wallet.publicKey;
     const userState = getUserPda(profile, user);
     const codeAccount = getCodeAccountPda(profile, user);
     const dbAccount = getDbAccountPda(profile, user);
@@ -60,17 +58,15 @@ export async function codein(
         system_program: SystemProgram.programId,
     });
 
-    // Anchor flow: resolve session sequence
+    // Resolve session sequence from userState
     let seq = BigInt(0);
-    if (isAnchor) {
-        const accountCoder = new BorshAccountsCoder(IDL);
-        const info = await connection.getAccountInfo(userState);
-        if (info) {
-            const decoded = accountCoder.decode("UserState", info.data) as {
-                total_session_files: BN;
-            };
-            seq = BigInt(decoded.total_session_files.toString());
-        }
+    const accountCoder = new BorshAccountsCoder(IDL);
+    const info = await connection.getAccountInfo(userState);
+    if (info) {
+        const decoded = accountCoder.decode("UserState", info.data) as {
+            total_session_files: BN;
+        };
+        seq = BigInt(decoded.total_session_files.toString());
     }
 
     // File metadata payload
