@@ -41,6 +41,7 @@
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
 import {getReaderConnection} from "../utils/connection_helper";
+import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import {readerContext} from "./reader_context";
@@ -50,29 +51,6 @@ const {instructionCoder, anchorProfile, pinocchioProfile} = readerContext;
 const resolveSessionConfig = (speed?: string) => {
     const resolvedSpeed = resolveSessionSpeed(speed);
     return SESSION_SPEED_PROFILES[resolvedSpeed];
-};
-
-const runWithConcurrency = async <T>(
-    items: T[],
-    limit: number,
-    worker: (item: T, index: number) => Promise<void>,
-) => {
-    if (items.length === 0) {
-        return;
-    }
-    const concurrency = Math.max(1, Math.min(limit, items.length));
-    let cursor = 0;
-    const runners = Array.from({length: concurrency}, async () => {
-        while (true) {
-            const index = cursor;
-            cursor += 1;
-            if (index >= items.length) {
-                return;
-            }
-            await worker(items[index], index);
-        }
-    });
-    await Promise.all(runners);
 };
 
 
