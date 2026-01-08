@@ -35,7 +35,6 @@ export async function codein(
     input: { connection: Connection; signer: Signer },
     chunks: string[],
     isAnchor = false,
-
     filename?: string,
     method = 0,
     filetype = "",
@@ -53,8 +52,8 @@ export async function codein(
         isAnchor
             ? createAnchorProfile()
             : createPinocchioProfile(
-                  new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
-              );
+                new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
+            );
     const builder = createInstructionBuilder(IDL, profile.programId);
     const user = signer.publicKey;
     const userState = getUserPda(profile, user);
@@ -141,9 +140,9 @@ export async function codein(
     const sessionAccount = useSession ? new PublicKey(onChainPath) : null;
     const sessionFinalize = useSession
         ? {
-              seq: new BN(seq.toString()),
-              total_chunks: totalChunks,
-          }
+            seq: new BN(seq.toString()),
+            total_chunks: totalChunks,
+        }
         : null;
     let iqAtaAccount: PublicKey | null | undefined;
     if (useDirectPath) {

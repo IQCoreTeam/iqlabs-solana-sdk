@@ -143,10 +143,10 @@ const readInscriptionInternal = async (
         const fallbackSig = inlineTxIsSig
             ? inlineTx!
             : pathIsSig
-            ? pathValue
-            : dataIsSig
-              ? dataValue
-              : "";
+                ? pathValue
+                : dataIsSig
+                    ? dataValue
+                    : "";
         if (!fallbackSig) {
             return {metadata: EMPTY_METADATA, data: dataValue || null};
         }
