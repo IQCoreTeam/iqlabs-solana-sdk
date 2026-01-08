@@ -295,6 +295,8 @@ export const requestConnectionInstruction = (
         instruction_table: PublicKey;
         requester_user: PublicKey;
         receiver_user: PublicKey;
+        table_ref: PublicKey;
+        target_table_ref: PublicKey;
         system_program?: PublicKey;
     },
     args: {
@@ -410,6 +412,7 @@ export const writeConnectionDataInstruction = (
     accounts: {
         db_root: PublicKey;
         connection_table: PublicKey;
+        table_ref: PublicKey;
         signer: PublicKey;
     },
     args: {
