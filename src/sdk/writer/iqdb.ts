@@ -235,7 +235,7 @@ export async function writeConnectionRow(
     return sendTx(connection, signer, ix);
 }
 
-export async function manageRowData(
+export async function manageRowData( /// 이것도 익스포트 해야 함
     connection: Connection,
     signer: Signer,
     dbRootId: Uint8Array | string,
@@ -321,7 +321,7 @@ export async function manageRowData(
     throw new Error("table/connection not found");
 }
 
-export async function requestConnection(
+export async function requestConnection( /// 이거 익스포트 해야 함
     connection: Connection,
     signer: Signer,
     dbRootId: Uint8Array | string,

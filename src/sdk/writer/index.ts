@@ -1,2 +1,3 @@
 // writer: high-level flows only
-export * from "./code_in";
+export { codein } from "./code_in";
+export { writeRow, manageRowData, requestConnection } from "./iqdb";

@@ -187,15 +187,9 @@ export const databaseInstructionInstruction = (
         table: PublicKey;
         instruction_table: PublicKey;
         signer_ata?: PublicKey;
-        signer: PublicKey;
+        signer: PublicKey
     },
-    args: {
-        db_root_id: Bytes;
-        table_seed: Bytes;
-        table_name: Bytes;
-        target_tx: Bytes;
-        content_json_tx: Bytes;
-    },
+    args: { db_root_id: Bytes; table_seed: Bytes; table_name: Bytes; target_tx: Bytes; content_json_tx: Bytes },
 ) => builder.build("database_instruction", accounts, args);
 
 export const dbCodeInInstruction = (
