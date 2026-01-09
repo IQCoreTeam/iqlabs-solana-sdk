@@ -12,6 +12,7 @@ import {
 } from "../../contract";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
+    DIRECT_METADATA_MAX_BYTES,
     DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
@@ -73,46 +74,56 @@ export async function codein(
     const magic = readMagicBytes(chunks[0]);
     const resolvedFiletype = filetype || magic.mime;
     const safeFilename = filename ?? `${seq}.${magic.ext}`;
-    const metadata = JSON.stringify({
+    const baseMetadata = {
         filetype: resolvedFiletype,
         method,
         filename: safeFilename,
         total_chunks: totalChunks,
-    });
+    };
+    const inlineMetadata =
+        totalChunks === 1
+            ? JSON.stringify({...baseMetadata, data: chunks[0]})
+            : "";
+    const useInline =
+        inlineMetadata.length > 0 &&
+        Buffer.byteLength(inlineMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
+    const metadata = useInline ? inlineMetadata : JSON.stringify(baseMetadata);
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
-    const useSession = totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    const useSession = !useInline && totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
     let sessionAccount: PublicKey | undefined;
     let sessionFinalize: { seq: BN; total_chunks: number } | null = null;
 
-    if (!useSession) {
-        onChainPath = await uploadLinkedList(
-            connection,
-            signer,
-            builder,
-            user,
-            codeAccount,
-            chunks,
-            method,
-        );
-    } else {
-        onChainPath = await uploadSession(
-            connection,
-            signer,
-            builder,
-            profile,
-            user,
-            userState,
-            seq,
-            chunks,
-            method,
-        );
-        sessionAccount = getSessionPda(profile, user, seq);
-        sessionFinalize = {
-            seq: new BN(seq.toString()),
-            total_chunks: totalChunks,
-        };
+    if (!useInline) {
+        if (!useSession) {
+            onChainPath = await uploadLinkedList(
+                connection,
+                signer,
+                builder,
+                user,
+                codeAccount,
+                chunks,
+                method,
+            );
+        } else {
+            onChainPath = await uploadSession(
+                connection,
+                signer,
+                builder,
+                profile,
+                user,
+                userState,
+                seq,
+                chunks,
+                method,
+            );
+            sessionAccount = getSessionPda(profile, user, seq);
+            sessionFinalize = {
+                seq: new BN(seq.toString()),
+                total_chunks: totalChunks,
+            };
+        }
     }
 
     // Finalize with db_code_in (fee handled on-chain)

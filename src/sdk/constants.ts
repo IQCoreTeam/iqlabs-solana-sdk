@@ -1,4 +1,5 @@
 export const DEFAULT_LINKED_LIST_THRESHOLD = 10;
+export const DEFAULT_CONTRACT_MODE = "pinocchio";
 export const DIRECT_METADATA_MAX_BYTES = 900;
 export const DEFAULT_WRITE_FEE_RECEIVER =
     "EWNSTD8tikwqHMcRNuuNbZrnYJUiJdKq9UXLXSEU4wZ1";

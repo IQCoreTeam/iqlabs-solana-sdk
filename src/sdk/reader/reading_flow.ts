@@ -8,16 +8,21 @@ import {
     getDbRootPda,
     getUserPda,
 } from "../../contract";
+import {DEFAULT_CONTRACT_MODE} from "../constants";
 import {getConnection, getReaderConnection} from "../utils/connection_helper";
 import {decodeConnectionMeta} from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
-import {readerContext} from "./reader_context";
+import {
+    readerContext,
+    resolveReaderModeFromTx,
+    resolveReaderProfile,
+} from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
 import {decodeDbCodeIn, extractCodeInPayload} from "./reader_utils";
 
-const {accountCoder, anchorProfile} = readerContext;
+const {accountCoder} = readerContext;
 const SIG_MIN_LEN = 80;
 const EMPTY_METADATA = "{}";
 const replayService = new ReplayServiceClient();
@@ -35,7 +40,10 @@ const resolveConnectionStatus = (status: number) => {
     return "unknown";
 };
 
-export async function readDBMetadata(txSignature: string): Promise<{
+export async function readDBMetadata(
+    txSignature: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
+): Promise<{
     onChainPath: string;
     metadata: string;
 }> {
@@ -46,13 +54,14 @@ export async function readDBMetadata(txSignature: string): Promise<{
     if (!tx) {
         throw new Error("transaction not found");
     }
-    return decodeDbCodeIn(tx);
+    return decodeDbCodeIn(tx, mode);
 }
 
 export async function readSession(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ result: string | null }> {
     if (readOption.isReplay || readOption.freshness === "archive") {
         await replayService.enqueueReplay({sessionPubkey});
@@ -63,13 +72,14 @@ export async function readSession(
     if (!info) {
         throw new Error("session account not found");
     }
-    return readSessionResult(sessionPubkey, readOption, speed);
+    return readSessionResult(sessionPubkey, readOption, speed, mode);
 }
 
 export async function readLinkedListFromTail(
     tailTx: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     //we actually dont use is replay and archive in linked list but just left this for re using the type.
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const tx = await connection.getTransaction(tailTx, {
@@ -78,16 +88,20 @@ export async function readLinkedListFromTail(
     if (!tx) {
         throw new Error("tail transaction not found");
     }
-    return readLinkedListResult(tailTx, readOption);
+    return readLinkedListResult(tailTx, readOption, mode);
 }
 
 export async function readDbCodeInFromTx(
     tx: VersionedTransactionResponse,
     speed?: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ metadata: string; data: string | null }> {
     const blockTime = tx.blockTime;
-
-    const {onChainPath, metadata, inlineData} = extractCodeInPayload(tx);
+    const resolvedMode = resolveReaderModeFromTx(tx, mode);
+    const {onChainPath, metadata, inlineData} = extractCodeInPayload(
+        tx,
+        resolvedMode,
+    );
     if (onChainPath.length === 0) {
         return {metadata, data: inlineData};
     }
@@ -95,16 +109,26 @@ export async function readDbCodeInFromTx(
     const readOption = resolveReadMode(onChainPath, blockTime);
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
     if (kind === "session") {
-        const {result} = await readSession(onChainPath, readOption, speed);
+        const {result} = await readSession(
+            onChainPath,
+            readOption,
+            speed,
+            resolvedMode,
+        );
         return {metadata, data: result};
     }
-    const {result} = await readLinkedListFromTail(onChainPath, readOption);
+    const {result} = await readLinkedListFromTail(
+        onChainPath,
+        readOption,
+        resolvedMode,
+    );
     return {metadata, data: result};
 }
 
 export async function readDbRowContent(
     tablePayload: { inlineData?: string | null; targetSignature?: string },
     speed?: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ metadata: string; data: string | null }> {
     if (tablePayload.inlineData !== undefined) {
         return {
@@ -126,10 +150,13 @@ export async function readDbRowContent(
         throw new Error("transaction not found");
     }
 
-    return await readDbCodeInFromTx(tx, speed);
+    return await readDbCodeInFromTx(tx, speed, mode);
 }
 
-export async function readUserState(userPubkey: string): Promise<{
+export async function readUserState(
+    userPubkey: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
+): Promise<{
     owner: string;
     metadata: string | null;
     totalSessionFiles: bigint;
@@ -137,7 +164,8 @@ export async function readUserState(userPubkey: string): Promise<{
 }> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const userState = getUserPda(anchorProfile, user);
+    const profile = resolveReaderProfile(mode);
+    const userState = getUserPda(profile, user);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
         throw new Error("user_state not found");
@@ -152,7 +180,7 @@ export async function readUserState(userPubkey: string): Promise<{
     const totalSessionFiles = BigInt(decoded.total_session_files.toString());
     if (metadata) {
         const {readCodeIn} = await import("./read_code_in");
-        const {data} = await readCodeIn(metadata);
+        const {data} = await readCodeIn(metadata, undefined, mode);
         const profileData = data ?? undefined;
         return {
             owner: decoded.owner.toBase58(),
@@ -172,13 +200,15 @@ export async function readConnection(
     dbRootId: Uint8Array<any> | string,
     partyA: string,
     partyB: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ status: string }> {
     const connection = getConnection();
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(anchorProfile, dbRootSeed);
+    const profile = resolveReaderProfile(mode);
+    const dbRoot = getDbRootPda(profile, dbRootSeed);
     const connectionSeed = deriveDmSeed(partyA, partyB);
     const connectionTable = getConnectionTablePda(
-        anchorProfile,
+        profile,
         dbRoot,
         connectionSeed,
     );

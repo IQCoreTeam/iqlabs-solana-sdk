@@ -19,3 +19,5 @@ TODO for SDK
 IDL 변경(테이블 관련 계정 제거) 기준으로 SDK 영향 범위 정리: global_fetch.ts, iqdb.ts에서 table_ref/target_table_ref 제거가 필요한 호출/검증 포인트 목록화.
 code_in 플로우 설계:
 short inscription(≤900 bytes metadata)만 metadata.data 포함, on_chain_path=""
+우리는 멀티 탭을 지원 해야 할수도 잇음, 뭐 개발자 모드를 키면 디폴트 모드가아닌 탭을 볼수있다던가 그런거 말이지 
+그리고 디폴트 값을 이제 상수로 관리 하는데, 이걸 reader 건 writer 건 다 적용해서 한번에 바꾸야 할듯

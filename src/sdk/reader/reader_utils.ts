@@ -6,10 +6,15 @@ import {
     type VersionedTransactionResponse,
 } from "@solana/web3.js";
 import {getSessionPda, getUserPda} from "../../contract";
+import {DEFAULT_CONTRACT_MODE} from "../constants";
 import {getConnection} from "../utils/connection_helper";
-import {readerContext} from "./reader_context";
+import {
+    readerContext,
+    resolveReaderModeFromTx,
+    resolveReaderProfile,
+} from "./reader_context";
 
-const {instructionCoder, anchorProfile, pinocchioProfile, idl} = readerContext;
+const {instructionCoder, idl} = readerContext;
 const SIG_MIN_LEN = 80;
 const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]+$/;
 const EVENT_CODER = new BorshCoder(idl as Idl);
@@ -17,6 +22,7 @@ const EVENT_CODER = new BorshCoder(idl as Idl);
 export const decodeReaderInstruction = (
     ix: MessageCompiledInstruction,
     accountKeys: MessageAccountKeys,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): {
     decoded: ReturnType<typeof instructionCoder.decode>;
     isAnchor: boolean;
@@ -26,26 +32,33 @@ export const decodeReaderInstruction = (
     if (!programId) {
         return null;
     }
-    const isAnchor = programId.equals(anchorProfile.programId);
-    const isPinocchio =
-        pinocchioProfile !== null &&
-        programId.equals(pinocchioProfile.programId);
-    if (!isAnchor && !isPinocchio) {
+    const profile = resolveReaderProfile(mode);
+    if (!programId.equals(profile.programId)) {
         return null;
     }
     const decoded = instructionCoder.decode(Buffer.from(ix.data));
-    return {decoded, isAnchor, isPinocchio};
+    return {
+        decoded,
+        isAnchor: profile.runtime === "anchor",
+        isPinocchio: profile.runtime === "pinocchio",
+    };
 };
 
 // ----- db_code_in decoding -----
 export const decodeDbCodeIn = (
     tx: VersionedTransactionResponse,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string } => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
+    const resolvedMode = resolveReaderModeFromTx(tx, mode);
 
     for (const ix of message.compiledInstructions) {
-        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        const decodedResult = decodeReaderInstruction(
+            ix,
+            accountKeys,
+            resolvedMode,
+        );
         if (!decodedResult || !decodedResult.decoded) {
             continue;
         }
@@ -61,16 +74,13 @@ export const decodeDbCodeIn = (
 // ----- Table-trail event decoding -----
 export const parseTableTrailEventsFromLogs = (
     logs: string[],
-    mode: "anchor" | "pinocchio",
+    mode: string = DEFAULT_CONTRACT_MODE,
 ) => {
     if (!logs || logs.length === 0) {
         return [];
     }
-    const programId =
-        mode === "anchor"
-            ? anchorProfile.programId
-            : pinocchioProfile.programId;
-    const parser = new EventParser(programId, EVENT_CODER);
+    const profile = resolveReaderProfile(mode);
+    const parser = new EventParser(profile.programId, EVENT_CODER);
     const events: Array<{
         table: PublicKey;
         signer: PublicKey;
@@ -102,12 +112,12 @@ export const parseTableTrailEventsFromLogs = (
 
 export const parseTableTrailEventsFromTx = (
     tx: VersionedTransactionResponse | null,
-    mode: "anchor" | "pinocchio",
+    mode: string = DEFAULT_CONTRACT_MODE,
 ) => parseTableTrailEventsFromLogs(tx?.meta?.logMessages ?? [], mode);
 
 export async function readTableTrailEvents(
     txSignature: string,
-    mode: "anchor" | "pinocchio",
+    mode: string = DEFAULT_CONTRACT_MODE,
 ) {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
@@ -122,12 +132,9 @@ export async function readTableTrailEvents(
 // ----- Table-trail payload parsing -----
 export const resolveTableTrailPayload = (
     logs: string[],
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): { inlineData?: string | null; targetSignature?: string } | null => {
-    const anchorEvents = parseTableTrailEventsFromLogs(logs, "anchor");
-    const tableEvents =
-        anchorEvents.length > 0
-            ? anchorEvents
-            : parseTableTrailEventsFromLogs(logs, "pinocchio");
+    const tableEvents = parseTableTrailEventsFromLogs(logs, mode);
     if (tableEvents.length === 0) {
         return null;
     }
@@ -195,8 +202,9 @@ export const resolveTableTrailPayload = (
 // ----- db_code_in metadata parsing -----
 export const extractCodeInPayload = (
     tx: VersionedTransactionResponse,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string; inlineData: string | null } => {
-    const {onChainPath, metadata} = decodeDbCodeIn(tx);
+    const {onChainPath, metadata} = decodeDbCodeIn(tx, mode);
     if (onChainPath.length > 0) {
         return {onChainPath, metadata, inlineData: null};
     }
@@ -236,10 +244,14 @@ export async function fetchAccountTransactions( // this use for bringing the db 
     return getConnection().getSignaturesForAddress(pubkey, {before, limit});
 }
 
-export async function getSessionPdaList(userPubkey: string): Promise<string[]> {
+export async function getSessionPdaList(
+    userPubkey: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
+): Promise<string[]> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const userState = getUserPda(readerContext.pinocchioProfile, user);
+    const profile = resolveReaderProfile(mode);
+    const userState = getUserPda(profile, user);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
         throw new Error("user_state not found");
@@ -251,7 +263,7 @@ export async function getSessionPdaList(userPubkey: string): Promise<string[]> {
     const sessions: string[] = [];
 
     for (let seq = BigInt(0); seq < totalSessionFiles; seq += BigInt(1)) {
-        const session = getSessionPda(readerContext.pinocchioProfile, user, seq);
+        const session = getSessionPda(profile, user, seq);
         sessions.push(session.toBase58());
     }
 

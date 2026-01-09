@@ -40,6 +40,7 @@
 
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
+import {DEFAULT_CONTRACT_MODE} from "../constants";
 import {getReaderConnection} from "../utils/connection_helper";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
@@ -55,12 +56,13 @@ const resolveSessionConfig = (speed?: string) => {
 const extractAnchorInstruction = (
     tx: VersionedTransactionResponse,
     expectedName: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ) => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
 
     for (const ix of message.compiledInstructions) {
-        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        const decodedResult = decodeReaderInstruction(ix, accountKeys, mode);
         if (!decodedResult || !decodedResult.decoded) {
             continue;
         }
@@ -98,13 +100,16 @@ const extractPinocchioPostChunk = (data: Buffer) => {
     return {index, chunk};
 };
 
-const extractPostChunk = (tx: VersionedTransactionResponse) => {
+const extractPostChunk = (
+    tx: VersionedTransactionResponse,
+    mode: string = DEFAULT_CONTRACT_MODE,
+) => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
     const chunks: Array<{ index: number; chunk: string }> = [];
 
     for (const ix of message.compiledInstructions) {
-        const decodedResult = decodeReaderInstruction(ix, accountKeys);
+        const decodedResult = decodeReaderInstruction(ix, accountKeys, mode);
         if (!decodedResult) {
             continue;
         }
@@ -125,8 +130,11 @@ const extractPostChunk = (tx: VersionedTransactionResponse) => {
     return chunks;
 };
 
-const extractSendCode = (tx: VersionedTransactionResponse) => {
-    const data = extractAnchorInstruction(tx, "send_code") as
+const extractSendCode = (
+    tx: VersionedTransactionResponse,
+    mode: string = DEFAULT_CONTRACT_MODE,
+) => {
+    const data = extractAnchorInstruction(tx, "send_code", mode) as
         | { code: string; before_tx: string }
         | null;
     if (!data) {
@@ -139,6 +147,7 @@ export async function readSessionResult(
     sessionPubkey: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const signatures = await connection.getSignaturesForAddress(
@@ -160,7 +169,7 @@ export async function readSessionResult(
         if (!tx) {
             return;
         }
-        const chunks = extractPostChunk(tx);
+        const chunks = extractPostChunk(tx, mode);
         for (const chunk of chunks) {
             chunkMap.set(chunk.index, chunk.chunk);
         }
@@ -179,6 +188,7 @@ export async function readSessionResult(
 export async function readLinkedListResult(
     tailTx: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const chunks: string[] = [];
@@ -198,7 +208,7 @@ export async function readLinkedListResult(
             throw new Error("linked list transaction not found");
         }
 
-        const decoded = extractSendCode(tx);
+        const decoded = extractSendCode(tx, mode);
         if (!decoded) {
             throw new Error("send_code instruction not found");
         }
