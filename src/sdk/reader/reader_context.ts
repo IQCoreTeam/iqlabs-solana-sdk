@@ -1,12 +1,16 @@
-import {BorshAccountsCoder, BorshInstructionCoder, type Idl} from "@coral-xyz/anchor";
+import {
+    BorshAccountsCoder,
+    BorshInstructionCoder,
+    type Idl,
+} from "@coral-xyz/anchor";
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
 import {
-    createAnchorProfile,
-    createPinocchioProfile,
+    DEFAULT_ANCHOR_PROGRAM_ID,
     DEFAULT_PINOCCHIO_PROGRAM_ID,
+    resolveContractRuntime,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../constants";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
@@ -14,24 +18,22 @@ export const readerContext = {
     idl: IDL,
     instructionCoder: new BorshInstructionCoder(IDL),
     accountCoder: new BorshAccountsCoder(IDL),
-    anchorProfile: createAnchorProfile(),
-    pinocchioProfile: createPinocchioProfile(
-        new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
-    ),
+    anchorProgramId: new PublicKey(DEFAULT_ANCHOR_PROGRAM_ID),
+    pinocchioProgramId: new PublicKey(DEFAULT_PINOCCHIO_PROGRAM_ID),
 } as const;
 
-export const resolveReaderProfile = (mode: string = DEFAULT_CONTRACT_MODE) => {
-    const resolvedMode =
-        mode === "anchor" || mode === "pinocchio" ? mode : DEFAULT_CONTRACT_MODE;
-    return resolvedMode === "anchor"
-        ? readerContext.anchorProfile
-        : readerContext.pinocchioProfile;
+export const resolveReaderProgramId = (
+    mode: string = DEFAULT_CONTRACT_MODE,
+) => {
+    const runtime = resolveContractRuntime(mode);
+    return runtime === "anchor"
+        ? readerContext.anchorProgramId
+        : readerContext.pinocchioProgramId;
 };
 
 export const resolveReaderModeFromTx = (
     tx: VersionedTransactionResponse,
-    mode: string = DEFAULT_CONTRACT_MODE,
-) => {
+): "anchor" | "pinocchio" => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys(
         tx.meta?.loadedAddresses
@@ -46,10 +48,10 @@ export const resolveReaderModeFromTx = (
         if (!programId) {
             continue;
         }
-        if (programId.equals(readerContext.anchorProfile.programId)) {
+        if (programId.equals(readerContext.anchorProgramId)) {
             sawAnchor = true;
         }
-        if (programId.equals(readerContext.pinocchioProfile.programId)) {
+        if (programId.equals(readerContext.pinocchioProgramId)) {
             sawPinocchio = true;
         }
     }
@@ -61,7 +63,5 @@ export const resolveReaderModeFromTx = (
         return "pinocchio";
     }
 
-    return mode === "anchor" || mode === "pinocchio"
-        ? mode
-        : DEFAULT_CONTRACT_MODE;
+    return resolveContractRuntime(DEFAULT_CONTRACT_MODE);
 };

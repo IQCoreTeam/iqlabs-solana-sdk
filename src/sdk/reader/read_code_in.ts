@@ -1,8 +1,9 @@
 import {getConnection} from "../utils/connection_helper";
 import {resolveTableTrailPayload} from "./reader_utils";
 import {readDbCodeInFromTx, readDbRowContent} from "./reading_flow";
-import {DEFAULT_CONTRACT_MODE} from "../constants";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {resolveReaderModeFromTx} from "./reader_context";
+import {resolveContractRuntime} from "../../contract";
 
 export async function readCodeIn(
     txSignature: string,
@@ -17,7 +18,8 @@ export async function readCodeIn(
         throw new Error("transaction not found");
     }
 
-    const resolvedMode = resolveReaderModeFromTx(tx, mode);
+    const userMode = resolveContractRuntime(mode);
+    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
     const tablePayload = resolveTableTrailPayload(
         tx.meta?.logMessages ?? [],
         resolvedMode,

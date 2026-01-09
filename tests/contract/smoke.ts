@@ -1,20 +1,21 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { PublicKey, Keypair } from "@solana/web3.js";
-import { BN, type Idl } from "@coral-xyz/anchor";
+import {PublicKey, Keypair} from "@solana/web3.js";
+import {BN, type Idl} from "@coral-xyz/anchor";
 import {
-  DEFAULT_ANCHOR_PROGRAM_ID,
-  createAnchorProfile,
-  createPinocchioProfile,
-  createInstructionBuilder,
-  createSessionInstruction,
-  getCodeAccountPda,
-  getDbAccountPda,
-  getDbRootPda,
-  getSessionPda,
-  getUserPda,
-  userInitializeInstruction,
+    DEFAULT_ANCHOR_PROGRAM_ID,
+    DEFAULT_PINOCCHIO_PROGRAM_ID,
+    createInstructionBuilder,
+    createSessionInstruction,
+    getCodeAccountPda,
+    getDbAccountPda,
+    getDbRootPda,
+    getProgramId,
+    getSessionPda,
+    getUserPda,
+    resolveContractRuntime,
+    userInitializeInstruction,
 } from "../../src/contract";
 
 const loadIdl = (): Idl => {
@@ -24,15 +25,14 @@ const loadIdl = (): Idl => {
 };
 
 const programId = new PublicKey(DEFAULT_ANCHOR_PROGRAM_ID);
-const profile = createAnchorProfile(programId);
 const user = Keypair.generate().publicKey;
 
 const dbRootId = new Uint8Array([1, 2, 3, 4]);
-const userState = getUserPda(profile, user);
-const session = getSessionPda(profile, user, 1n);
-const codeAccount = getCodeAccountPda(profile, user);
-const dbAccount = getDbAccountPda(profile, user);
-const dbRoot = getDbRootPda(profile, dbRootId);
+const userState = getUserPda(user, programId);
+const session = getSessionPda(user, 1n, programId);
+const codeAccount = getCodeAccountPda(user, programId);
+const dbAccount = getDbAccountPda(user, programId);
+const dbRoot = getDbRootPda(dbRootId, programId);
 
 assert.ok(userState instanceof PublicKey);
 assert.ok(session instanceof PublicKey);
@@ -66,19 +66,18 @@ const userInitIx = userInitializeInstruction(builder, {
 
 assert.equal(userInitIx.programId.toBase58(), programId.toBase58());
 
-const pinocchioId = Keypair.generate().publicKey;
-const explicitPinocchio = createPinocchioProfile(pinocchioId);
-assert.equal(explicitPinocchio.runtime, "pinocchio");
-assert.equal(
-  explicitPinocchio.programId.toBase58(),
-  pinocchioId.toBase58(),
-);
+const pinocchioRuntime = resolveContractRuntime("pinocchio");
+assert.equal(pinocchioRuntime, "pinocchio");
+const inferredAnchor = resolveContractRuntime("anything_else");
+assert.equal(inferredAnchor, "anchor");
 
-const defaultAnchor = createAnchorProfile();
-assert.equal(defaultAnchor.runtime, "anchor");
-assert.equal(
-  defaultAnchor.programId.toBase58(),
-  DEFAULT_ANCHOR_PROGRAM_ID,
-);
+const defaultAnchorProgram = getProgramId("anchor");
+assert.equal(defaultAnchorProgram.toBase58(), DEFAULT_ANCHOR_PROGRAM_ID);
+const defaultPinocchioProgram = getProgramId("pinocchio");
+assert.equal(defaultPinocchioProgram.toBase58(), DEFAULT_PINOCCHIO_PROGRAM_ID);
+
+const customProgramId = Keypair.generate().publicKey;
+const customUserState = getUserPda(user, customProgramId);
+assert.ok(customUserState instanceof PublicKey);
 
 console.log("contract smoke test ok");

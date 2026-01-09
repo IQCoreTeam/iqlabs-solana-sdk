@@ -10,7 +10,6 @@ import {
     getConnectionTablePda,
     getDbRootPda,
     getTablePda,
-    type ProgramProfile,
 } from "../../contract";
 import {toSeedBytes} from "./seed";
 
@@ -69,11 +68,11 @@ export function decodeConnectionMeta(data: Buffer) {
 
 export async function ensureDbRootExists(
     connection: Connection,
-    profile: ProgramProfile,
+    programId: PublicKey,
     dbRootId: Uint8Array | string,
 ) {
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const info = await connection.getAccountInfo(dbRoot);
     if (!info) {
         throw new Error("db_root not found");
@@ -82,14 +81,14 @@ export async function ensureDbRootExists(
 
 export async function ensureTableExists(
     connection: Connection,
-    profile: ProgramProfile,
+    programId: PublicKey,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
 ) {
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const tableSeedBytes = toSeedBytes(tableSeed);
-    const tablePda = getTablePda(profile, dbRoot, tableSeedBytes);
+    const tablePda = getTablePda(dbRoot, tableSeedBytes, programId);
     const tableInfo = await connection.getAccountInfo(tablePda);
 
     if (!tableInfo) {
@@ -101,14 +100,14 @@ export async function ensureTableExists(
 
 export async function fetchTableMeta(
     connection: Connection,
-    profile: ProgramProfile,
+    programId: PublicKey,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
 ) {
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const tableSeedBytes = toSeedBytes(tableSeed);
-    const tablePda = getTablePda(profile, dbRoot, tableSeedBytes);
+    const tablePda = getTablePda(dbRoot, tableSeedBytes, programId);
     const info = await connection.getAccountInfo(tablePda);
     if (!info) {
         throw new Error("table not found");
@@ -119,17 +118,17 @@ export async function fetchTableMeta(
 
 export async function fetchConnectionMeta(
     connection: Connection,
-    profile: ProgramProfile,
+    programId: PublicKey,
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
 ) {
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
     const connectionTable = getConnectionTablePda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
     const info = await connection.getAccountInfo(connectionTable);
     if (!info) {

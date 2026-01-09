@@ -1,8 +1,9 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
-import {DEFAULT_CONTRACT_MODE} from "../constants";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {resolveReaderModeFromTx} from "./reader_context";
 import {decodeReaderInstruction} from "./reader_utils";
+import {resolveContractRuntime} from "../../contract";
 
 const DAY_SECONDS = 86_400;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
@@ -18,18 +19,14 @@ const resolveOnChainPath = (
             ? {accountKeysFromLookups: tx.meta.loadedAddresses}
             : undefined,
     );
-    const resolvedMode = resolveReaderModeFromTx(tx, mode);
+    const userMode = resolveContractRuntime(mode);
+    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
 
     for (const ix of message.compiledInstructions) {
-        const decodedResult = decodeReaderInstruction(
-            ix,
-            accountKeys,
-            resolvedMode,
-        );
-        if (!decodedResult || !decodedResult.decoded) {
+        const decoded = decodeReaderInstruction(ix, accountKeys);
+        if (!decoded) {
             continue;
         }
-        const {decoded} = decodedResult;
         if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
             const data = decoded.data as { on_chain_path: string };
             return data.on_chain_path;

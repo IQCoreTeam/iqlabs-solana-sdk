@@ -6,7 +6,6 @@ import {
     postChunkInstruction,
     sendCodeInstruction,
     type InstructionBuilder,
-    type ProgramProfile,
 } from "../../contract";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
@@ -58,7 +57,7 @@ export async function uploadSession(
     connection: Connection,
     signer: SignerInput,
     builder: InstructionBuilder,
-    profile: ProgramProfile,
+    programId: PublicKey,
     user: PublicKey,
     userState: PublicKey,
     seq: bigint,
@@ -67,7 +66,7 @@ export async function uploadSession(
     options?: {speed?: string},
 ) {
     const config = resolveUploadConfig(options);
-    const session = getSessionPda(profile, user, seq);
+    const session = getSessionPda(user, seq, programId);
     const sessionInfo = await connection.getAccountInfo(session);
     if (!sessionInfo) {
         const createIx = createSessionInstruction(

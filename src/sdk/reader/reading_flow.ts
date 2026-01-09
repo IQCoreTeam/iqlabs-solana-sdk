@@ -7,8 +7,9 @@ import {
     getConnectionTablePda,
     getDbRootPda,
     getUserPda,
+    resolveContractRuntime,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../constants";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection, getReaderConnection} from "../utils/connection_helper";
 import {decodeConnectionMeta} from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
@@ -17,7 +18,7 @@ import {readLinkedListResult, readSessionResult} from "./reading_methods";
 import {
     readerContext,
     resolveReaderModeFromTx,
-    resolveReaderProfile,
+    resolveReaderProgramId,
 } from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
 import {decodeDbCodeIn, extractCodeInPayload} from "./reader_utils";
@@ -97,7 +98,8 @@ export async function readDbCodeInFromTx(
     mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ metadata: string; data: string | null }> {
     const blockTime = tx.blockTime;
-    const resolvedMode = resolveReaderModeFromTx(tx, mode);
+    const userMode = resolveContractRuntime(mode);
+    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
     const {onChainPath, metadata, inlineData} = extractCodeInPayload(
         tx,
         resolvedMode,
@@ -164,8 +166,8 @@ export async function readUserState(
 }> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const profile = resolveReaderProfile(mode);
-    const userState = getUserPda(profile, user);
+    const programId = resolveReaderProgramId(mode);
+    const userState = getUserPda(user, programId);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
         throw new Error("user_state not found");
@@ -204,13 +206,13 @@ export async function readConnection(
 ): Promise<{ status: string }> {
     const connection = getConnection();
     const dbRootSeed = toSeedBytes(dbRootId);
-    const profile = resolveReaderProfile(mode);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const programId = resolveReaderProgramId(mode);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionSeed = deriveDmSeed(partyA, partyB);
     const connectionTable = getConnectionTablePda(
-        profile,
         dbRoot,
         connectionSeed,
+        programId,
     );
     const info = await connection.getAccountInfo(connectionTable);
     if (!info) {

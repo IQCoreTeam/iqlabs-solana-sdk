@@ -7,7 +7,6 @@ import {
 } from "@solana/web3.js";
 
 import {
-    createAnchorProfile,
     createInstructionBuilder,
     databaseInstructionInstruction,
     getConnectionInstructionTablePda,
@@ -15,13 +14,13 @@ import {
     getConnectionTableRefPda,
     getDbRootPda,
     getInstructionTablePda,
+    getProgramId,
     getTargetConnectionTableRefPda,
-    getUserPda,
     getTablePda,
+    getUserPda,
     requestConnectionInstruction,
     writeConnectionDataInstruction,
     writeDataInstruction,
-    type ProgramProfile,
 } from "../../contract";
 import {codein} from "./code_in";
 import {sendTx} from "./writer_utils";
@@ -47,7 +46,7 @@ const buildTableTrailPayload = (rowJson: string, txid: string) => {
 
 export async function validateRowJson(
     connection: Connection,
-    profile: ProgramProfile,
+    programId: PublicKey,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
@@ -64,7 +63,7 @@ export async function validateRowJson(
         throw new Error("row_json must be an object");
     }
 
-    const meta = await fetchTableMeta(connection, profile, dbRootId, tableSeed);
+    const meta = await fetchTableMeta(connection, programId, dbRootId, tableSeed);
     const requiredId = idCol ?? meta.idCol;
     const allowedKeys = new Set([...meta.columns, meta.idCol]);
     const row = parsed as Record<string, unknown>;
@@ -104,22 +103,22 @@ export async function writeRow(
     tableSeed: Uint8Array | string,
     rowJson: string,
 ) {
-    const profile = createAnchorProfile();
-    const builder = createInstructionBuilder(IDL, profile.programId);
+    const programId = getProgramId("anchor");
+    const builder = createInstructionBuilder(IDL, programId);
     const dbRootSeed = toSeedBytes(dbRootId);
     const tableSeedBytes = toSeedBytes(tableSeed);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
 
-    await ensureDbRootExists(connection, profile, dbRootSeed);
+    await ensureDbRootExists(connection, programId, dbRootSeed);
     const {tablePda} = await ensureTableExists(
         connection,
-        profile,
+        programId,
         dbRootSeed,
         tableSeedBytes,
     );
     await validateRowJson(
         connection,
-        profile,
+        programId,
         dbRootSeed,
         tableSeedBytes,
         rowJson,
@@ -127,7 +126,7 @@ export async function writeRow(
 
     const meta = await fetchTableMeta(
         connection,
-        profile,
+        programId,
         dbRootSeed,
         tableSeedBytes,
     );
@@ -166,23 +165,23 @@ export async function writeConnectionRow(
     connectionSeed: Uint8Array | string,
     rowJson: string,
 ) {
-    const profile = createAnchorProfile();
-    const builder = createInstructionBuilder(IDL, profile.programId);
+    const programId = getProgramId("anchor");
+    const builder = createInstructionBuilder(IDL, programId);
     const dbRootSeed = toSeedBytes(dbRootId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionTable = getConnectionTablePda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
     const tableRef = getConnectionTableRefPda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
 
-    await ensureDbRootExists(connection, profile, dbRootSeed);
+    await ensureDbRootExists(connection, programId, dbRootSeed);
     const [connectionInfo, tableRefInfo] = await Promise.all([
         connection.getAccountInfo(connectionTable),
         connection.getAccountInfo(tableRef),
@@ -244,15 +243,15 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
     tableName?: string | Uint8Array,
     targetTx?: string | Uint8Array,
 ) {
-    const profile = createAnchorProfile();
-    const builder = createInstructionBuilder(IDL, profile.programId);
+    const programId = getProgramId("anchor");
+    const builder = createInstructionBuilder(IDL, programId);
     const dbRootSeed = toSeedBytes(dbRootId);
     const seedBytes = toSeedBytes(seed);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
-    const tablePda = getTablePda(profile, dbRoot, seedBytes);
-    const connectionTable = getConnectionTablePda(profile, dbRoot, seedBytes);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
+    const tablePda = getTablePda(dbRoot, seedBytes, programId);
+    const connectionTable = getConnectionTablePda(dbRoot, seedBytes, programId);
 
-    await ensureDbRootExists(connection, profile, dbRootSeed);
+    await ensureDbRootExists(connection, programId, dbRootSeed);
     const [tableInfo, connectionInfo] = await Promise.all([
         connection.getAccountInfo(tablePda),
         connection.getAccountInfo(connectionTable),
@@ -265,18 +264,18 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
         }
 
         const {tablePda: table} =
-            await ensureTableExists(connection, profile, dbRootSeed, seedBytes);
+            await ensureTableExists(connection, programId, dbRootSeed, seedBytes);
         const instructionTable = getInstructionTablePda(
-            profile,
             dbRoot,
             seedBytes,
+            programId,
         );
         const instructionInfo = await connection.getAccountInfo(instructionTable);
         if (!instructionInfo) {
             throw new Error("instruction table not found");
         }
 
-        const meta = await fetchTableMeta(connection, profile, dbRootSeed, seedBytes);
+        const meta = await fetchTableMeta(connection, programId, dbRootSeed, seedBytes);
         if (
             meta.writers.length > 0 &&
             !meta.writers.some((writer) => writer.equals(signer.publicKey))
@@ -333,8 +332,8 @@ export async function requestConnection( /// 이거 익스포트 해야 함
     extKeys: Array<string | Uint8Array>,
 ) {
     // Validate requester
-    const profile = createAnchorProfile();
-    const builder = createInstructionBuilder(IDL, profile.programId);
+    const programId = getProgramId("anchor");
+    const builder = createInstructionBuilder(IDL, programId);
     const requester = signer.publicKey;
     const requesterBase58 = requester.toBase58();
     if (requesterBase58 !== partyA && requesterBase58 !== partyB) {
@@ -345,30 +344,30 @@ export async function requestConnection( /// 이거 익스포트 해야 함
     const receiverBase58 = requesterBase58 === partyA ? partyB : partyA;
     const receiver = new PublicKey(receiverBase58);
     const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(profile, dbRootSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionSeedBytes = deriveDmSeed(partyA, partyB);
     const connectionTable = getConnectionTablePda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
     const instructionTable = getConnectionInstructionTablePda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
     const tableRef = getConnectionTableRefPda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
     const targetTableRef = getTargetConnectionTableRefPda(
-        profile,
         dbRoot,
         connectionSeedBytes,
+        programId,
     );
-    const requesterUser = getUserPda(profile, requester);
-    const receiverUser = getUserPda(profile, receiver);
+    const requesterUser = getUserPda(requester, programId);
+    const receiverUser = getUserPda(receiver, programId);
 
     // Encode args (payload only carries dmTable)
     const toBytes = (value: string | Uint8Array) =>

@@ -5,13 +5,13 @@ import {
     type MessageCompiledInstruction,
     type VersionedTransactionResponse,
 } from "@solana/web3.js";
-import {getSessionPda, getUserPda} from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../constants";
+import {getSessionPda, getUserPda, resolveContractRuntime} from "../../contract";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {
     readerContext,
     resolveReaderModeFromTx,
-    resolveReaderProfile,
+    resolveReaderProgramId,
 } from "./reader_context";
 
 const {instructionCoder, idl} = readerContext;
@@ -22,26 +22,17 @@ const EVENT_CODER = new BorshCoder(idl as Idl);
 export const decodeReaderInstruction = (
     ix: MessageCompiledInstruction,
     accountKeys: MessageAccountKeys,
-    mode: string = DEFAULT_CONTRACT_MODE,
-): {
-    decoded: ReturnType<typeof instructionCoder.decode>;
-    isAnchor: boolean;
-    isPinocchio: boolean;
-} | null => {
+): ReturnType<typeof instructionCoder.decode> | null => {
     const programId = accountKeys.get(ix.programIdIndex);
     if (!programId) {
         return null;
     }
-    const profile = resolveReaderProfile(mode);
-    if (!programId.equals(profile.programId)) {
+    const isAnchor = programId.equals(readerContext.anchorProgramId);
+    const isPinocchio = programId.equals(readerContext.pinocchioProgramId);
+    if (!isAnchor && !isPinocchio) {
         return null;
     }
-    const decoded = instructionCoder.decode(Buffer.from(ix.data));
-    return {
-        decoded,
-        isAnchor: profile.runtime === "anchor",
-        isPinocchio: profile.runtime === "pinocchio",
-    };
+    return instructionCoder.decode(Buffer.from(ix.data));
 };
 
 // ----- db_code_in decoding -----
@@ -51,18 +42,14 @@ export const decodeDbCodeIn = (
 ): { onChainPath: string; metadata: string } => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
-    const resolvedMode = resolveReaderModeFromTx(tx, mode);
+    const userMode = resolveContractRuntime(mode);
+    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
 
     for (const ix of message.compiledInstructions) {
-        const decodedResult = decodeReaderInstruction(
-            ix,
-            accountKeys,
-            resolvedMode,
-        );
-        if (!decodedResult || !decodedResult.decoded) {
+        const decoded = decodeReaderInstruction(ix, accountKeys);
+        if (!decoded) {
             continue;
         }
-        const {decoded} = decodedResult;
         if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
             const data = decoded.data as { on_chain_path: string; metadata: string };
             return {onChainPath: data.on_chain_path, metadata: data.metadata};
@@ -79,8 +66,8 @@ export const parseTableTrailEventsFromLogs = (
     if (!logs || logs.length === 0) {
         return [];
     }
-    const profile = resolveReaderProfile(mode);
-    const parser = new EventParser(profile.programId, EVENT_CODER);
+    const programId = resolveReaderProgramId(mode);
+    const parser = new EventParser(programId, EVENT_CODER);
     const events: Array<{
         table: PublicKey;
         signer: PublicKey;
@@ -250,8 +237,8 @@ export async function getSessionPdaList(
 ): Promise<string[]> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const profile = resolveReaderProfile(mode);
-    const userState = getUserPda(profile, user);
+    const programId = resolveReaderProgramId(mode);
+    const userState = getUserPda(user, programId);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
         throw new Error("user_state not found");
@@ -263,7 +250,7 @@ export async function getSessionPdaList(
     const sessions: string[] = [];
 
     for (let seq = BigInt(0); seq < totalSessionFiles; seq += BigInt(1)) {
-        const session = getSessionPda(profile, user, seq);
+        const session = getSessionPda(user, seq, programId);
         sessions.push(session.toBase58());
     }
 

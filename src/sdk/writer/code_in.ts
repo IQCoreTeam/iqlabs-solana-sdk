@@ -2,11 +2,11 @@ import {BN, BorshAccountsCoder, type Idl} from "@coral-xyz/anchor";
 import {Connection, PublicKey, SystemProgram} from "@solana/web3.js";
 
 import {
-    createAnchorProfile,
     createInstructionBuilder,
     dbCodeInInstruction,
     getCodeAccountPda,
     getDbAccountPda,
+    getProgramId,
     getSessionPda,
     getUserPda,
 } from "../../contract";
@@ -43,12 +43,12 @@ export async function codein(
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
-    const profile = createAnchorProfile();
-    const builder = createInstructionBuilder(IDL, profile.programId);
+    const programId = getProgramId("anchor");
+    const builder = createInstructionBuilder(IDL, programId);
     const user = wallet.publicKey;
-    const userState = getUserPda(profile, user);
-    const codeAccount = getCodeAccountPda(profile, user);
-    const dbAccount = getDbAccountPda(profile, user);
+    const userState = getUserPda(user, programId);
+    const codeAccount = getCodeAccountPda(user, programId);
+    const dbAccount = getDbAccountPda(user, programId);
 
     // Ensure user/db accounts exist
     await ensureUserInitialized(connection, signer, builder, {
@@ -111,14 +111,14 @@ export async function codein(
                 connection,
                 signer,
                 builder,
-                profile,
+                programId,
                 user,
                 userState,
                 seq,
                 chunks,
                 method,
             );
-            sessionAccount = getSessionPda(profile, user, seq);
+            sessionAccount = getSessionPda(user, seq, programId);
             sessionFinalize = {
                 seq: new BN(seq.toString()),
                 total_chunks: totalChunks,
