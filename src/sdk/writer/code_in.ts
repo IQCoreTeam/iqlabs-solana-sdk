@@ -26,7 +26,7 @@ import {uploadLinkedList, uploadSession} from "./uploading_methods";
 const IDL = require("../../../idl/code_in.json") as Idl;
 
 
-export async function codein(
+export async function codeIn(
     input: {connection: Connection; signer: SignerInput},
     chunks: string[],
     isAnchor = false,
@@ -43,7 +43,14 @@ export async function codein(
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
-    const programId = getProgramId("anchor");
+    let programId: PublicKey;
+    if (isAnchor) {
+         programId = getProgramId("anchor");///TODO :sset the default mode more centralized
+
+    }else{
+        programId = getProgramId("pinocchio")
+    }
+
     const builder = createInstructionBuilder(IDL, programId);
     const user = wallet.publicKey;
     const userState = getUserPda(user, programId);

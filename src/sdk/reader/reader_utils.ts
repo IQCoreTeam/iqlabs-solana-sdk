@@ -5,7 +5,7 @@ import {
     type MessageCompiledInstruction,
     type VersionedTransactionResponse,
 } from "@solana/web3.js";
-import {getSessionPda, getUserPda, resolveContractRuntime} from "../../contract";
+import {getDbAccountPda, getSessionPda, getUserPda, resolveContractRuntime} from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {
@@ -13,6 +13,8 @@ import {
     resolveReaderModeFromTx,
     resolveReaderProgramId,
 } from "./reader_context";
+import * as sdkModule from "../../index";
+import {readDBMetadata} from "./reading_flow";
 
 const {instructionCoder, idl} = readerContext;
 const SIG_MIN_LEN = 80;
@@ -256,3 +258,21 @@ export async function getSessionPdaList(
 
     return sessions;
 }
+//high level but I put this because I think people should use this a lot
+export const fetchDbTransactions = async (
+    publicKey: PublicKey,
+    limit: number,
+    before?: string,
+) => {
+    const dbPda = getDbAccountPda(publicKey);
+    const signatures = await fetchAccountTransactions(dbPda, {
+        limit,
+        before,
+    });
+    const withMetadata = [];
+    for (const sig of signatures) {
+        const dbMetadata = await readDBMetadata(sig.signature);
+        withMetadata.push({ ...sig, ...dbMetadata });
+    }
+    return withMetadata;
+};

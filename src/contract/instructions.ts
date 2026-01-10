@@ -272,7 +272,6 @@ export const postChunkInstruction = (
         session: PublicKey;
     },
     args: {
-        seq: BN;
         index: number;
         chunk: string;
         method: number;

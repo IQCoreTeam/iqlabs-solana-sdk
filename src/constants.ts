@@ -1,1 +1,1 @@
-export const DEFAULT_CONTRACT_MODE = "pinocchio";
+export const DEFAULT_CONTRACT_MODE = "anchor";

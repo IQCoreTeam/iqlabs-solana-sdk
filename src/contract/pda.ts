@@ -44,7 +44,7 @@ const encodeU64Seed = (value: bigint | number) => {
 };
 
 const findPda = (
-    seeds: ReadonlyArray<Buffer | Uint8Array<any>>,
+    seeds: Array<Buffer | Uint8Array<any>>,
     programId: PublicKey,
 ) => PublicKey.findProgramAddressSync(seeds, programId)[0];
 

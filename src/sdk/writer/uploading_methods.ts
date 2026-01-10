@@ -93,7 +93,6 @@ export async function uploadSession(
             builder,
             {user, session},
             {
-                seq: new BN(seq.toString()),
                 index: payload.index,
                 chunk: payload.chunk,
                 method,
