@@ -30,7 +30,14 @@ export async function uploadLinkedList(
     codeAccount: PublicKey,
     chunks: string[],
     method: number,
+    onProgress?: (percent: number) => void,
 ) {
+    const totalChunks = chunks.length;
+    let lastPercent = -1;
+    if (onProgress) {
+        onProgress(0);
+        lastPercent = 0;
+    }
     let beforeTx = "Genesis";
     for (let index = 0; index < chunks.length; index += 1) {
         const chunk = chunks[index];
@@ -49,6 +56,13 @@ export async function uploadLinkedList(
             },
         );
         beforeTx = await sendTx(connection, signer, ix);
+        if (onProgress && totalChunks > 0) {
+            const percent = Math.floor(((index + 1) / totalChunks) * 100);
+            if (percent !== lastPercent) {
+                lastPercent = percent;
+                onProgress(percent);
+            }
+        }
     }
     return beforeTx;
 }
@@ -63,9 +77,17 @@ export async function uploadSession(
     seq: bigint,
     chunks: string[],
     method: number,
-    options?: {speed?: string},
+    options?: {speed?: string; onProgress?: (percent: number) => void},
 ) {
     const config = resolveUploadConfig(options);
+    const totalChunks = chunks.length;
+    let completed = 0;
+    let lastPercent = -1;
+    const onProgress = options?.onProgress;
+    if (onProgress) {
+        onProgress(0);
+        lastPercent = 0;
+    }
     const session = getSessionPda(user, seq, programId);
     const sessionInfo = await connection.getAccountInfo(session);
     if (!sessionInfo) {
@@ -100,6 +122,14 @@ export async function uploadSession(
             },
         );
         await sendTx(connection, signer, ix);
+        completed += 1;
+        if (onProgress && totalChunks > 0) {
+            const percent = Math.floor((completed / totalChunks) * 100);
+            if (percent !== lastPercent) {
+                lastPercent = percent;
+                onProgress(percent);
+            }
+        }
     });
 
     return session.toBase58();

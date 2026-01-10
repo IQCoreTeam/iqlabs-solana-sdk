@@ -138,6 +138,7 @@ export async function readSessionResult(
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const signatures = await connection.getSignaturesForAddress(
@@ -147,6 +148,13 @@ export async function readSessionResult(
     const sessionConfig = resolveSessionConfig(speed);
     const limiter = createRateLimiter(sessionConfig.maxRps);
     const maxConcurrency = sessionConfig.maxConcurrency;
+    const totalSignatures = signatures.length;
+    let completed = 0;
+    let lastPercent = -1;
+    if (onProgress) {
+        onProgress(0);
+        lastPercent = 0;
+    }
 
     await runWithConcurrency(signatures, maxConcurrency, async (entry) => {
         if (limiter) {
@@ -163,6 +171,14 @@ export async function readSessionResult(
         for (const chunk of chunks) {
             chunkMap.set(chunk.index, chunk.chunk);
         }
+        completed += 1;
+        if (onProgress && totalSignatures > 0) {
+            const percent = Math.floor((completed / totalSignatures) * 100);
+            if (percent !== lastPercent) {
+                lastPercent = percent;
+                onProgress(percent);
+            }
+        }
     });
     if (chunkMap.size === 0) {
         throw new Error("no session chunks found");
@@ -171,6 +187,9 @@ export async function readSessionResult(
         .sort(([a], [b]) => a - b)
         .map(([, chunk]) => chunk)
         .join("");
+    if (onProgress && totalSignatures > 0 && lastPercent < 100) {
+        onProgress(100);
+    }
 
     return {result};
 }
@@ -179,11 +198,20 @@ export async function readLinkedListResult(
     tailTx: string,
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
+    expectedTotalChunks?: number,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const chunks: string[] = [];
     const visited = new Set<string>();
     let cursor = tailTx;
+    const totalChunks = expectedTotalChunks ?? 0;
+    let processed = 0;
+    let lastPercent = -1;
+    if (onProgress) {
+        onProgress(0);
+        lastPercent = 0;
+    }
 
     while (cursor && cursor !== "Genesis") {
         if (visited.has(cursor)) {
@@ -204,7 +232,21 @@ export async function readLinkedListResult(
         }
 
         chunks.push(decoded.code);
+        processed += 1;
+        if (onProgress && totalChunks > 0) {
+            const percent = Math.min(
+                100,
+                Math.floor((processed / totalChunks) * 100),
+            );
+            if (percent !== lastPercent) {
+                lastPercent = percent;
+                onProgress(percent);
+            }
+        }
         cursor = decoded.beforeTx;
+    }
+    if (onProgress && lastPercent < 100) {
+        onProgress(100);
     }
 
     return {result: chunks.reverse().join("")};

@@ -7,7 +7,7 @@ import {setRpcUrl} from "./sdk/utils/connection_helper";
 
 export {contract, reader, writer, wallet, setRpcUrl};
 export * from "./sdk/constants";
-
+import {getRpcUrl}from "./sdk/utils/connection_helper";
 const iqlabs = {
     contract,
     reader,
@@ -15,6 +15,7 @@ const iqlabs = {
     wallet,
     constants,
     setRpcUrl,
+    getRpcUrl,
 };
 
 export {iqlabs};

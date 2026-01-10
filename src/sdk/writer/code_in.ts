@@ -33,6 +33,7 @@ export async function codeIn(
     filename?: string,
     method = 0,
     filetype = "",
+    onProgress?: (percent: number) => void,
 ) {
     // Basic validation and input setup
     const totalChunks = chunks.length;
@@ -112,6 +113,7 @@ export async function codeIn(
                 codeAccount,
                 chunks,
                 method,
+                onProgress,
             );
         } else {
             onChainPath = await uploadSession(
@@ -124,6 +126,7 @@ export async function codeIn(
                 seq,
                 chunks,
                 method,
+                {onProgress},
             );
             sessionAccount = getSessionPda(user, seq, programId);
             sessionFinalize = {
@@ -157,5 +160,9 @@ export async function codeIn(
         {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
 
-    return sendTx(connection, signer, dbIx);
+    const signature = await sendTx(connection, signer, dbIx);
+    if (onProgress) {
+        onProgress(100);
+    }
+    return signature;
 }

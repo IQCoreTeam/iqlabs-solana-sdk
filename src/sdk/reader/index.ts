@@ -7,4 +7,5 @@ export {
 export {
     fetchAccountTransactions,
     getSessionPdaList,
+    fetchDbTransactions
 } from "./reader_utils";

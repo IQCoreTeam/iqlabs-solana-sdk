@@ -271,8 +271,15 @@ export const fetchDbTransactions = async (
     });
     const withMetadata = [];
     for (const sig of signatures) {
-        const dbMetadata = await readDBMetadata(sig.signature);
-        withMetadata.push({ ...sig, ...dbMetadata });
+        try {
+            const dbMetadata = await readDBMetadata(sig.signature);
+            withMetadata.push({ ...sig, ...dbMetadata });
+        } catch (err) {
+            if (err instanceof Error && err.message === "db_code_in instruction not found") {
+                continue;
+            }
+            throw err;
+        }
     }
     return withMetadata;
 };

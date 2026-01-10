@@ -43,7 +43,6 @@ const resolveConnectionStatus = (status: number) => {
 
 export async function readDBMetadata(
     txSignature: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{
     onChainPath: string;
     metadata: string;
@@ -55,7 +54,7 @@ export async function readDBMetadata(
     if (!tx) {
         throw new Error("transaction not found");
     }
-    return decodeDbCodeIn(tx, mode);
+    return decodeDbCodeIn(tx);
 }
 
 export async function readSession(
@@ -63,9 +62,13 @@ export async function readSession(
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
 ): Promise<{ result: string | null }> {
     if (readOption.isReplay || readOption.freshness === "archive") {
         await replayService.enqueueReplay({sessionPubkey});
+        if (onProgress) {
+            onProgress(100);
+        }
         return {result: null};
     }
     const connection = getReaderConnection(readOption.freshness);
@@ -73,7 +76,7 @@ export async function readSession(
     if (!info) {
         throw new Error("session account not found");
     }
-    return readSessionResult(sessionPubkey, readOption, speed, mode);
+    return readSessionResult(sessionPubkey, readOption, speed, mode, onProgress);
 }
 
 export async function readLinkedListFromTail(
@@ -81,6 +84,8 @@ export async function readLinkedListFromTail(
     readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     //we actually dont use is replay and archive in linked list but just left this for re using the type.
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
+    expectedTotalChunks?: number,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const tx = await connection.getTransaction(tailTx, {
@@ -89,13 +94,20 @@ export async function readLinkedListFromTail(
     if (!tx) {
         throw new Error("tail transaction not found");
     }
-    return readLinkedListResult(tailTx, readOption, mode);
+    return readLinkedListResult(
+        tailTx,
+        readOption,
+        mode,
+        onProgress,
+        expectedTotalChunks,
+    );
 }
 
 export async function readDbCodeInFromTx(
     tx: VersionedTransactionResponse,
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
 ): Promise<{ metadata: string; data: string | null }> {
     const blockTime = tx.blockTime;
     const userMode = resolveContractRuntime(mode);
@@ -104,7 +116,25 @@ export async function readDbCodeInFromTx(
         tx,
         resolvedMode,
     );
+    let totalChunks: number | undefined;
+    try {
+        const parsed = JSON.parse(metadata) as { total_chunks?: unknown };
+        const rawTotal = parsed.total_chunks;
+        if (typeof rawTotal === "number" && Number.isFinite(rawTotal)) {
+            totalChunks = rawTotal;
+        } else if (typeof rawTotal === "string") {
+            const parsedTotal = Number.parseInt(rawTotal, 10);
+            if (!Number.isNaN(parsedTotal)) {
+                totalChunks = parsedTotal;
+            }
+        }
+    } catch {
+        // ignore malformed metadata
+    }
     if (onChainPath.length === 0) {
+        if (onProgress) {
+            onProgress(100);
+        }
         return {metadata, data: inlineData};
     }
 
@@ -116,6 +146,7 @@ export async function readDbCodeInFromTx(
             readOption,
             speed,
             resolvedMode,
+            onProgress,
         );
         return {metadata, data: result};
     }
@@ -123,6 +154,8 @@ export async function readDbCodeInFromTx(
         onChainPath,
         readOption,
         resolvedMode,
+        onProgress,
+        totalChunks,
     );
     return {metadata, data: result};
 }
@@ -131,8 +164,12 @@ export async function readDbRowContent(
     tablePayload: { inlineData?: string | null; targetSignature?: string },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
+    onProgress?: (percent: number) => void,
 ): Promise<{ metadata: string; data: string | null }> {
     if (tablePayload.inlineData !== undefined) {
+        if (onProgress) {
+            onProgress(100);
+        }
         return {
             metadata: EMPTY_METADATA,
             data: tablePayload.inlineData ?? null,
@@ -152,7 +189,7 @@ export async function readDbRowContent(
         throw new Error("transaction not found");
     }
 
-    return await readDbCodeInFromTx(tx, speed, mode);
+    return await readDbCodeInFromTx(tx, speed, mode, onProgress);
 }
 
 export async function readUserState(
@@ -182,7 +219,7 @@ export async function readUserState(
     const totalSessionFiles = BigInt(decoded.total_session_files.toString());
     if (metadata) {
         const {readCodeIn} = await import("./read_code_in");
-        const {data} = await readCodeIn(metadata, undefined, mode);
+        const {data} = await readCodeIn(metadata);
         const profileData = data ?? undefined;
         return {
             owner: decoded.owner.toBase58(),
