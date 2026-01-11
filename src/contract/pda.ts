@@ -5,7 +5,7 @@ import {
     SEED_CODE_ACCOUNT,
     SEED_CONFIG,
     SEED_CONNECTION,
-    SEED_DB_ACCOUNT,
+    SEED_USER_INVENTORY,
     SEED_DB_ROOT,
     SEED_INSTRUCTION,
     SEED_TABLE,
@@ -27,14 +27,9 @@ const SEED_USER_BYTES = Buffer.from(SEED_USER);
 const SEED_BUNDLE_BYTES = Buffer.from(SEED_BUNDLE);
 const SEED_CONNECTION_BYTES = Buffer.from(SEED_CONNECTION);
 const SEED_CODE_ACCOUNT_BYTES = Buffer.from(SEED_CODE_ACCOUNT);
-const SEED_DB_ACCOUNT_BYTES = Buffer.from(SEED_DB_ACCOUNT);
+const SEED_USER_INVENTORY_BYTES = Buffer.from(SEED_USER_INVENTORY);
 
-const encodeBytesSeed = (value: Bytes) => {
-    const data = Buffer.from(value);
-    const length = Buffer.alloc(4);
-    length.writeUInt32LE(data.length, 0);
-    return Buffer.concat([length, data]);
-};
+const encodeBytesSeed = (value: Bytes) => Buffer.from(value);
 
 const encodeU64Seed = (value: bigint | number) => {
     const data = Buffer.alloc(8);
@@ -177,11 +172,11 @@ export const getCodeAccountPda = (
 ) =>
     findPda([SEED_CODE_ACCOUNT_BYTES, user.toBuffer()], programId);
 
-export const getDbAccountPda = (
+export const getUserInventoryPda = (
     user: PublicKey,
     programId: PublicKey = getProgramId(),
 ) =>
-    findPda([SEED_DB_ACCOUNT_BYTES, user.toBuffer()], programId);
+    findPda([SEED_USER_INVENTORY_BYTES, user.toBuffer()], programId);
 
 export const getServerAccountPda = (
     user: PublicKey,

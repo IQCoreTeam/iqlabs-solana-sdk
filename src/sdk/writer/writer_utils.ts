@@ -39,18 +39,18 @@ export async function ensureUserInitialized(
         user: PublicKey;
         code_account: PublicKey;
         user_state: PublicKey;
-        db_account: PublicKey;
+        user_inventory: PublicKey;
         system_program?: PublicKey;
     },
 ) {
-    let exists = await getCachedAccountExists(connection, accounts.db_account);
+    let exists = await getCachedAccountExists(connection, accounts.user_inventory);
     if (!exists) {
-        exists = await refreshAccountExists(connection, accounts.db_account);
+        exists = await refreshAccountExists(connection, accounts.user_inventory);
     }
     if (exists) {
         return;
     }
     const ix = userInitializeInstruction(builder, accounts);
     await sendTx(connection, signer, ix);
-    markAccountExists(accounts.db_account, true);
+    markAccountExists(accounts.user_inventory, true);
 }

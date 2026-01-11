@@ -1,6 +1,6 @@
 import {getConnection} from "../utils/connection_helper";
 import {resolveTableTrailPayload} from "./reader_utils";
-import {readDbCodeInFromTx, readDbRowContent} from "./reading_flow";
+import {readUserInventoryCodeInFromTx, readDbRowContent} from "./reading_flow";
 import {resolveReaderModeFromTx} from "./reader_context";
 import {resolveContractRuntime} from "../../contract";
 
@@ -27,5 +27,5 @@ export async function readCodeIn(
         return readDbRowContent(tablePayload, speed, resolvedMode, onProgress);
     }
 
-    return await readDbCodeInFromTx(tx, speed, resolvedMode, onProgress);
+    return await readUserInventoryCodeInFromTx(tx, speed, resolvedMode, onProgress);
 }

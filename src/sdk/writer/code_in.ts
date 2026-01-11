@@ -3,13 +3,14 @@ import {Connection, PublicKey, SystemProgram} from "@solana/web3.js";
 
 import {
     createInstructionBuilder,
-    dbCodeInInstruction,
+    userInventoryCodeInInstruction,
     getCodeAccountPda,
-    getDbAccountPda,
+    getUserInventoryPda,
     getProgramId,
     getSessionPda,
     getUserPda,
 } from "../../contract";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
     DIRECT_METADATA_MAX_BYTES,
@@ -18,7 +19,6 @@ import {
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {readMagicBytes} from "../utils/magic_bytes";
-import {DEFAULT_SESSION_SPEED} from "../utils/session_speed";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {ensureUserInitialized, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
@@ -26,10 +26,10 @@ import {uploadLinkedList, uploadSession} from "./uploading_methods";
 const IDL = require("../../../idl/code_in.json") as Idl;
 
 
-export async function codeIn(
+export async function prepareCodeIn(
     input: {connection: Connection; signer: SignerInput},
     chunks: string[],
-    isAnchor = false,
+    mode: string = DEFAULT_CONTRACT_MODE,
     filename?: string,
     method = 0,
     filetype = "",
@@ -44,26 +44,20 @@ export async function codeIn(
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
-    let programId: PublicKey;
-    if (isAnchor) {
-         programId = getProgramId("anchor");///TODO :sset the default mode more centralized
-
-    }else{
-        programId = getProgramId("pinocchio")
-    }
+    const programId = getProgramId(mode);
 
     const builder = createInstructionBuilder(IDL, programId);
     const user = wallet.publicKey;
     const userState = getUserPda(user, programId);
     const codeAccount = getCodeAccountPda(user, programId);
-    const dbAccount = getDbAccountPda(user, programId);
+    const userInventory = getUserInventoryPda(user, programId);
 
     // Ensure user/db accounts exist
     await ensureUserInitialized(connection, signer, builder, {
         user,
         code_account: codeAccount,
         user_state: userState,
-        db_account: dbAccount,
+        user_inventory: userInventory,
         system_program: SystemProgram.programId,
     });
 
@@ -136,7 +130,7 @@ export async function codeIn(
         }
     }
 
-    // Finalize with db_code_in (fee handled on-chain)
+    // Finalize with user_inventory_code_in (fee handled on-chain)
     const feeReceiver = new PublicKey(DEFAULT_WRITE_FEE_RECEIVER);
     const isDirectPath = !useSession && onChainPath.length === 0;
     const iqAta = isDirectPath
@@ -147,11 +141,53 @@ export async function codeIn(
               false,
           )
         : null;
-    const dbIx = dbCodeInInstruction(
+
+    return {
+        builder,
+        user,
+        userInventory,
+        onChainPath,
+        metadata,
+        sessionAccount,
+        sessionFinalize,
+        feeReceiver,
+        iqAta,
+    };
+}
+
+export async function codeIn(
+    input: {connection: Connection; signer: SignerInput},
+    chunks: string[],
+    mode: string = DEFAULT_CONTRACT_MODE,
+    filename?: string,
+    method = 0,
+    filetype = "",
+    onProgress?: (percent: number) => void,
+) {
+    const {
+        builder,
+        user,
+        userInventory,
+        onChainPath,
+        metadata,
+        sessionAccount,
+        sessionFinalize,
+        feeReceiver,
+        iqAta,
+    } = await prepareCodeIn(
+        input,
+        chunks,
+        mode,
+        filename,
+        method,
+        filetype,
+        onProgress,
+    );
+    const dbIx = userInventoryCodeInInstruction(
         builder,
         {
             user,
-            db_account: dbAccount,
+            user_inventory: userInventory,
             system_program: SystemProgram.programId,
             receiver: feeReceiver,
             session: sessionAccount,
@@ -160,7 +196,7 @@ export async function codeIn(
         {on_chain_path: onChainPath, metadata, session: sessionFinalize},
     );
 
-    const signature = await sendTx(connection, signer, dbIx);
+    const signature = await sendTx(input.connection, input.signer, dbIx);
     if (onProgress) {
         onProgress(100);
     }

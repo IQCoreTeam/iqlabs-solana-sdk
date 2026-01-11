@@ -8,7 +8,9 @@ import {
 
 import {
     createInstructionBuilder,
-    databaseInstructionInstruction,
+    walletConnectionCodeInInstruction,
+    dbInstructionCodeInInstruction,
+    dbCodeInInstruction,
     getConnectionInstructionTablePda,
     getConnectionTablePda,
     getConnectionTableRefPda,
@@ -19,11 +21,10 @@ import {
     getTablePda,
     getUserPda,
     requestConnectionInstruction,
-    writeConnectionDataInstruction,
-    writeDataInstruction,
 } from "../../contract";
-import {codein} from "./code_in";
-import {sendTx} from "./writer_utils";
+import {DEFAULT_CONTRACT_MODE} from "../../constants";
+import {resolveAssociatedTokenAccount} from "../utils/ata";
+import {readerContext} from "../reader/reader_context";
 import {
     decodeConnectionMeta,
     evaluateConnectionAccess,
@@ -31,18 +32,11 @@ import {
     ensureTableExists,
     fetchTableMeta,
 } from "../utils/global_fetch";
-import {DIRECT_METADATA_MAX_BYTES} from "../constants";
-import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
+import {prepareCodeIn} from "./code_in";
+import {sendTx} from "./writer_utils";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
-
-const buildTableTrailPayload = (rowJson: string, txid: string) => {
-    const payload = JSON.stringify({data: rowJson, source_tx: txid});
-    return Buffer.byteLength(payload, "utf8") <= DIRECT_METADATA_MAX_BYTES
-        ? payload
-        : txid;
-};
 
 export async function validateRowJson(
     connection: Connection,
@@ -102,9 +96,9 @@ export async function writeRow(
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
+    mode = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = getProgramId("anchor");
-    const builder = createInstructionBuilder(IDL, programId);
+    const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const tableSeedBytes = toSeedBytes(tableSeed);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
@@ -138,23 +132,39 @@ export async function writeRow(
     }
 
     const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
-    const txid = await codein({connection, signer}, [rowJson]);
-    const payload = buildTableTrailPayload(rowJson, txid);
-    const ix = writeDataInstruction(
+    const {
+        builder,
+        user,
+        userInventory,
+        onChainPath,
+        metadata,
+        sessionAccount,
+        sessionFinalize,
+        feeReceiver,
+        iqAta,
+    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+    const ix = dbCodeInInstruction(
         builder,
         {
+            user,
+            signer: signer.publicKey,
+            user_inventory: userInventory,
             db_root: dbRoot,
             table: tablePda,
-            signer: signer.publicKey,
             signer_ata: signerAta ?? undefined,
+            system_program: SystemProgram.programId,
+            receiver: feeReceiver,
+            session: sessionAccount,
+            iq_ata: iqAta ?? undefined,
         },
         {
             db_root_id: dbRootSeed,
             table_seed: tableSeedBytes,
-            row_json_tx: Buffer.from(payload, "utf8"),
+            on_chain_path: onChainPath,
+            metadata,
+            session: sessionFinalize,
         },
     );
-
     return sendTx(connection, signer, ix);
 }
 
@@ -164,9 +174,9 @@ export async function writeConnectionRow(
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
     rowJson: string,
+    mode = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = getProgramId("anchor");
-    const builder = createInstructionBuilder(IDL, programId);
+    const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
@@ -215,19 +225,37 @@ export async function writeConnectionRow(
         throw new Error(`missing id_col: ${meta.idCol}`);
     }
 
-    const txid = await codein({connection, signer}, [rowJson]);
-    const ix = writeConnectionDataInstruction(
+    const {
+        builder,
+        user,
+        userInventory,
+        onChainPath,
+        metadata,
+        sessionAccount,
+        sessionFinalize,
+        feeReceiver,
+        iqAta,
+    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+    const ix = walletConnectionCodeInInstruction(
         builder,
         {
+            user,
+            signer: signer.publicKey,
+            user_inventory: userInventory,
             db_root: dbRoot,
             connection_table: connectionTable,
             table_ref: tableRef,
-            signer: signer.publicKey,
+            system_program: SystemProgram.programId,
+            receiver: feeReceiver,
+            session: sessionAccount,
+            iq_ata: iqAta ?? undefined,
         },
         {
             db_root_id: dbRootSeed,
             connection_seed: connectionSeedBytes,
-            row_json_tx: Buffer.from(txid, "utf8"),
+            on_chain_path: onChainPath,
+            metadata,
+            session: sessionFinalize,
         },
     );
 
@@ -242,9 +270,9 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
     rowJson: string,
     tableName?: string | Uint8Array,
     targetTx?: string | Uint8Array,
+    mode = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = getProgramId("anchor");
-    const builder = createInstructionBuilder(IDL, programId);
+    const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const seedBytes = toSeedBytes(seed);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
@@ -258,7 +286,7 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
     ]);
 
     if (tableInfo) {
-        // Inline on purpose: database_instruction is only used here right now.
+        // Inline on purpose: db_instruction_code_in is only used here right now.
         if (!tableName || !targetTx) {
             throw new Error("tableName and targetTx are required for table edits");
         }
@@ -284,16 +312,31 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
         }
 
         const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
-        const contentTx = await codein({connection, signer}, [rowJson]);
-        const payload = buildTableTrailPayload(rowJson, contentTx);
-        const ix = databaseInstructionInstruction(
+        const {
+            builder,
+            user,
+            userInventory,
+            onChainPath,
+            metadata,
+            sessionAccount,
+            sessionFinalize,
+            feeReceiver,
+            iqAta,
+        } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+        const ix = dbInstructionCodeInInstruction(
             builder,
             {
+                user,
+                signer: signer.publicKey,
+                user_inventory: userInventory,
                 db_root: dbRoot,
                 table,
                 instruction_table: instructionTable,
                 signer_ata: signerAta ?? undefined,
-                signer: signer.publicKey,
+                system_program: SystemProgram.programId,
+                receiver: feeReceiver,
+                session: sessionAccount,
+                iq_ata: iqAta ?? undefined,
             },
             {
                 db_root_id: dbRootSeed,
@@ -306,7 +349,9 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
                     typeof targetTx === "string"
                         ? Buffer.from(targetTx, "utf8")
                         : targetTx,
-                content_json_tx: Buffer.from(payload, "utf8"),
+                on_chain_path: onChainPath,
+                metadata,
+                session: sessionFinalize,
             },
         );
 
@@ -314,7 +359,14 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
     }
 
     if (connectionInfo) {
-        return writeConnectionRow(connection, signer, dbRootSeed, seedBytes, rowJson);
+        return writeConnectionRow(
+            connection,
+            signer,
+            dbRootSeed,
+            seedBytes,
+            rowJson,
+            mode,
+        );
     }
 
     throw new Error("table/connection not found");
@@ -330,9 +382,10 @@ export async function requestConnection( /// 이거 익스포트 해야 함
     columns: Array<string | Uint8Array>,
     idCol: string | Uint8Array,
     extKeys: Array<string | Uint8Array>,
+    mode = DEFAULT_CONTRACT_MODE,
 ) {
     // Validate requester
-    const programId = getProgramId("anchor");
+    const programId = getProgramId(mode);
     const builder = createInstructionBuilder(IDL, programId);
     const requester = signer.publicKey;
     const requesterBase58 = requester.toBase58();
@@ -407,4 +460,59 @@ export async function requestConnection( /// 이거 익스포트 해야 함
 
     // Send transaction
     return sendTx(connection, signer, ix);
+}
+///TODO 이거 리더쪽으로 옮기자
+export async function getTablelistFromRoot(
+    connection: Connection,
+    dbRootId: Uint8Array | string,
+    mode = DEFAULT_CONTRACT_MODE,
+) {
+    const programId = getProgramId(mode);
+    const dbRootSeed = toSeedBytes(dbRootId);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
+    const info = await connection.getAccountInfo(dbRoot);
+    if (!info) {
+        return {
+            rootPda: dbRoot,
+            creator: null,
+            tableSeeds: [] as string[],
+            globalTableSeeds: [] as string[],
+        };
+    }
+    const decoded = readerContext.accountCoder.decode("DbRoot", info.data) as any;
+    const creator = decoded?.creator
+        ? new PublicKey(decoded.creator).toBase58()
+        : null;
+    const toHex = (value: any) => {
+        if (value instanceof Uint8Array) {
+            return Buffer.from(value).toString("hex");
+        }
+        if (Array.isArray(value)) {
+            return Buffer.from(value).toString("hex");
+        }
+        if (value?.data && Array.isArray(value.data)) {
+            return Buffer.from(value.data).toString("hex");
+        }
+        return "";
+    };
+    const rawTableSeeds =
+        decoded.table_seeds ??
+        decoded.tableSeeds ??
+        decoded.table_names ??
+        decoded.tableNames ??
+        [];
+    const rawGlobalSeeds =
+        decoded.global_table_seeds ??
+        decoded.globalTableSeeds ??
+        decoded.global_table_names ??
+        decoded.globalTableNames ??
+        [];
+    const tableSeeds = rawTableSeeds.map((value: any) => toHex(value));
+    const globalTableSeeds = rawGlobalSeeds.map((value: any) => toHex(value));
+    return {
+        rootPda: dbRoot,
+        creator,
+        tableSeeds,
+        globalTableSeeds,
+    };
 }

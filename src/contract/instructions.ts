@@ -17,7 +17,10 @@ export type InstructionName =
     | "create_table"
     | "database_instruction"
     | "db_code_in"
-    | "db_code_in_for_free"
+    | "db_instruction_code_in"
+    | "wallet_connection_code_in"
+    | "user_inventory_code_in"
+    | "user_inventory_code_in_for_free"
     | "initialize_config"
     | "initialize_db_root"
     | "manage_connection"
@@ -180,23 +183,12 @@ export const createTableInstruction = (
     args: TableCreateArgs,
 ) => builder.build("create_table", accounts, args);
 
-export const databaseInstructionInstruction = (
-    builder: InstructionBuilder,
-    accounts: {
-        db_root: PublicKey;
-        table: PublicKey;
-        instruction_table: PublicKey;
-        signer_ata?: PublicKey;
-        signer: PublicKey
-    },
-    args: { db_root_id: Bytes; table_seed: Bytes; table_name: Bytes; target_tx: Bytes; content_json_tx: Bytes },
-) => builder.build("database_instruction", accounts, args);
 
-export const dbCodeInInstruction = (
+export const userInventoryCodeInInstruction = (
     builder: InstructionBuilder,
     accounts: {
         user: PublicKey;
-        db_account: PublicKey;
+        user_inventory: PublicKey;
         system_program?: PublicKey;
         receiver: PublicKey;
         session?: PublicKey;
@@ -207,14 +199,14 @@ export const dbCodeInInstruction = (
         metadata: string;
         session: SessionFinalize | null;
     },
-) => builder.build("db_code_in", accounts, args);
+) => builder.build("user_inventory_code_in", accounts, args);
 
 // SDK writer does not wrap this instruction yet; add a helper if needed.
-export const dbCodeInForFreeInstruction = (
+export const userInventoryCodeInForFreeInstruction = (
     builder: InstructionBuilder,
     accounts: {
         user: PublicKey;
-        db_account: PublicKey;
+        user_inventory: PublicKey;
         config: PublicKey;
         system_program?: PublicKey;
         session?: PublicKey;
@@ -225,7 +217,7 @@ export const dbCodeInForFreeInstruction = (
         session: SessionFinalize | null;
         proof: Bytes[];
     },
-) => builder.build("db_code_in_for_free", accounts, args);
+) => builder.build("user_inventory_code_in_for_free", accounts, args);
 
 export const initializeConfigInstruction = (
     builder: InstructionBuilder,
@@ -395,37 +387,125 @@ export const userInitializeInstruction = (
         user: PublicKey;
         code_account: PublicKey;
         user_state: PublicKey;
-        db_account: PublicKey;
+        user_inventory: PublicKey;
         system_program?: PublicKey;
     },
 ) => builder.build("user_initialize", accounts);
 
-export const writeConnectionDataInstruction = (
+// export const writeConnectionDataInstruction = (
+//     builder: InstructionBuilder,
+//     accounts: {
+//         db_root: PublicKey;
+//         connection_table: PublicKey;
+//         table_ref: PublicKey;
+//         signer: PublicKey;
+//     },
+//     args: {
+//         db_root_id: Bytes;
+//         connection_seed: Bytes;
+//         row_json_tx: Bytes;
+//     },
+// ) => builder.build("write_connection_data", accounts, args);
+//
+// export const writeDataInstruction = (
+//     builder: InstructionBuilder,
+//     accounts: {
+//         db_root: PublicKey;
+//         table: PublicKey;
+//         signer_ata?: PublicKey;
+//         signer: PublicKey;
+//     },
+//     args: {
+//         db_root_id: Bytes;
+//         table_seed: Bytes;
+//         row_json_tx: Bytes;
+//     },
+// ) => builder.build("write_data", accounts, args);
+// export const databaseInstructionInstruction = (
+//     builder: InstructionBuilder,
+//     accounts: {
+//         db_root: PublicKey;
+//         table: PublicKey;
+//         instruction_table: PublicKey;
+//         signer_ata?: PublicKey;
+//         signer: PublicKey
+//     },
+//     args: { db_root_id: Bytes; table_seed: Bytes; table_name: Bytes; target_tx: Bytes; content_json_tx: Bytes },
+// ) => builder.build("database_instruction", accounts, args);
+
+export const walletConnectionCodeInInstruction = (
     builder: InstructionBuilder,
     accounts: {
+        user: PublicKey;
+        signer?: PublicKey;
+        user_inventory: PublicKey;
         db_root: PublicKey;
         connection_table: PublicKey;
         table_ref: PublicKey;
-        signer: PublicKey;
+        system_program?: PublicKey;
+        receiver: PublicKey;
+        session?: PublicKey;
+        iq_ata?: PublicKey;
     },
     args: {
         db_root_id: Bytes;
         connection_seed: Bytes;
-        row_json_tx: Bytes;
+        on_chain_path: string;
+        metadata: string;
+        session: SessionFinalize | null;
     },
-) => builder.build("write_connection_data", accounts, args);
+) => builder.build("wallet_connection_code_in", accounts, args);
 
-export const writeDataInstruction = (
+export const dbCodeInInstruction = (
     builder: InstructionBuilder,
     accounts: {
+        user: PublicKey;
+        signer?: PublicKey;
+        user_inventory: PublicKey;
         db_root: PublicKey;
         table: PublicKey;
         signer_ata?: PublicKey;
-        signer: PublicKey;
+        system_program?: PublicKey;
+        receiver: PublicKey;
+        session?: PublicKey;
+        iq_ata?: PublicKey;
     },
     args: {
         db_root_id: Bytes;
         table_seed: Bytes;
-        row_json_tx: Bytes;
+        on_chain_path: string;
+        metadata: string;
+        session: SessionFinalize | null;
     },
-) => builder.build("write_data", accounts, args);
+) => builder.build("db_code_in", accounts, args);
+
+export const dbInstructionCodeInInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        user: PublicKey;
+        signer?: PublicKey;
+        user_inventory: PublicKey;
+        db_root: PublicKey;
+        table: PublicKey;
+        instruction_table: PublicKey;
+        signer_ata?: PublicKey;
+        system_program?: PublicKey;
+        receiver: PublicKey;
+        session?: PublicKey;
+        iq_ata?: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        table_seed: Bytes;
+        table_name: Bytes;
+        target_tx: Bytes;
+        on_chain_path: string;
+        metadata: string;
+        session: SessionFinalize | null;
+    },
+) =>
+    builder.build(
+        "db_instruction_code_in",
+        accounts,
+        args,
+    );

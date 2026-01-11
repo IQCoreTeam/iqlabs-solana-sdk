@@ -21,7 +21,7 @@ import {
     resolveReaderProgramId,
 } from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
-import {decodeDbCodeIn, extractCodeInPayload} from "./reader_utils";
+import {decodeUserInventoryCodeIn, extractCodeInPayload} from "./reader_utils";
 
 const {accountCoder} = readerContext;
 const SIG_MIN_LEN = 80;
@@ -41,7 +41,7 @@ const resolveConnectionStatus = (status: number) => {
     return "unknown";
 };
 
-export async function readDBMetadata(
+export async function readInventoryMetadata(
     txSignature: string,
 ): Promise<{
     onChainPath: string;
@@ -54,7 +54,7 @@ export async function readDBMetadata(
     if (!tx) {
         throw new Error("transaction not found");
     }
-    return decodeDbCodeIn(tx);
+    return decodeUserInventoryCodeIn(tx);
 }
 
 export async function readSession(
@@ -103,7 +103,7 @@ export async function readLinkedListFromTail(
     );
 }
 
-export async function readDbCodeInFromTx(
+export async function readUserInventoryCodeInFromTx(
     tx: VersionedTransactionResponse,
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
@@ -189,7 +189,7 @@ export async function readDbRowContent(
         throw new Error("transaction not found");
     }
 
-    return await readDbCodeInFromTx(tx, speed, mode, onProgress);
+    return await readUserInventoryCodeInFromTx(tx, speed, mode, onProgress);
 }
 
 export async function readUserState(

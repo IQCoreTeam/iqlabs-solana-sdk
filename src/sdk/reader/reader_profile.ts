@@ -27,13 +27,16 @@ const resolveOnChainPath = (
         if (!decoded) {
             continue;
         }
-        if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
+        if (
+            decoded.name === "user_inventory_code_in" ||
+            decoded.name === "user_inventory_code_in_for_free"
+        ) {
             const data = decoded.data as { on_chain_path: string };
             return data.on_chain_path;
         }
     }
 
-    throw new Error("db_code_in instruction not found");
+    throw new Error("user_inventory_code_in instruction not found");
 };
 
 export const resolveReadMode = (

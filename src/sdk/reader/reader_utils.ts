@@ -5,7 +5,7 @@ import {
     type MessageCompiledInstruction,
     type VersionedTransactionResponse,
 } from "@solana/web3.js";
-import {getDbAccountPda, getSessionPda, getUserPda, resolveContractRuntime} from "../../contract";
+import {getUserInventoryPda, getSessionPda, getUserPda, resolveContractRuntime} from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {
@@ -13,8 +13,7 @@ import {
     resolveReaderModeFromTx,
     resolveReaderProgramId,
 } from "./reader_context";
-import * as sdkModule from "../../index";
-import {readDBMetadata} from "./reading_flow";
+import {readInventoryMetadata} from "./reading_flow";
 
 const {instructionCoder, idl} = readerContext;
 const SIG_MIN_LEN = 80;
@@ -37,8 +36,8 @@ export const decodeReaderInstruction = (
     return instructionCoder.decode(Buffer.from(ix.data));
 };
 
-// ----- db_code_in decoding -----
-export const decodeDbCodeIn = (
+// ----- user_inventory_code_in decoding -----
+export const decodeUserInventoryCodeIn = (
     tx: VersionedTransactionResponse,
     mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string } => {
@@ -52,12 +51,15 @@ export const decodeDbCodeIn = (
         if (!decoded) {
             continue;
         }
-        if (decoded.name === "db_code_in" || decoded.name === "db_code_in_for_free") {
+        if (
+            decoded.name === "user_inventory_code_in" ||
+            decoded.name === "user_inventory_code_in_for_free"
+        ) {
             const data = decoded.data as { on_chain_path: string; metadata: string };
             return {onChainPath: data.on_chain_path, metadata: data.metadata};
         }
     }
-    throw new Error("db_code_in instruction not found");
+    throw new Error("user_inventory_code_in instruction not found");
 };
 
 // ----- Table-trail event decoding -----
@@ -188,12 +190,12 @@ export const resolveTableTrailPayload = (
     return {targetSignature: fallbackSig};
 };
 
-// ----- db_code_in metadata parsing -----
+// ----- user_inventory_code_in metadata parsing -----
 export const extractCodeInPayload = (
     tx: VersionedTransactionResponse,
     mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string; inlineData: string | null } => {
-    const {onChainPath, metadata} = decodeDbCodeIn(tx, mode);
+    const {onChainPath, metadata} = decodeUserInventoryCodeIn(tx, mode);
     if (onChainPath.length > 0) {
         return {onChainPath, metadata, inlineData: null};
     }
@@ -259,23 +261,23 @@ export async function getSessionPdaList(
     return sessions;
 }
 //high level but I put this because I think people should use this a lot
-export const fetchDbTransactions = async (
+export const fetchInventoryTransactions = async (
     publicKey: PublicKey,
     limit: number,
     before?: string,
 ) => {
-    const dbPda = getDbAccountPda(publicKey);
-    const signatures = await fetchAccountTransactions(dbPda, {
+    const inventoryPda = getUserInventoryPda(publicKey);
+    const signatures = await fetchAccountTransactions(inventoryPda, {
         limit,
         before,
     });
     const withMetadata = [];
     for (const sig of signatures) {
         try {
-            const dbMetadata = await readDBMetadata(sig.signature);
-            withMetadata.push({ ...sig, ...dbMetadata });
+            const inventoryMetadata = await readInventoryMetadata(sig.signature);
+            withMetadata.push({ ...sig, ...inventoryMetadata });
         } catch (err) {
-            if (err instanceof Error && err.message === "db_code_in instruction not found") {
+            if (err instanceof Error && err.message === "user_inventory_code_in instruction not found") {
                 continue;
             }
             throw err;
