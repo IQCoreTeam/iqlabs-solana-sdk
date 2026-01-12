@@ -141,9 +141,28 @@ export async function readSessionResult(
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
-    const signatures = await connection.getSignaturesForAddress(
-        new PublicKey(sessionPubkey),
-    );
+    const sessionKey = new PublicKey(sessionPubkey);
+    const signatures = [];
+    let before: string | undefined;
+    //TODO make this pagination well if we need to pagination, or make this bringing all function to the helper function and reuse for needs
+    while (true) {
+        const page = await connection.getSignaturesForAddress(sessionKey, {
+            limit: 1000,
+            before,
+        });
+        if (page.length === 0) {
+            break;
+        }
+        signatures.push(...page);
+        if (page.length < 1000) {
+            break;
+        }
+        const nextBefore = page[page.length - 1]?.signature;
+        if (!nextBefore || nextBefore === before) {
+            break;
+        }
+        before = nextBefore;
+    }
     const chunkMap = new Map<number, string>();
     const sessionConfig = resolveSessionConfig(speed);
     const limiter = createRateLimiter(sessionConfig.maxRps);
