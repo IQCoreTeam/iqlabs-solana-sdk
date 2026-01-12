@@ -5,5 +5,4 @@ export {
     writeConnectionRow,
     manageRowData,
     requestConnection,
-    getTablelistFromRoot,
 } from "./iqdb";

@@ -1,45 +1,28 @@
 import {PublicKey, VersionedTransactionResponse} from "@solana/web3.js";
 
 import {
-    CONNECTION_STATUS_APPROVED,
-    CONNECTION_STATUS_BLOCKED,
-    CONNECTION_STATUS_PENDING,
-    getConnectionTablePda,
-    getDbRootPda,
+    getUserInventoryPda,
     getUserPda,
     resolveContractRuntime,
 } from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection, getReaderConnection} from "../utils/connection_helper";
-import {decodeConnectionMeta} from "../utils/global_fetch";
-import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
 import {
     readerContext,
-    resolveReaderModeFromTx,
-    resolveReaderProgramId,
+    resolveReaderModeFromTx, resolveReaderProgramId,
 } from "./reader_context";
 import {ReplayServiceClient} from "./replayservice";
-import {decodeUserInventoryCodeIn, extractCodeInPayload} from "./reader_utils";
+import {
+    decodeUserInventoryCodeIn,
+    extractCodeInPayload,
+    fetchAccountTransactions,
+} from "./reader_utils";
 
 const {accountCoder} = readerContext;
 const SIG_MIN_LEN = 80;
-const EMPTY_METADATA = "{}";
 const replayService = new ReplayServiceClient();
-
-const resolveConnectionStatus = (status: number) => {
-    if (status === CONNECTION_STATUS_PENDING) {
-        return "pending";
-    }
-    if (status === CONNECTION_STATUS_APPROVED) {
-        return "approved";
-    }
-    if (status === CONNECTION_STATUS_BLOCKED) {
-        return "blocked";
-    }
-    return "unknown";
-};
 
 export async function readInventoryMetadata(
     txSignature: string,
@@ -56,6 +39,32 @@ export async function readInventoryMetadata(
     }
     return decodeUserInventoryCodeIn(tx);
 }
+
+//high level but I put this because I think people should use this a lot
+export const fetchInventoryTransactions = async (
+    publicKey: PublicKey,
+    limit: number,
+    before?: string,
+) => {
+    const inventoryPda = getUserInventoryPda(publicKey);
+    const signatures = await fetchAccountTransactions(inventoryPda, {
+        limit,
+        before,
+    });
+    const withMetadata = [];
+    for (const sig of signatures) {
+        try {
+            const inventoryMetadata = await readInventoryMetadata(sig.signature);
+            withMetadata.push({ ...sig, ...inventoryMetadata });
+        } catch (err) {
+            if (err instanceof Error && err.message === "user_inventory_code_in instruction not found") {
+                continue;
+            }
+            throw err;
+        }
+    }
+    return withMetadata;
+};
 
 export async function readSession(
     sessionPubkey: string,
@@ -160,38 +169,6 @@ export async function readUserInventoryCodeInFromTx(
     return {metadata, data: result};
 }
 
-export async function readDbRowContent(
-    tablePayload: { inlineData?: string | null; targetSignature?: string },
-    speed?: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
-    onProgress?: (percent: number) => void,
-): Promise<{ metadata: string; data: string | null }> {
-    if (tablePayload.inlineData !== undefined) {
-        if (onProgress) {
-            onProgress(100);
-        }
-        return {
-            metadata: EMPTY_METADATA,
-            data: tablePayload.inlineData ?? null,
-        };
-    }
-
-    const targetSignature = tablePayload.targetSignature;
-    if (!targetSignature) {
-        return {metadata: EMPTY_METADATA, data: null};
-    }
-
-    const connection = getConnection();
-    const tx = await connection.getTransaction(targetSignature, {
-        maxSupportedTransactionVersion: 0,
-    });
-    if (!tx) {
-        throw new Error("transaction not found");
-    }
-
-    return await readUserInventoryCodeInFromTx(tx, speed, mode, onProgress);
-}
-
 export async function readUserState(
     userPubkey: string,
     mode: string = DEFAULT_CONTRACT_MODE,
@@ -233,28 +210,4 @@ export async function readUserState(
         metadata: null,
         totalSessionFiles,
     };
-}
-
-export async function readConnection(
-    dbRootId: Uint8Array<any> | string,
-    partyA: string,
-    partyB: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
-): Promise<{ status: string }> {
-    const connection = getConnection();
-    const dbRootSeed = toSeedBytes(dbRootId);
-    const programId = resolveReaderProgramId(mode);
-    const dbRoot = getDbRootPda(dbRootSeed, programId);
-    const connectionSeed = deriveDmSeed(partyA, partyB);
-    const connectionTable = getConnectionTablePda(
-        dbRoot,
-        connectionSeed,
-        programId,
-    );
-    const info = await connection.getAccountInfo(connectionTable);
-    if (!info) {
-        throw new Error("connection table not found");
-    }
-    const meta = decodeConnectionMeta(info.data);
-    return {status: resolveConnectionStatus(meta.status)};
 }

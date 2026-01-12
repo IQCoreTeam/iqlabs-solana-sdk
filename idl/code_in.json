@@ -1471,6 +1471,589 @@
       ]
     },
     {
+      "name": "db_code_in",
+      "discriminator": [
+        38,
+        100,
+        165,
+        242,
+        99,
+        137,
+        206,
+        108
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller / writer. Used for:",
+            "- fee payment (system transfer)",
+            "- writer auth checks",
+            "- gate checks"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account (stores the canonical pointer/metadata for the \"row write\").",
+            "Row-level data is not emitted; clients should read `user_inventory` for row checks."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle account for finalized uploads.",
+            "When provided, instruction may finalize the bundle and use its pubkey as on_chain_path."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "docs": [
+            "The DB root namespace used to derive the table PDA."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "docs": [
+            "Target table.",
+            "This instruction does NOT append row bytes on-chain; it only:",
+            "- enforces writer/gate policies",
+            "- updates `last_timestamp` to record activity"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer_ata",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "db_instruction_code_in",
+      "discriminator": [
+        30,
+        11,
+        100,
+        201,
+        224,
+        121,
+        37,
+        163
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller / writer."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account storing pointer/metadata for this commit."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle PDA."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "docs": [
+            "Main table PDA.",
+            "This instruction does not emit payload; it only enforces policy and touches timestamps."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "docs": [
+            "Instruction table PDA (if you keep it as a separate structure).",
+            "You may optionally update timestamps here as well."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer_ata",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "initialize_config",
       "discriminator": [
         208,
@@ -3486,6 +4069,243 @@
           }
         }
       ]
+    },
+    {
+      "name": "wallet_connection_code_in",
+      "discriminator": [
+        204,
+        215,
+        244,
+        145,
+        49,
+        183,
+        94,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller. Must be party_a or party_b of the connection.",
+            "Also pays fees (if any) and writes UserInventory pointer/metadata."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account that stores the canonical pointer/metadata for this commit."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle PDA (used when finalizing a bundle upload)."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "docs": [
+            "Root namespace (used to derive the connection PDA)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "connection_table",
+          "docs": [
+            "Connection PDA.",
+            "This instruction enforces connection permissions and updates last_timestamp."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "connection_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -3658,19 +4478,6 @@
         42,
         163,
         235
-      ]
-    },
-    {
-      "name": "TableTrailEmitted",
-      "discriminator": [
-        44,
-        170,
-        45,
-        164,
-        158,
-        14,
-        129,
-        143
       ]
     }
   ],
@@ -4119,30 +4926,6 @@
         "fields": [
           {
             "name": "data",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "TableTrailEmitted",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "table",
-            "type": "pubkey"
-          },
-          {
-            "name": "signer",
-            "type": "pubkey"
-          },
-          {
-            "name": "data",
-            "type": "bytes"
-          },
-          {
-            "name": "target",
             "type": "bytes"
           }
         ]

@@ -18,9 +18,8 @@ import {
     DEFAULT_WRITE_FEE_RECEIVER,
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
-import {readMagicBytes} from "../utils/magic_bytes";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
-import {ensureUserInitialized, sendTx} from "./writer_utils";
+import {ensureUserInitialized, readMagicBytes, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;

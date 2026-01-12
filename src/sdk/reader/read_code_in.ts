@@ -1,8 +1,7 @@
-import {getConnection} from "../utils/connection_helper";
-import {resolveTableTrailPayload} from "./reader_utils";
-import {readUserInventoryCodeInFromTx, readDbRowContent} from "./reading_flow";
-import {resolveReaderModeFromTx} from "./reader_context";
 import {resolveContractRuntime} from "../../contract";
+import {getConnection} from "../utils/connection_helper";
+import {resolveReaderModeFromTx} from "./reader_context";
+import {readUserInventoryCodeInFromTx} from "./reading_flow";
 
 export async function readCodeIn(
     txSignature: string,
@@ -19,13 +18,5 @@ export async function readCodeIn(
 
     const userMode = resolveContractRuntime();
     const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
-    const tablePayload = resolveTableTrailPayload(
-        tx.meta?.logMessages ?? [],
-        resolvedMode,
-    );
-    if (tablePayload) {
-        return readDbRowContent(tablePayload, speed, resolvedMode, onProgress);
-    }
-
     return await readUserInventoryCodeInFromTx(tx, speed, resolvedMode, onProgress);
 }

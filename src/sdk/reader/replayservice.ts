@@ -27,7 +27,7 @@ export interface ReplayService {
     getReplayLogs(jobId: string): Promise<Record<string, unknown>>;
 
     downloadReplay(jobId: string): Promise<{
-        data: Uint8Array;
+        data: Uint8Array<any>;
         contentType?: string;
         filename?: string;
     }>;

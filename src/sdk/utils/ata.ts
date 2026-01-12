@@ -1,5 +1,5 @@
 import {Connection, PublicKey} from "@solana/web3.js";
-import {getCachedAccountExists, refreshAccountExists} from "./account_cache";
+import {getCachedAccountExists, refreshAccountExists} from "../writer/writer_utils";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",

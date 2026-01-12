@@ -5,7 +5,7 @@ let runtimeRpcUrl: string | undefined;
 
 export function setRpcUrl(url: string) {
     runtimeRpcUrl = url;
-    console.log(`[SDK] setRpcUrl(${url})`);
+    // console.log(`[SDK] setRpcUrl(${url})`);
 }
 
 const env = (key: string) => {
@@ -43,7 +43,7 @@ export function detectConnectionSettings(): {
         env("RPC_URL") ??
         "https://devnet.helius-rpc.com/?api-key=f27e768e-586d-4e00-a35e-ef4d504101f5\n";
 
-    console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
+    // console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
 
     return {
         rpcUrl,
@@ -56,7 +56,7 @@ export function detectConnectionSettings(): {
 
 export function getRpcUrl(): string {
     const url = detectConnectionSettings().rpcUrl;
-    console.log(`[SDK] getRpcUrl() = ${url}`);
+    // console.log(`[SDK] getRpcUrl() = ${url}`);
     return url;
 }
 

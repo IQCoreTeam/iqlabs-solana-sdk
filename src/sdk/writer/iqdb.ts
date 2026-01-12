@@ -24,7 +24,6 @@ import {
 } from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
-import {readerContext} from "../reader/reader_context";
 import {
     decodeConnectionMeta,
     evaluateConnectionAccess,
@@ -262,7 +261,7 @@ export async function writeConnectionRow(
     return sendTx(connection, signer, ix);
 }
 
-export async function manageRowData( /// 이것도 익스포트 해야 함
+export async function manageRowData(
     connection: Connection,
     signer: Signer,
     dbRootId: Uint8Array | string,
@@ -372,7 +371,7 @@ export async function manageRowData( /// 이것도 익스포트 해야 함
     throw new Error("table/connection not found");
 }
 
-export async function requestConnection( /// 이거 익스포트 해야 함
+export async function requestConnection(
     connection: Connection,
     signer: Signer,
     dbRootId: Uint8Array | string,
@@ -460,59 +459,4 @@ export async function requestConnection( /// 이거 익스포트 해야 함
 
     // Send transaction
     return sendTx(connection, signer, ix);
-}
-///TODO 이거 리더쪽으로 옮기자
-export async function getTablelistFromRoot(
-    connection: Connection,
-    dbRootId: Uint8Array | string,
-    mode = DEFAULT_CONTRACT_MODE,
-) {
-    const programId = getProgramId(mode);
-    const dbRootSeed = toSeedBytes(dbRootId);
-    const dbRoot = getDbRootPda(dbRootSeed, programId);
-    const info = await connection.getAccountInfo(dbRoot);
-    if (!info) {
-        return {
-            rootPda: dbRoot,
-            creator: null,
-            tableSeeds: [] as string[],
-            globalTableSeeds: [] as string[],
-        };
-    }
-    const decoded = readerContext.accountCoder.decode("DbRoot", info.data) as any;
-    const creator = decoded?.creator
-        ? new PublicKey(decoded.creator).toBase58()
-        : null;
-    const toHex = (value: any) => {
-        if (value instanceof Uint8Array) {
-            return Buffer.from(value).toString("hex");
-        }
-        if (Array.isArray(value)) {
-            return Buffer.from(value).toString("hex");
-        }
-        if (value?.data && Array.isArray(value.data)) {
-            return Buffer.from(value.data).toString("hex");
-        }
-        return "";
-    };
-    const rawTableSeeds =
-        decoded.table_seeds ??
-        decoded.tableSeeds ??
-        decoded.table_names ??
-        decoded.tableNames ??
-        [];
-    const rawGlobalSeeds =
-        decoded.global_table_seeds ??
-        decoded.globalTableSeeds ??
-        decoded.global_table_names ??
-        decoded.globalTableNames ??
-        [];
-    const tableSeeds = rawTableSeeds.map((value: any) => toHex(value));
-    const globalTableSeeds = rawGlobalSeeds.map((value: any) => toHex(value));
-    return {
-        rootPda: dbRoot,
-        creator,
-        tableSeeds,
-        globalTableSeeds,
-    };
 }

@@ -6,8 +6,7 @@ import * as constants from "./sdk/constants";
 import * as utils from "./sdk/utils";
 import {setRpcUrl} from "./sdk/utils/connection_helper";
 
-export {contract, reader, writer, wallet,utils, setRpcUrl};
-export * from "./sdk/constants";
+export {contract, reader, writer, constants,wallet,utils, setRpcUrl};
 import {getRpcUrl}from "./sdk/utils/connection_helper";
 
 const iqlabs = {
