@@ -125,7 +125,7 @@ export async function readTableRows(
         if (limiter) {
             await limiter.wait();
         }
-        let result: {data: string | null; metadata: string};
+        let result: {data: string | null; metadata: string};//data { SESSIONPDA:NDJKFNDJNKFJAFDDSFADF} metadata{file name filetype etc
         try {
             result = await readCodeIn(sig.signature, speed);
         } catch (err) {

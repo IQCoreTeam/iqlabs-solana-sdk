@@ -4,6 +4,7 @@ export const SESSION_SPEED_PROFILES = {
     medium: {maxRps: 50, maxConcurrency: 50},
     heavy: {maxRps: 100, maxConcurrency: 100},
     extreme: {maxRps: 250, maxConcurrency: 250},
+
 } satisfies Record<string, { maxRps: number; maxConcurrency: number }>;
 
 export type SessionSpeedKey = keyof typeof SESSION_SPEED_PROFILES;

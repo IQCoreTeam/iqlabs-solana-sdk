@@ -14,7 +14,6 @@ export interface ReplayService {
         retryAfter?: number;
         estimatedWaitMs?: number;
     }>;
-
     getReplayStatus(jobId: string): Promise<{
         jobId: string;
         status: string;
@@ -23,9 +22,7 @@ export interface ReplayService {
         hasArtifact: boolean;
         downloadUrl?: string;
     }>;
-
     getReplayLogs(jobId: string): Promise<Record<string, unknown>>;
-
     downloadReplay(jobId: string): Promise<{
         data: Uint8Array<any>;
         contentType?: string;
@@ -42,7 +39,6 @@ const resolveBrowserOrigin = (): string | null => {
 };
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
-
 const normalizeBaseUrl = (value?: string | null): string | null => {
     if (!value) {
         return null;

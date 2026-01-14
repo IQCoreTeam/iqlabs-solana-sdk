@@ -178,6 +178,7 @@ export async function writeConnectionRow(
     const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
+    const connectionSeedBuffer = Buffer.from(connectionSeedBytes);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionTable = getConnectionTablePda(
         dbRoot,
@@ -251,7 +252,7 @@ export async function writeConnectionRow(
         },
         {
             db_root_id: dbRootSeed,
-            connection_seed: connectionSeedBytes,
+            connection_seed: connectionSeedBuffer,
             on_chain_path: onChainPath,
             metadata,
             session: sessionFinalize,

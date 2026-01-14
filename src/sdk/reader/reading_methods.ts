@@ -53,7 +53,6 @@ const resolveSessionConfig = (speed?: string) => {
     return SESSION_SPEED_PROFILES[resolvedSpeed];
 };
 
-
 const extractAnchorInstruction = (
     tx: VersionedTransactionResponse,
     expectedName: string,

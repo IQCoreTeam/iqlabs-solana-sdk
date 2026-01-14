@@ -11,6 +11,7 @@ import {
 } from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
+
 import {
     readerContext,
     resolveReaderModeFromTx,
@@ -18,7 +19,6 @@ import {
 } from "./reader_context";
 
 const {instructionCoder} = readerContext;
-
 export const decodeReaderInstruction = (
     ix: MessageCompiledInstruction,
     accountKeys: MessageAccountKeys,
@@ -131,6 +131,5 @@ export async function getSessionPdaList(
         const session = getSessionPda(user, seq, programId);
         sessions.push(session.toBase58());
     }
-
     return sessions;
 }

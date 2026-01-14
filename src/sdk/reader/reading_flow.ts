@@ -9,10 +9,12 @@ import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection, getReaderConnection} from "../utils/connection_helper";
 import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
+
 import {
     readerContext,
     resolveReaderModeFromTx, resolveReaderProgramId,
 } from "./reader_context";
+
 import {ReplayServiceClient} from "./replayservice";
 import {
     decodeUserInventoryCodeIn,
