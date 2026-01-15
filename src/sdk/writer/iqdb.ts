@@ -293,11 +293,13 @@ export async function manageRowData(
 
         const {tablePda: table} =
             await ensureTableExists(connection, programId, dbRootSeed, seedBytes);
+
         const instructionTable = getInstructionTablePda(
             dbRoot,
             seedBytes,
             programId,
         );
+
         const instructionInfo = await connection.getAccountInfo(instructionTable);
         if (!instructionInfo) {
             throw new Error("instruction table not found");
@@ -354,10 +356,8 @@ export async function manageRowData(
                 session: sessionFinalize,
             },
         );
-
         return sendTx(connection, signer, ix);
     }
-
     if (connectionInfo) {
         return writeConnectionRow(
             connection,
@@ -367,6 +367,7 @@ export async function manageRowData(
             rowJson,
             mode,
         );
+
     }
 
     throw new Error("table/connection not found");

@@ -96,8 +96,8 @@ export async function prepareCodeIn(
     let sessionAccount: PublicKey | undefined;
     let sessionFinalize: { seq: BN; total_chunks: number } | null = null;
 
-    if (!useInline) {
-        if (!useSession) {
+    if (!useInline) { // useInline =  data + metadata < 900 bytes
+        if (!useSession) { //useSession = data>8500 bytes
             onChainPath = await uploadLinkedList(
                 connection,
                 signer,

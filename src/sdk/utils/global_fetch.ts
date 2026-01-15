@@ -165,7 +165,8 @@ export function evaluateConnectionAccess(
     if (meta.status === CONNECTION_STATUS_APPROVED) {
         return {allowed: true, status};
     }
-
+//TODO inside the contract, original setting is when user open the connection , requester can send the message, only thing is this will display on pending,
+    // reference is X , we can see request menus on x  we can give people the time to explain each other.
     if (meta.status === CONNECTION_STATUS_PENDING) {
         const message =
             signerIdx === meta.requester
