@@ -369,5 +369,5 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 ---
 
 ## Additional Resources
-- [IQLabs Official X](#https://x.com/IQLabsOfficial)
-- [Example Project](#https://github.com/IQCoreTeam/IQSdkUsageExampleCliTool)
+- [IQLabs Official X](https://x.com/IQLabsOfficial)
+- [Example Project](https://github.com/IQCoreTeam/IQSdkUsageExampleCliTool)
