@@ -14,4 +14,5 @@ export {
 export {
     fetchAccountTransactions,
     getSessionPdaList,
+    fetchUserConnections,
 } from "./reader_utils";

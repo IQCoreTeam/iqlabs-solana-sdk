@@ -11,6 +11,8 @@ import {
 } from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
+import {createRateLimiter} from "../utils/rate_limiter";
+import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
 
 import {
     readerContext,
@@ -96,6 +98,7 @@ export const extractCodeInPayload = (
     return {onChainPath, metadata: cleanedMetadata, inlineData: data};
 };
 
+// ----- account transaction & list fetchers -----
 export async function fetchAccountTransactions( // this use for bringing the db pda list, session chunk list, friend list , we dont check data here bacause it increases rpc call
     account: string | PublicKey,
     options: { before?: string; limit?: number } = {},
@@ -132,4 +135,143 @@ export async function getSessionPdaList(
         sessions.push(session.toBase58());
     }
     return sessions;
+}
+
+// ----- connection list fetcher -----
+export async function fetchUserConnections(
+    userPubkey: PublicKey | string,
+    dbRootId: string,
+    options?: {
+        limit?: number;
+        before?: string;
+        speed?: "light" | "medium" | "heavy" | "extreme";
+        mode?: string;
+    },
+): Promise<
+    Array<{
+        partyA: string;
+        partyB: string;
+        status: "pending" | "approved" | "blocked";
+        requester: "a" | "b";
+        blocker: "a" | "b" | "none";
+        timestamp?: number;
+    }>
+> {
+    const {decodeConnectionMeta} = await import("../utils/global_fetch");
+
+    // 1. Calculate UserState PDA
+    const mode = options?.mode ?? DEFAULT_CONTRACT_MODE;
+    const programId = resolveReaderProgramId(mode);
+    const pubkey = typeof userPubkey === "string" ? new PublicKey(userPubkey) : userPubkey;
+    const userState = getUserPda(pubkey, programId);
+
+    // 2. Fetch transaction history
+    const {before, limit} = options ?? {};
+    const signatures = await fetchAccountTransactions(userState, {before, limit});
+
+    // 3. Filter request_connection instructions and collect Connection PDA addresses
+    const connectionPdaSet = new Set<string>();
+    const connectionPdaData: Array<{
+        connectionPda: PublicKey;
+        timestamp?: number;
+    }> = [];
+
+    for (const sig of signatures) {
+        const connection = getConnection();
+        let tx: VersionedTransactionResponse | null;
+        try {
+            tx = await connection.getTransaction(sig.signature, {
+                maxSupportedTransactionVersion: 0,
+            });
+        } catch {
+            continue;
+        }
+        if (!tx) {
+            continue;
+        }
+
+        const message = tx.transaction.message;
+        const accountKeys = message.getAccountKeys();
+
+        for (const ix of message.compiledInstructions) {
+            const decoded = decodeReaderInstruction(ix, accountKeys);
+            if (!decoded || decoded.name !== "request_connection") {
+                continue;
+            }
+
+            // Extract connection_table PDA from instruction accounts
+            // connection_table is at index 2 in the accounts array
+            const connectionTablePubkey = accountKeys.get(ix.accountKeyIndexes[2]);
+            if (!connectionTablePubkey) {
+                continue;
+            }
+
+            const pdaKey = connectionTablePubkey.toBase58();
+            if (!connectionPdaSet.has(pdaKey)) {
+                connectionPdaSet.add(pdaKey);
+                connectionPdaData.push({
+                    connectionPda: connectionTablePubkey,
+                    timestamp: sig.blockTime ?? undefined,
+                });
+            }
+        }
+    }
+
+    // 4. Create rate limiter based on speed profile
+    const speedKey = resolveSessionSpeed(options?.speed);
+    const profile = SESSION_SPEED_PROFILES[speedKey];
+    const rateLimiter = createRateLimiter(profile.maxRps);
+
+    // 5. Fetch Connection PDA data with rate limiting
+    const connection = getConnection();
+    const connections = await Promise.all(
+        connectionPdaData.map(async ({connectionPda, timestamp}) => {
+            if (rateLimiter) {
+                await rateLimiter.wait();
+            }
+
+            try {
+                const info = await connection.getAccountInfo(connectionPda);
+                if (!info) {
+                    return null;
+                }
+
+                // Decode all info from Connection PDA
+                const meta = decodeConnectionMeta(info.data);
+                const partyA = meta.partyA.toBase58();
+                const partyB = meta.partyB.toBase58();
+
+                const statusNum = meta.status;
+                const status: "pending" | "approved" | "blocked" =
+                    statusNum === 0 ? "pending" :
+                    statusNum === 1 ? "approved" :
+                    statusNum === 2 ? "blocked" : "pending";
+
+                const requester: "a" | "b" = meta.requester === 0 ? "a" : "b";
+                const blocker: "a" | "b" | "none" =
+                    meta.blocker === 0 ? "a" :
+                    meta.blocker === 1 ? "b" : "none";
+
+                return {
+                    partyA,
+                    partyB,
+                    status,
+                    requester,
+                    blocker,
+                    timestamp,
+                };
+            } catch {
+                return null;
+            }
+        }),
+    );
+
+    return connections.filter((c) => c !== null) as Array<{
+        partyA: string;
+        partyB: string;
+        status: "pending" | "approved" | "blocked";
+        requester: "a" | "b";
+        blocker: "a" | "b" | "none";
+        timestamp?: number;
+    }>;
 }

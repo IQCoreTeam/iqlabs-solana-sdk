@@ -35,7 +35,11 @@ export async function readConnection(
     partyA: string,
     partyB: string,
     mode: string = DEFAULT_CONTRACT_MODE,
-): Promise<{ status: string }> {
+): Promise<{
+    status: "pending" | "approved" | "blocked" | "unknown";
+    requester: "a" | "b";
+    blocker: "a" | "b" | "none";
+}> {
     const connection = getConnection();
     const dbRootSeed = toSeedBytes(dbRootId);
     const programId = resolveReaderProgramId(mode);
@@ -51,7 +55,16 @@ export async function readConnection(
         throw new Error("connection table not found");
     }
     const meta = decodeConnectionMeta(info.data);
-    return {status: resolveConnectionStatus(meta.status)};
+    const status = resolveConnectionStatus(meta.status);
+    const requester = meta.requester === 0 ? "a" : "b";
+    const blocker =
+        meta.blocker === 0 ? "a" : meta.blocker === 1 ? "b" : "none";
+
+    return {
+        status: status as "pending" | "approved" | "blocked" | "unknown",
+        requester,
+        blocker,
+    };
 }
 
 export async function getTablelistFromRoot(

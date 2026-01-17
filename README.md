@@ -83,7 +83,7 @@ An on-chain account that manages relationships between two users (friends, messa
 - [`manageConnection()`](#manageconnection): approve/reject/block/unblock a request
 - [`readConnection()`](#readconnection): check current relationship status
 - [`writeConnectionRow()`](#writeconnectionrow): exchange messages/data with a connected friend
-- [`fetchUserConnections()`](#fetchuserconnections) (WIP): fetch friend list (in progress)
+- [`fetchUserConnections()`](#fetchuserconnections): fetch all connections (sent & received friend requests)
 
 ---
 
@@ -229,17 +229,33 @@ await writeConnectionRow(
 
 #### `fetchUserConnections()`
 
-> **WIP**: This function is currently under development.
+Fetch all connections (friend requests) for a user by analyzing their UserState PDA transaction history.
 
-| **Parameters** | `userPubkey`: user public key<br>`dbRootId`: database ID<br>`options`: options (limit, before, speed) |
+| **Parameters** | `userPubkey`: user public key (string or PublicKey)<br>`dbRootId`: database ID (string)<br>`options`: optional settings |
 |----------|--------------------------|
-| **Returns** | Array of connections |
+| **Options** | `limit`: max number of transactions to fetch<br>`before`: signature to paginate from<br>`speed`: rate limit profile ('light', 'medium', 'heavy', 'extreme')<br>`mode`: contract mode (optional) |
+| **Returns** | Array of connection objects with partyA, partyB, status, requester, blocker, timestamp |
 
-**Expected usage:**
+**Example:**
 ```typescript
-const connections = await fetchUserConnections(myPubkey, 'my-db');
-const pending = connections.filter(c => c.status === 'pending');
-const approved = connections.filter(c => c.status === 'approved');
+import { fetchUserConnections } from 'iqlabs-sdk/reader';
+
+// Fetch all connections
+const connections = await fetchUserConnections(myPubkey, 'my-db', {
+  speed: 'light',  // 6 RPS (default)
+  limit: 100
+});
+
+// Filter by status
+const pendingRequests = connections.filter(c => c.status === 'pending');
+const friends = connections.filter(c => c.status === 'approved');
+const blocked = connections.filter(c => c.status === 'blocked');
+
+// Check who sent the request
+pendingRequests.forEach(conn => {
+  const friend = conn.partyA === myPubkey ? conn.partyB : conn.partyA;
+  console.log(`Connection with ${friend}, requester: ${conn.requester}`);
+});
 ```
 
 ---
