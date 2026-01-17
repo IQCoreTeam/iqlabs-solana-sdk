@@ -31,6 +31,7 @@ export async function uploadLinkedList(
     chunks: string[],
     method: number,
     onProgress?: (percent: number) => void,
+    options?: {speed?: string},
 ) {
     const totalChunks = chunks.length;
     let lastPercent = -1;
@@ -38,9 +39,14 @@ export async function uploadLinkedList(
         onProgress(0);
         lastPercent = 0;
     }
+    const config = resolveUploadConfig(options);
+    const limiter = createRateLimiter(config.maxRps);
     let beforeTx = "Genesis";
     for (let index = 0; index < chunks.length; index += 1) {
         const chunk = chunks[index];
+        if (limiter) {
+            await limiter.wait();
+        }
         const ix = sendCodeInstruction(
             builder,
             {
