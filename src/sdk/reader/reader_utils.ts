@@ -140,7 +140,6 @@ export async function getSessionPdaList(
 // ----- connection list fetcher -----
 export async function fetchUserConnections(
     userPubkey: PublicKey | string,
-    dbRootId: string,
     options?: {
         limit?: number;
         before?: string;
@@ -149,6 +148,7 @@ export async function fetchUserConnections(
     },
 ): Promise<
     Array<{
+        dbRootId: string;
         partyA: string;
         partyB: string;
         status: "pending" | "approved" | "blocked";
@@ -253,6 +253,7 @@ export async function fetchUserConnections(
                     meta.blocker === 1 ? "b" : "none";
 
                 return {
+                    dbRootId: meta.dbRootId,
                     partyA,
                     partyB,
                     status,
@@ -267,6 +268,7 @@ export async function fetchUserConnections(
     );
 
     return connections.filter((c) => c !== null) as Array<{
+        dbRootId: string;
         partyA: string;
         partyB: string;
         status: "pending" | "approved" | "blocked";

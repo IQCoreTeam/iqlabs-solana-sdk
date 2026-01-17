@@ -36,6 +36,7 @@ export function decodeTableMeta(data: Buffer) {
 
 export function decodeConnectionMeta(data: Buffer) {
     const decoded = ACCOUNT_CODER.decode("Connection", data) as {
+        db_root_id: Uint8Array;
         column_names: Uint8Array[];
         id_col: Uint8Array;
         ext_keys: Uint8Array[];
@@ -49,6 +50,7 @@ export function decodeConnectionMeta(data: Buffer) {
     };
 
     return {
+        dbRootId: Buffer.from(decoded.db_root_id).toString("utf8"),
         columns: decoded.column_names.map((value) =>
             Buffer.from(value).toString("utf8"),
         ),

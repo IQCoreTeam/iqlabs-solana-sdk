@@ -4715,6 +4715,10 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "db_root_id",
+            "type": "bytes"
+          },
+          {
             "name": "column_names",
             "type": {
               "vec": "bytes"

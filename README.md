@@ -229,32 +229,35 @@ await writeConnectionRow(
 
 #### `fetchUserConnections()`
 
-Fetch all connections (friend requests) for a user by analyzing their UserState PDA transaction history.
+Fetch all connections (friend requests) for a user by analyzing their UserState PDA transaction history. Each connection includes its `dbRootId`, identifying which app the connection belongs to.
 
-| **Parameters** | `userPubkey`: user public key (string or PublicKey)<br>`dbRootId`: database ID (string)<br>`options`: optional settings |
+| **Parameters** | `userPubkey`: user public key (string or PublicKey)<br>`options`: optional settings |
 |----------|--------------------------|
 | **Options** | `limit`: max number of transactions to fetch<br>`before`: signature to paginate from<br>`speed`: rate limit profile ('light', 'medium', 'heavy', 'extreme')<br>`mode`: contract mode (optional) |
-| **Returns** | Array of connection objects with partyA, partyB, status, requester, blocker, timestamp |
+| **Returns** | Array of connection objects with dbRootId, partyA, partyB, status, requester, blocker, timestamp |
 
 **Example:**
 ```typescript
 import { fetchUserConnections } from 'iqlabs-sdk/reader';
 
-// Fetch all connections
-const connections = await fetchUserConnections(myPubkey, 'my-db', {
+// Fetch all connections (across all apps!)
+const connections = await fetchUserConnections(myPubkey, {
   speed: 'light',  // 6 RPS (default)
   limit: 100
 });
+
+// Filter by app
+const solchatConnections = connections.filter(c => c.dbRootId === 'solchat');
+const zoConnections = connections.filter(c => c.dbRootId === 'zo-trading');
 
 // Filter by status
 const pendingRequests = connections.filter(c => c.status === 'pending');
 const friends = connections.filter(c => c.status === 'approved');
 const blocked = connections.filter(c => c.status === 'blocked');
 
-// Check who sent the request
-pendingRequests.forEach(conn => {
-  const friend = conn.partyA === myPubkey ? conn.partyB : conn.partyA;
-  console.log(`Connection with ${friend}, requester: ${conn.requester}`);
+// Check connection details
+connections.forEach(conn => {
+  console.log(`App: ${conn.dbRootId}, ${conn.partyA} ↔ ${conn.partyB}, status: ${conn.status}`);
 });
 ```
 
