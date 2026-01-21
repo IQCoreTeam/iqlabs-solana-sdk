@@ -170,7 +170,12 @@ export async function fetchUserConnections(
     const {before, limit} = options ?? {};
     const signatures = await fetchAccountTransactions(userState, {before, limit});
 
-    // 3. Filter request_connection instructions and collect Connection PDA addresses
+    // 3. Create rate limiter based on speed profile
+    const speedKey = resolveSessionSpeed(options?.speed);
+    const profile = SESSION_SPEED_PROFILES[speedKey];
+    const rateLimiter = createRateLimiter(profile.maxRps);
+
+    // 4. Filter request_connection instructions and collect Connection PDA addresses
     const connectionPdaSet = new Set<string>();
     const connectionPdaData: Array<{
         connectionPda: PublicKey;
@@ -178,6 +183,9 @@ export async function fetchUserConnections(
     }> = [];
 
     for (const sig of signatures) {
+        if (rateLimiter) {
+            await rateLimiter.wait();
+        }
         const connection = getConnection();
         let tx: VersionedTransactionResponse | null;
         try {
@@ -217,11 +225,6 @@ export async function fetchUserConnections(
             }
         }
     }
-
-    // 4. Create rate limiter based on speed profile
-    const speedKey = resolveSessionSpeed(options?.speed);
-    const profile = SESSION_SPEED_PROFILES[speedKey];
-    const rateLimiter = createRateLimiter(profile.maxRps);
 
     // 5. Fetch Connection PDA data with rate limiting
     const connection = getConnection();
