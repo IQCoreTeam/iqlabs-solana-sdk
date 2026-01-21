@@ -167,14 +167,12 @@ export function evaluateConnectionAccess(
     if (meta.status === CONNECTION_STATUS_APPROVED) {
         return {allowed: true, status};
     }
-//TODO inside the contract, original setting is when user open the connection , requester can send the message, only thing is this will display on pending,
-    // reference is X , we can see request menus on x  we can give people the time to explain each other.
+    // In pending state, only the requester can send messages (like X/Twitter DM requests)
     if (meta.status === CONNECTION_STATUS_PENDING) {
-        const message =
-            signerIdx === meta.requester
-                ? "Ask the other party to open the connection."
-                : "Allow the connection in settings.";
-        return {allowed: false, status, message};
+        if (signerIdx === meta.requester) {
+            return {allowed: true, status};
+        }
+        return {allowed: false, status, message: "Allow the connection in settings."};
     }
     if (meta.status === CONNECTION_STATUS_BLOCKED) {
         const blockerIdx =
