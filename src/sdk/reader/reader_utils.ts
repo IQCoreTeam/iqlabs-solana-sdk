@@ -149,6 +149,7 @@ export async function fetchUserConnections(
 ): Promise<
     Array<{
         dbRootId: string;
+        connectionPda: string;
         partyA: string;
         partyB: string;
         status: "pending" | "approved" | "blocked";
@@ -254,6 +255,7 @@ export async function fetchUserConnections(
 
                 return {
                     dbRootId: meta.dbRootId,
+                    connectionPda: connectionPda.toBase58(),
                     partyA,
                     partyB,
                     status,
@@ -269,6 +271,7 @@ export async function fetchUserConnections(
 
     return connections.filter((c) => c !== null) as Array<{
         dbRootId: string;
+        connectionPda: string;
         partyA: string;
         partyB: string;
         status: "pending" | "approved" | "blocked";

@@ -1,6 +1,6 @@
 export const DEFAULT_SESSION_SPEED = "light" as const;
 export const SESSION_SPEED_PROFILES = {
-    light: {maxRps: 6, maxConcurrency:  10}, //this was good with helius but you guys can maintain it
+    light: {maxRps: 2, maxConcurrency:  5}, //this was good with helius but you guys can maintain it
     medium: {maxRps: 50, maxConcurrency: 50},
     heavy: {maxRps: 100, maxConcurrency: 100},
     extreme: {maxRps: 250, maxConcurrency: 250},
