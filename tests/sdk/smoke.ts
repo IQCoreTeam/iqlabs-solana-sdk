@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import {randomUUID} from "node:crypto";
 import {Keypair, PublicKey} from "@solana/web3.js";
 import {keccak_256} from "@noble/hashes/sha3";
 
@@ -7,7 +6,6 @@ import {
   chooseRpcUrlForFreshness,
   detectConnectionSettings,
 } from "../../src/sdk/utils/connection_helper";
-import { ReplayServiceClient } from "../../src/sdk/reader/replayservice";
 import {
   deriveDmSeed,
   deriveSeedBytes,
@@ -24,6 +22,8 @@ import {evaluateConnectionAccess} from "../../src/sdk/utils/global_fetch";
 
 const ENV_KEYS = [
   "IQLABS_RPC_ENDPOINT",
+  "IQLABS_RPC_PROVIDER",
+  "RPC_PROVIDER",
   "SOLANA_RPC_ENDPOINT",
   "SOLANA_RPC",
   "RPC_ENDPOINT",
@@ -73,108 +73,6 @@ async function testConnectionHelper() {
   } finally {
     restoreEnv(snapshot);
   }
-}
-
-type FetchCall = {
-  url: string;
-  init?: RequestInit;
-};
-
-const createJsonResponse = (data: unknown, init: ResponseInit = {}) =>
-  new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
-    ...init,
-  });
-
-async function testReplayServiceClient() {
-  const baseUrl = "https://example.com/api";
-  const jobId = randomUUID();
-  const calls: FetchCall[] = [];
-  const binaryData = new Uint8Array([1, 2, 3, 4]);
-
-  const mockFetch: typeof fetch = async (input, init) => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
-    calls.push({ url, init });
-
-    if (url === `${baseUrl}/replay`) {
-      return createJsonResponse({
-        jobId,
-        status: "queued",
-        retryAfter: 1,
-        estimatedWaitMs: 10,
-      });
-    }
-    if (url === `${baseUrl}/replay/${jobId}`) {
-      return createJsonResponse({
-        jobId,
-        status: "done",
-        hasArtifact: true,
-        downloadUrl: `${baseUrl}/replay/${jobId}/download`,
-      });
-    }
-    if (url === `${baseUrl}/replay/${jobId}/logs`) {
-      return createJsonResponse({ entries: 3 });
-    }
-    if (url === `${baseUrl}/replay/${jobId}/download`) {
-      return new Response(binaryData, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/octet-stream",
-          "Content-Disposition": 'attachment; filename="dump.bin"',
-        },
-      });
-    }
-    throw new Error(`Unhandled fetch url: ${url}`);
-  };
-
-  const client = new ReplayServiceClient({
-    replayBaseUrl: baseUrl,
-    fetcher: mockFetch,
-    headers: { "X-Test": "sdk" },
-  });
-
-  const enqueue = await client.enqueueReplay({ sessionPubkey: "session" });
-  assert.equal(enqueue.jobId, jobId);
-  assert.equal(enqueue.status, "queued");
-
-  const status = await client.getReplayStatus(jobId);
-  assert.equal(status.hasArtifact, true);
-  assert.equal(status.downloadUrl, `${baseUrl}/replay/${jobId}/download`);
-
-  const logs = await client.getReplayLogs(jobId);
-  assert.equal((logs as { entries: number }).entries, 3);
-
-  const download = await client.downloadReplay(jobId);
-  assert.deepEqual(Array.from(download.data), Array.from(binaryData));
-  assert.equal(download.contentType, "application/octet-stream");
-  assert.equal(download.filename, "dump.bin");
-
-  assert.equal(calls.length, 4);
-  const postCall = calls[0];
-  assert.equal(postCall.url, `${baseUrl}/replay`);
-  assert.equal(postCall.init?.method ?? "POST", "POST");
-  const payload = postCall.init?.body
-    ? JSON.parse(String(postCall.init.body))
-    : null;
-  assert.equal(payload.sessionPubkey, "session");
-}
-
-async function testReplayServiceMissingBase() {
-  const client = new ReplayServiceClient({
-    fetcher: async () => {
-      throw new Error("fetch should not be called");
-    },
-  });
-  await assert.rejects(
-    () => client.enqueueReplay({ sessionPubkey: "session" }),
-    /baseUrl/i,
-  );
 }
 
 function bytesToHex(bytes: Uint8Array) {
@@ -282,8 +180,6 @@ async function testEvaluateConnectionAccess() {
 
 async function main() {
   await testConnectionHelper();
-  await testReplayServiceClient();
-  await testReplayServiceMissingBase();
   await testSeedUtils();
   await testEvaluateConnectionAccess();
   console.log("sdk smoke test ok");

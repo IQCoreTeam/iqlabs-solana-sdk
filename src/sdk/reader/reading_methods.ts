@@ -3,7 +3,6 @@
 // - Keep logic here; reading_flow.ts just describes the path.
 //
 // ReadOption
-// - isReplay: boolean (true = replay, false = rpc)
 // - freshness: "fresh" | "recent" | "archive"
 //
 // 1) readSessionResult(sessionPubkey, readOption, speed?)
@@ -35,13 +34,13 @@
 //      - reverse and reconstruct result
 //      - return result
 //    Notes:
-//      - linked-list does not use replay
-//      - RPC choice: <=24h -> zeroblock, else -> helius
+//      - RPC choice uses the provided freshness label
 
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getReaderConnection} from "../utils/connection_helper";
+import {RpcClient} from "../utils/rpc_client";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
@@ -134,15 +133,61 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
 
 export async function readSessionResult(
     sessionPubkey: string,
-    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
+    const rpcClient = new RpcClient({connection});
     const sessionKey = new PublicKey(sessionPubkey);
     const signatures = [];
     let before: string | undefined;
+
+    const heliusTransactions =
+        await rpcClient.tryFetchTransactionsForAddressAll(sessionKey, {
+            maxSupportedTransactionVersion: 0,
+        });
+    if (heliusTransactions && heliusTransactions.length > 0) {
+        const chunkMap = new Map<number, string>();
+        const totalTxs = heliusTransactions.length;
+        let completed = 0;
+        let lastPercent = -1;
+        if (onProgress) {
+            onProgress(0);
+            lastPercent = 0;
+        }
+
+        for (const tx of heliusTransactions) {
+            if (!tx) {
+                continue;
+            }
+            const chunks = extractPostChunk(tx);
+            for (const chunk of chunks) {
+                chunkMap.set(chunk.index, chunk.chunk);
+            }
+            completed += 1;
+            if (onProgress && totalTxs > 0) {
+                const percent = Math.floor((completed / totalTxs) * 100);
+                if (percent !== lastPercent) {
+                    lastPercent = percent;
+                    onProgress(percent);
+                }
+            }
+        }
+        if (chunkMap.size === 0) {
+            throw new Error("no session chunks found");
+        }
+        const result = Array.from(chunkMap.entries())
+            .sort(([a], [b]) => a - b)
+            .map(([, chunk]) => chunk)
+            .join("");
+        if (onProgress && totalTxs > 0 && lastPercent < 100) {
+            onProgress(100);
+        }
+        return {result};
+    }
+
     //TODO make this pagination well if we need to pagination, or make this bringing all function to the helper function and reuse for needs
     while (true) {
         const page = await connection.getSignaturesForAddress(sessionKey, {
@@ -214,7 +259,7 @@ export async function readSessionResult(
 
 export async function readLinkedListResult(
     tailTx: string,
-    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    readOption: { freshness?: "fresh" | "recent" | "archive" },
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,

@@ -263,7 +263,7 @@ assert(friends.some(c =>
 ```markdown
 ### 친구 목록 조회
 \`\`\`typescript
-import { fetchUserConnections } from 'iqlabs-sdk/reader';
+import { fetchUserConnections } from 'iqlabs-solana-sdk/reader';
 
 // 모든 연결 가져오기
 const connections = await fetchUserConnections(myPubkey, 'my-db');
