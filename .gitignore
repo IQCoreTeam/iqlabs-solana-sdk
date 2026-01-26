@@ -1,3 +1,15 @@
 node_modules/
 .env
 .env.local
+.env.*.local
+
+# Build artifacts
+dist/
+coverage/
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+.idea/
