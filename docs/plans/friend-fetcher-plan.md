@@ -90,18 +90,10 @@ const blocked = connections.filter(c => c.status === 'blocked');
 
 ## 파일 구조
 
-### 새로 추가할 파일
-`/src/sdk/reader/connection_list.ts`
-
-```typescript
-export {
-  fetchUserConnections
-}
-```
-
-### 수정할 파일
-- `/src/sdk/reader/index.ts` - export 추가
-- `/src/index.ts` - 최상위 export 추가
+### 현재 위치
+- `/src/core/reader/reader_utils.ts` - `fetchUserConnections` 구현
+- `/src/core/reader/index.ts` - reader exports
+- `/src/index.ts` - 최상위 export
 
 ---
 
@@ -113,8 +105,8 @@ export {
 - ✅ `decodeReaderInstruction()` - 트랜잭션 인스트럭션 디코딩
 
 ### Contract
-- ✅ `contract.pda.getUserPda()` - UserState PDA 주소 계산
-- ✅ `contract.pda.getConnectionTablePda()` - Connection PDA 주소 계산
+- ✅ `getUserPda()` - UserState PDA 주소 계산
+- ✅ `getConnectionTablePda()` - Connection PDA 주소 계산
 
 ### Utils
 - ✅ `deriveDmSeed()` - 두 지갑 주소로부터 연결 시드 생성
@@ -263,10 +255,15 @@ assert(friends.some(c =>
 ```markdown
 ### 친구 목록 조회
 \`\`\`typescript
-import { fetchUserConnections } from 'iqlabs-solana-sdk/reader';
+import {createClient} from "@iqlabs/solana-sdk";
+
+const client = createClient({connection});
+const {reader} = client;
 
 // 모든 연결 가져오기
-const connections = await fetchUserConnections(myPubkey, 'my-db');
+const connections = await reader.fetchUserConnections(myPubkey, {
+  limit: 100,
+});
 
 // 받은 친구 요청 확인
 const pending = connections.filter(c => c.status === 'pending');
@@ -301,5 +298,5 @@ High-level API 섹션에 추가:
 
 ## 참고
 - 예시 구현: `/Users/sumin/WebstormProjects/iqlabs-sdk-cli-example/cli/src/apps/chat/chat-service.ts`
-- 기존 함수: `/Users/sumin/WebstormProjects/iqlabs-sdk/src/sdk/reader/iqdb.ts` (`readConnection`)
-- 트랜잭션 유틸: `/Users/sumin/WebstormProjects/iqlabs-sdk/src/sdk/reader/reader_utils.ts`
+- 기존 함수: `/Users/sumin/WebstormProjects/iqlabs-sdk/src/core/reader/iqdb.ts` (`readConnection`)
+- 트랜잭션 유틸: `/Users/sumin/WebstormProjects/iqlabs-sdk/src/core/reader/reader_utils.ts`

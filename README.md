@@ -6,6 +6,7 @@
 
 ## Table of Contents
 
+0. [Usage](#usage)
 1. [Core Concepts](#core-concepts)
    - [Data Storage (Code In)](#data-storage-code-in)
    - [User State PDA](#user-state-pda)
@@ -22,6 +23,68 @@
 3. [Quickstart (Example App)](#quickstart-example-app)
 
 ---
+
+## Usage
+
+The SDK is now split into three entrypoints:
+
+- `@iqlabs/solana-sdk` → core + default web3 adapter (mobile-safe)
+- `@iqlabs/solana-sdk/mobile` → mobile adapters (MWA signer)
+- `@iqlabs/solana-sdk/anchor` → Anchor-only helpers (Node/dev tooling)
+
+### Create a client (Node/web or React Native)
+
+```typescript
+import {Connection, Keypair} from "@solana/web3.js";
+import {createClient, toWalletSigner} from "@iqlabs/solana-sdk";
+
+const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+const signer = Keypair.generate();
+
+const client = createClient({
+  connection,
+  signer: toWalletSigner(signer),
+});
+
+const {reader, writer} = client;
+```
+
+### Create a mobile client (MWA)
+
+```typescript
+import {Connection} from "@solana/web3.js";
+import {createMobileClient} from "@iqlabs/solana-sdk/mobile";
+
+const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+// `wallet` is the Mobile Wallet Adapter wallet object from your RN app
+const client = createMobileClient({
+  connection,
+  mwaWallet: wallet,
+});
+
+const {reader, writer} = client;
+```
+
+The mobile wallet object just needs to satisfy this shape:
+
+```typescript
+type MwaWallet = {
+  publicKey: PublicKey;
+  signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T>;
+  signAllTransactions?<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]>;
+};
+```
+
+### Anchor helpers (Node/dev tooling)
+
+```typescript
+import {AnchorProvider, Wallet} from "@coral-xyz/anchor";
+import {createAnchorClient} from "@iqlabs/solana-sdk/anchor";
+
+const provider = AnchorProvider.local();
+const anchor = createAnchorClient({provider});
+```
 
 ## Core Concepts
 
@@ -113,35 +176,41 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 
 #### `codeIn()`
 
-| **Parameters** | `connection`: Solana RPC connection<br>`signer`: signing wallet<br>`data`: data to upload (single string or array)<br>`mode`: contract mode (default: 'anchor') |
+| **Parameters** | `writer`: from `createClient` (requires signer)<br>`data`: data to upload (array of string chunks)<br>`mode`: contract mode (default: 'anchor') |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
 **Example:**
 ```typescript
-import { codeIn } from 'iqlabs-solana-sdk';
+import {createClient, toWalletSigner} from "@iqlabs/solana-sdk";
 
-// Upload a single file
-const signature = await codeIn(connection, signer, 'Hello, blockchain!');
+const client = createClient({connection, signer: toWalletSigner(signer)});
+const {writer} = client;
 
-// Upload multiple files
-const multiSig = await codeIn(connection, signer, ['file1.txt', 'file2.txt', 'file3.txt']);
+// Upload a single file (single chunk)
+const signature = await writer.codeIn(["Hello, blockchain!"]);
+
+// Upload multiple chunks
+const multiSig = await writer.codeIn(["file1.txt", "file2.txt", "file3.txt"]);
 ```
 
 ---
 
 #### `readCodeIn()`
 
-| **Parameters** | `txSignature`: transaction signature<br>`connection`: (optional) Solana RPC connection |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`txSignature`: transaction signature |
 |----------|--------------------------|
 | **Returns** | Stored data (string) |
 
 **Example:**
 ```typescript
-import { readCodeIn } from 'iqlabs-solana-sdk';
+import {createClient} from "@iqlabs/solana-sdk";
 
-const data = await readCodeIn('5Xg7...', connection);
-console.log(data); // 'Hello, blockchain!'
+const client = createClient({connection});
+const {reader} = client;
+
+const data = await reader.readCodeIn("5Xg7...");
+console.log(data); // { metadata, data }
 ```
 
 ---
@@ -150,18 +219,25 @@ console.log(data); // 'Hello, blockchain!'
 
 #### `requestConnection()`
 
-| **Parameters** | `connection`: Solana RPC connection<br>`signer`: signing wallet<br>`dbRootId`: database ID<br>`partyA`, `partyB`: the two users to connect<br>`tableName`: connection table name<br>`columns`: column list<br>`idCol`: ID column<br>`extKeys`: extension keys |
+| **Parameters** | `writer`: from `createClient` (requires signer)<br>`dbRootId`: database ID<br>`partyA`, `partyB`: the two users to connect<br>`tableName`: connection table name<br>`columns`: column list<br>`idCol`: ID column<br>`extKeys`: extension keys |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
 **Example:**
 ```typescript
-import { requestConnection } from 'iqlabs-solana-sdk';
+import {createClient, toWalletSigner} from "@iqlabs/solana-sdk";
 
-await requestConnection(
-  connection, signer, 'my-db',
-  myWalletAddress, friendWalletAddress,
-  'dm_table', ['message', 'timestamp'], 'message_id', []
+const client = createClient({connection, signer: toWalletSigner(signer)});
+const {writer} = client;
+
+await writer.requestConnection(
+  "my-db",
+  myWalletAddress,
+  friendWalletAddress,
+  "dm_table",
+  ["message", "timestamp"],
+  "message_id",
+  [],
 );
 ```
 
@@ -175,7 +251,7 @@ await requestConnection(
 
 **Example:**
 ```typescript
-import { contract } from 'iqlabs-solana-sdk';
+ import { contract } from "@iqlabs/solana-sdk";
 
 // Approve a friend request
 const approveIx = contract.manageConnectionInstruction(
@@ -196,15 +272,18 @@ const blockIx = contract.manageConnectionInstruction(
 
 #### `readConnection()`
 
-| **Parameters** | `dbRootId`: database ID<br>`walletA`, `walletB`: the two wallets to check |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`dbRootId`: database ID<br>`walletA`, `walletB`: the two wallets to check |
 |----------|--------------------------|
 | **Returns** | `{ status: 'pending' | 'approved' | 'blocked', requester, blocker }` |
 
 **Example:**
 ```typescript
-import { readConnection } from 'iqlabs-solana-sdk';
+import {createClient} from "@iqlabs/solana-sdk";
 
-const { status, requester, blocker } = await readConnection('my-db', walletA, walletB);
+const client = createClient({connection});
+const {reader} = client;
+
+const { status, requester, blocker } = await reader.readConnection("my-db", walletA, walletB);
 console.log(status); // 'pending' | 'approved' | 'blocked'
 ```
 
@@ -212,17 +291,21 @@ console.log(status); // 'pending' | 'approved' | 'blocked'
 
 #### `writeConnectionRow()`
 
-| **Parameters** | `connection`: Solana RPC connection<br>`signer`: signing wallet<br>`dbRootId`: database ID<br>`connectionSeed`: connection seed<br>`rowJson`: JSON data |
+| **Parameters** | `writer`: from `createClient` (requires signer)<br>`dbRootId`: database ID<br>`connectionSeed`: connection seed<br>`rowJson`: JSON data |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
 **Example:**
 ```typescript
-import { writeConnectionRow } from 'iqlabs-solana-sdk';
+import {createClient, toWalletSigner} from "@iqlabs/solana-sdk";
 
-await writeConnectionRow(
-  connection, signer, 'my-db', connectionSeed,
-  JSON.stringify({ message_id: '123', message: 'Hello friend!', timestamp: Date.now() })
+const client = createClient({connection, signer: toWalletSigner(signer)});
+const {writer} = client;
+
+await writer.writeConnectionRow(
+  "my-db",
+  connectionSeed,
+  JSON.stringify({ message_id: "123", message: "Hello friend!", timestamp: Date.now() }),
 );
 ```
 
@@ -232,19 +315,22 @@ await writeConnectionRow(
 
 Fetch all connections (friend requests) for a user by analyzing their UserState PDA transaction history. Each connection includes its `dbRootId`, identifying which app the connection belongs to.
 
-| **Parameters** | `userPubkey`: user public key (string or PublicKey)<br>`options`: optional settings |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`userPubkey`: user public key (string or PublicKey)<br>`options`: optional settings |
 |----------|--------------------------|
 | **Options** | `limit`: max number of transactions to fetch<br>`before`: signature to paginate from<br>`speed`: rate limit profile ('light', 'medium', 'heavy', 'extreme')<br>`mode`: contract mode (optional) |
 | **Returns** | Array of connection objects with dbRootId, partyA, partyB, status, requester, blocker, timestamp |
 
 **Example:**
 ```typescript
-import { fetchUserConnections } from 'iqlabs-solana-sdk/reader';
+import {createClient} from "@iqlabs/solana-sdk";
+
+const client = createClient({connection});
+const {reader} = client;
 
 // Fetch all connections (across all apps!)
-const connections = await fetchUserConnections(myPubkey, {
-  speed: 'light',  // 6 RPS (default)
-  limit: 100
+const connections = await reader.fetchUserConnections(myPubkey, {
+  speed: "light",  // 6 RPS (default)
+  limit: 100,
 });
 
 // Filter by app
@@ -268,22 +354,25 @@ connections.forEach(conn => {
 
 #### `writeRow()`
 
-| **Parameters** | `connection`: Solana RPC connection<br>`signer`: signing wallet<br>`dbRootId`: database ID<br>`tableSeed`: table name<br>`rowJson`: JSON row data |
+| **Parameters** | `writer`: from `createClient` (requires signer)<br>`dbRootId`: database ID<br>`tableSeed`: table name<br>`rowJson`: JSON row data |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
 **Example:**
 ```typescript
-import { writeRow } from 'iqlabs-solana-sdk';
+import {createClient, toWalletSigner} from "@iqlabs/solana-sdk";
+
+const client = createClient({connection, signer: toWalletSigner(signer)});
+const {writer} = client;
 
 // Write the first row to create the table
-await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
-  id: 1, name: 'Alice', email: 'alice@example.com'
+await writer.writeRow("my-db", "users", JSON.stringify({
+  id: 1, name: "Alice", email: "alice@example.com"
 }));
 
 // Add another row to the same table
-await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
-  id: 2, name: 'Bob', email: 'bob@example.com'
+await writer.writeRow("my-db", "users", JSON.stringify({
+  id: 2, name: "Bob", email: "bob@example.com"
 }));
 ```
 
@@ -291,18 +380,20 @@ await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
 
 #### `readTableRows()`
 
-| **Parameters** | `accountInfo`: table account info |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`account`: table PDA (PublicKey or base58 string) |
 |----------|--------------------------|
 | **Returns** | Row array (Row[]) |
 
 **Example:**
 ```typescript
-import { readTableRows, contract } from 'iqlabs-solana-sdk';
+import {createClient, getDbRootPda, getTablePda, toSeedBytes} from "@iqlabs/solana-sdk";
 
-const dbRootPda = contract.pda.getDbRootPda('my-db');
-const tablePda = contract.pda.getTablePda(dbRootPda, 'users');
-const accountInfo = await connection.getAccountInfo(tablePda);
-const rows = readTableRows(accountInfo);
+const client = createClient({connection});
+const {reader} = client;
+
+const dbRootPda = getDbRootPda(toSeedBytes("my-db"));
+const tablePda = getTablePda(dbRootPda, toSeedBytes("users"));
+const rows = await reader.readTableRows(tablePda);
 
 console.log(`Total rows: ${rows.length}`);
 ```
@@ -311,15 +402,18 @@ console.log(`Total rows: ${rows.length}`);
 
 #### `getTablelistFromRoot()`
 
-| **Parameters** | `dbRootId`: database ID |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`dbRootId`: database ID |
 |----------|--------------------------|
 | **Returns** | Table name array (string[]) |
 
 **Example:**
 ```typescript
-import { getTablelistFromRoot } from 'iqlabs-solana-sdk';
+import {createClient} from "@iqlabs/solana-sdk";
 
-const tables = await getTablelistFromRoot('my-db');
+const client = createClient({connection});
+const {reader} = client;
+
+const tables = await reader.getTablelistFromRoot("my-db");
 console.log('Table list:', tables);
 ```
 
@@ -327,15 +421,18 @@ console.log('Table list:', tables);
 
 #### `fetchInventoryTransactions()`
 
-| **Parameters** | `userPubkey`: user public key<br>`limit`: max count (optional) |
+| **Parameters** | `reader`: from `createClient` (read-only is fine)<br>`userPubkey`: user public key<br>`limit`: max count (optional) |
 |----------|--------------------------|
 | **Returns** | Transaction array |
 
 **Example:**
 ```typescript
-import { fetchInventoryTransactions } from 'iqlabs-solana-sdk';
+import {createClient} from "@iqlabs/solana-sdk";
 
-const myFiles = await fetchInventoryTransactions(myPubkey, 20);
+const client = createClient({connection});
+const {reader} = client;
+
+const myFiles = await reader.fetchInventoryTransactions(myPubkey, 20);
 myFiles.forEach(tx => {
   let metadata: { data?: unknown } | null = null;
   try {
@@ -367,7 +464,7 @@ myFiles.forEach(tx => {
 
 **Example:**
 ```typescript
-import { setRpcUrl } from 'iqlabs-solana-sdk';
+import { setRpcUrl } from "@iqlabs/solana-sdk";
 
 setRpcUrl('https://your-rpc.example.com');
 ```
@@ -384,7 +481,7 @@ Environment alternative: set `IQLABS_RPC_PROVIDER=helius|standard`.
 
 **Example:**
 ```typescript
-import { setRpcProvider } from 'iqlabs-solana-sdk';
+import { setRpcProvider } from "@iqlabs/solana-sdk";
 
 setRpcProvider('standard');
 ```

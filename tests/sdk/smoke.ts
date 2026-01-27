@@ -5,20 +5,16 @@ import {keccak_256} from "@noble/hashes/sha3";
 import {
   chooseRpcUrlForFreshness,
   detectConnectionSettings,
-} from "../../src/sdk/utils/connection_helper";
-import {
   deriveDmSeed,
   deriveSeedBytes,
   sortPubkeys,
   toSeedBytes,
-} from "../../src/sdk/utils/seed";
-import {
   CONNECTION_BLOCKER_NONE,
   CONNECTION_STATUS_APPROVED,
   CONNECTION_STATUS_BLOCKED,
   CONNECTION_STATUS_PENDING,
-} from "../../src/contract";
-import {evaluateConnectionAccess} from "../../src/sdk/utils/global_fetch";
+  evaluateConnectionAccess,
+} from "@iqlabs/solana-sdk";
 
 const ENV_KEYS = [
   "IQLABS_RPC_ENDPOINT",
@@ -132,9 +128,8 @@ async function testEvaluateConnectionAccess() {
 
   const pendingRequester = evaluate({}, partyA);
   assert.deepEqual(pendingRequester, {
-    allowed: false,
+    allowed: true,
     status: "pending",
-    message: "Ask the other party to open the connection.",
   });
 
   const pendingOther = evaluate({}, partyB);

@@ -2,7 +2,7 @@ import {readFileSync} from "node:fs";
 import {homedir} from "node:os";
 import {resolve} from "node:path";
 import {Connection, Keypair, LAMPORTS_PER_SOL} from "@solana/web3.js";
-import {reader, setRpcUrl, writer} from "iqlabs-solana-sdk";
+import {createClient, setRpcUrl, toWalletSigner} from "@iqlabs/solana-sdk";
 
 const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 setRpcUrl(RPC_URL);
@@ -76,6 +76,8 @@ const signer = cliKeypairPath
     ? loadKeypairFromFile(cliKeypairPath)
     : envKeypair ?? Keypair.generate();
 const userProvidedKeypair = Boolean(cliKeypairPath || envKeypair);
+const client = createClient({connection, signer: toWalletSigner(signer)});
+const {reader, writer} = client;
 
 async function airdropIfNeeded() {
     if (userProvidedKeypair) {
@@ -123,7 +125,7 @@ async function main() {
 
     const payload = "hello";
     console.log("Writing payload with codeIn...");
-    const signature = await writer.codeIn({connection, signer}, [payload]);
+    const signature = await writer.codeIn([payload]);
     console.log("tx:", signature);
 
     console.log("Reading back with readCodeIn...");

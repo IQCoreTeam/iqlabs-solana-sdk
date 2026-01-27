@@ -1,5 +1,5 @@
 {
-  "name": "iqlabs-solana-sdk",
+  "name": "@iqlabs/solana-sdk",
   "version": "0.1.0",
   "private": true,
   "repository": {
@@ -10,32 +10,49 @@
     "url": "https://github.com/IQCoreTeam/iqlabs-solana-sdk/issues"
   },
   "homepage": "https://github.com/IQCoreTeam/iqlabs-solana-sdk#readme",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "require": "./dist/index.cjs"
+    },
+    "./mobile": {
+      "types": "./dist/mobile.d.ts",
+      "import": "./dist/mobile.js",
+      "require": "./dist/mobile.cjs"
+    },
+    "./anchor": {
+      "types": "./dist/anchor.d.ts",
+      "import": "./dist/anchor.js",
+      "require": "./dist/anchor.cjs"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && cp -R idl dist/idl",
+    "build": "tsup",
     "example:hello": "npm run build && tsx examples/hello.ts",
     "prepare": "npm run build",
+    "test": "npm run build && tsx tests/sdk/smoke.ts && tsx tests/contract/smoke.ts && tsx tests/entrypoints/smoke.ts",
     "test:contract": "tsx tests/contract/smoke.ts",
-    "test:sdk": "tsx tests/sdk/smoke.ts"
+    "test:sdk": "tsx tests/sdk/smoke.ts",
+    "test:entrypoints": "tsx tests/entrypoints/smoke.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
+    "@coral-xyz/borsh": "^0.31.1",
+    "bn.js": "^5.2.2",
     "@noble/hashes": "^1.8.0",
     "@solana/web3.js": "^1.98.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "tsup": "^8.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
