@@ -19,6 +19,7 @@
    - [Environment Settings](#environment-settings)
 
 2.1. [Advanced Functions](#advanced-functions) (list only)
+3. [Quickstart (Example App)](#quickstart-example-app)
 
 ---
 
@@ -401,6 +402,28 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 - `getSessionPdaList()` (`reader`)
 - `deriveDmSeed()` (`utils`/`reader`)
 - `toSeedBytes()` (`utils`)
+
+---
+
+## Quickstart (Example App)
+
+Run the local example that writes a small payload and reads it back from devnet.
+
+```bash
+npm run example:hello
+```
+
+Optionally pass a funded keypair file to avoid airdrops:
+
+```bash
+npm run example:hello -- --keypair /path/to/id.json
+```
+
+You can also set an env var instead:
+
+```bash
+SOLANA_KEYPAIR_PATH=/path/to/id.json npm run example:hello
+```
 
 ---
 
