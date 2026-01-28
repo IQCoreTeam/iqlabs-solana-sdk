@@ -15,6 +15,7 @@ import {
     resolveReaderModeFromTx, resolveReaderProgramId,
 } from "./reader_context";
 
+import {ReplayServiceClient} from "./replayservice";
 import {
     decodeUserInventoryCodeIn,
     extractCodeInPayload,
@@ -23,6 +24,7 @@ import {
 
 const {accountCoder} = readerContext;
 const SIG_MIN_LEN = 80;
+const replayService = new ReplayServiceClient();
 
 export async function readInventoryMetadata(
     txSignature: string,
@@ -68,11 +70,18 @@ export const fetchInventoryTransactions = async (
 
 export async function readSession(
     sessionPubkey: string,
-    readOption: { freshness?: "fresh" | "recent" | "archive" },
+    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string | null }> {
+    if (readOption.isReplay || readOption.freshness === "archive") {
+        await replayService.enqueueReplay({sessionPubkey});
+        if (onProgress) {
+            onProgress(100);
+        }
+        return {result: null};
+    }
     const connection = getReaderConnection(readOption.freshness);
     const info = await connection.getAccountInfo(new PublicKey(sessionPubkey));
     if (!info) {
@@ -83,7 +92,8 @@ export async function readSession(
 
 export async function readLinkedListFromTail(
     tailTx: string,
-    readOption: { freshness?: "fresh" | "recent" | "archive" },
+    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    //we actually dont use is replay and archive in linked list but just left this for re using the type.
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,

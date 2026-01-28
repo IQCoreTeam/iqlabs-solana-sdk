@@ -2,6 +2,8 @@ export const DEFAULT_ANCHOR_PROGRAM_ID =
     "7dL1jKd4CaFHQRV2SU23XJtSCrPXaLpEbq9FteRXup8v";
 export const DEFAULT_PINOCCHIO_PROGRAM_ID =
     "7dL1jKd4CaFHQRV2SU23XJtSCrPXaLpEbq9FteRXup8v";
+export const DEFAULT_REPLAY_BASE_URL = "";
+
 export const SEED_CONFIG = "configmY}AGBJiqLabs";
 export const SEED_DB_ROOT = "rootmY}AGBJiqLabs";
 export const SEED_TABLE = "tablemY}AGBJiqLabs";

@@ -45,35 +45,35 @@ const resolveOnChainPath = (
 export const resolveReadMode = (
     onChainPath: string,
     blockTime?: number | null,
-): { freshness?: "fresh" | "recent" | "archive" } => {
+): { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" } => {
     const now = Math.floor(Date.now() / 1000);
     const ageSeconds =
         typeof blockTime === "number" ? Math.max(0, now - blockTime) : null;
     if (onChainPath.length === 0) {
         const freshness =
             ageSeconds !== null && ageSeconds <= DAY_SECONDS ? "fresh" : "recent";
-        return {freshness};
+        return {isReplay: false, freshness};
     }
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
 
     if (kind === "linked_list") {
         const freshness =
             ageSeconds !== null && ageSeconds <= DAY_SECONDS ? "fresh" : "recent";
-        return {freshness};
+        return {isReplay: false, freshness};
     }
     if (ageSeconds !== null && ageSeconds <= DAY_SECONDS) {
-        return {freshness: "fresh"};
+        return {isReplay: false, freshness: "fresh"};
     }
     if (ageSeconds !== null && ageSeconds <= WEEK_SECONDS) {
-        return {freshness: "recent"};
+        return {isReplay: false, freshness: "recent"};
     }
-    return {freshness: "archive"};
+    return {isReplay: true, freshness: "archive"};
 };
 
 export async function decideReadMode(
     txSignature: string,
     mode: string = DEFAULT_CONTRACT_MODE,
-): Promise<{ freshness?: "fresh" | "recent" | "archive" }> {
+): Promise<{ isReplay: boolean; freshness?: "fresh" | "recent" | "archive" }> {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
         maxSupportedTransactionVersion: 0,

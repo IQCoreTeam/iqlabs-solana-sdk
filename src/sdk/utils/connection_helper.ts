@@ -1,18 +1,11 @@
 import {Connection, type Commitment} from "@solana/web3.js";
 
-export type RpcProvider = "helius" | "standard";
-
 // Runtime config that can be set by the consuming app
 let runtimeRpcUrl: string | undefined;
-let runtimeRpcProvider: RpcProvider | undefined;
 
 export function setRpcUrl(url: string) {
     runtimeRpcUrl = url;
     // console.log(`[SDK] setRpcUrl(${url})`);
-}
-
-export function setRpcProvider(provider: RpcProvider) {
-    runtimeRpcProvider = provider;
 }
 
 const env = (key: string) => {
@@ -29,26 +22,8 @@ function getNextPublicEnvVars() {
     return {
         rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT,
         heliusRpc: process.env.NEXT_PUBLIC_HELIUS_RPC_URL,
-        rpcProvider: process.env.NEXT_PUBLIC_IQLABS_RPC_PROVIDER,
     };
 }
-
-const normalizeProvider = (value?: string): RpcProvider | undefined => {
-    if (!value) {
-        return undefined;
-    }
-    const trimmed = value.trim().toLowerCase();
-    if (trimmed === "helius") {
-        return "helius";
-    }
-    if (trimmed === "standard" || trimmed === "rpc") {
-        return "standard";
-    }
-    return undefined;
-};
-
-const inferProviderFromUrl = (url: string): RpcProvider =>
-    url.toLowerCase().includes("helius") ? "helius" : "standard";
 
 export function detectConnectionSettings(): {
     rpcUrl: string;
@@ -62,13 +37,11 @@ export function detectConnectionSettings(): {
         runtimeRpcUrl ??
         env("IQLABS_RPC_ENDPOINT") ??
         env("SOLANA_RPC_ENDPOINT") ??
-        env("HELIUS_RPC_URL") ??
         nextPublic.rpcEndpoint ??
-        nextPublic.heliusRpc ??
         env("SOLANA_RPC") ??
         env("RPC_ENDPOINT") ??
         env("RPC_URL") ??
-        "https://api.devnet.solana.com";
+        "https://devnet.helius-rpc.com/?api-key=f27e768e-586d-4e00-a35e-ef4d504101f5\n";
 
     // console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
 
@@ -85,15 +58,6 @@ export function getRpcUrl(): string {
     const url = detectConnectionSettings().rpcUrl;
     // console.log(`[SDK] getRpcUrl() = ${url}`);
     return url;
-}
-
-export function getRpcProvider(): RpcProvider {
-    const nextPublic = getNextPublicEnvVars();
-    const envProvider =
-        normalizeProvider(env("IQLABS_RPC_PROVIDER")) ??
-        normalizeProvider(env("RPC_PROVIDER")) ??
-        normalizeProvider(nextPublic.rpcProvider);
-    return runtimeRpcProvider ?? envProvider ?? inferProviderFromUrl(getRpcUrl());
 }
 
 export function chooseRpcUrlForFreshness(

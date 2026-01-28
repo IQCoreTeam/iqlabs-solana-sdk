@@ -1,4 +1,4 @@
-# IQLabs Solana SDK 
+# IQLabs SDK 
 
 > **Draft**: This document is in progress and will be refined.
 
@@ -118,7 +118,7 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 
 **Example:**
 ```typescript
-import { codeIn } from 'iqlabs-solana-sdk';
+import { codeIn } from 'iqlabs-sdk';
 
 // Upload a single file
 const signature = await codeIn(connection, signer, 'Hello, blockchain!');
@@ -137,7 +137,7 @@ const multiSig = await codeIn(connection, signer, ['file1.txt', 'file2.txt', 'fi
 
 **Example:**
 ```typescript
-import { readCodeIn } from 'iqlabs-solana-sdk';
+import { readCodeIn } from 'iqlabs-sdk';
 
 const data = await readCodeIn('5Xg7...', connection);
 console.log(data); // 'Hello, blockchain!'
@@ -155,7 +155,7 @@ console.log(data); // 'Hello, blockchain!'
 
 **Example:**
 ```typescript
-import { requestConnection } from 'iqlabs-solana-sdk';
+import { requestConnection } from 'iqlabs-sdk';
 
 await requestConnection(
   connection, signer, 'my-db',
@@ -174,7 +174,7 @@ await requestConnection(
 
 **Example:**
 ```typescript
-import { contract } from 'iqlabs-solana-sdk';
+import { contract } from 'iqlabs-sdk';
 
 // Approve a friend request
 const approveIx = contract.manageConnectionInstruction(
@@ -201,7 +201,7 @@ const blockIx = contract.manageConnectionInstruction(
 
 **Example:**
 ```typescript
-import { readConnection } from 'iqlabs-solana-sdk';
+import { readConnection } from 'iqlabs-sdk';
 
 const { status, requester, blocker } = await readConnection('my-db', walletA, walletB);
 console.log(status); // 'pending' | 'approved' | 'blocked'
@@ -217,7 +217,7 @@ console.log(status); // 'pending' | 'approved' | 'blocked'
 
 **Example:**
 ```typescript
-import { writeConnectionRow } from 'iqlabs-solana-sdk';
+import { writeConnectionRow } from 'iqlabs-sdk';
 
 await writeConnectionRow(
   connection, signer, 'my-db', connectionSeed,
@@ -238,7 +238,7 @@ Fetch all connections (friend requests) for a user by analyzing their UserState 
 
 **Example:**
 ```typescript
-import { fetchUserConnections } from 'iqlabs-solana-sdk/reader';
+import { fetchUserConnections } from 'iqlabs-sdk/reader';
 
 // Fetch all connections (across all apps!)
 const connections = await fetchUserConnections(myPubkey, {
@@ -273,7 +273,7 @@ connections.forEach(conn => {
 
 **Example:**
 ```typescript
-import { writeRow } from 'iqlabs-solana-sdk';
+import { writeRow } from 'iqlabs-sdk';
 
 // Write the first row to create the table
 await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
@@ -296,7 +296,7 @@ await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
 
 **Example:**
 ```typescript
-import { readTableRows, contract } from 'iqlabs-solana-sdk';
+import { readTableRows, contract } from 'iqlabs-sdk';
 
 const dbRootPda = contract.pda.getDbRootPda('my-db');
 const tablePda = contract.pda.getTablePda(dbRootPda, 'users');
@@ -316,7 +316,7 @@ console.log(`Total rows: ${rows.length}`);
 
 **Example:**
 ```typescript
-import { getTablelistFromRoot } from 'iqlabs-solana-sdk';
+import { getTablelistFromRoot } from 'iqlabs-sdk';
 
 const tables = await getTablelistFromRoot('my-db');
 console.log('Table list:', tables);
@@ -332,7 +332,7 @@ console.log('Table list:', tables);
 
 **Example:**
 ```typescript
-import { fetchInventoryTransactions } from 'iqlabs-solana-sdk';
+import { fetchInventoryTransactions } from 'iqlabs-sdk';
 
 const myFiles = await fetchInventoryTransactions(myPubkey, 20);
 myFiles.forEach(tx => {
@@ -366,26 +366,9 @@ myFiles.forEach(tx => {
 
 **Example:**
 ```typescript
-import { setRpcUrl } from 'iqlabs-solana-sdk';
+import { setRpcUrl } from 'iqlabs-sdk';
 
 setRpcUrl('https://your-rpc.example.com');
-```
-
-#### `setRpcProvider()`
-
-Helius is recommended for full historical access and faster reads. If you use a non-Helius RPC, set the provider to `standard` to force the fallback path.
-
-Environment alternative: set `IQLABS_RPC_PROVIDER=helius|standard`.
-
-| **Parameters** | `provider`: `'helius' | 'standard'` |
-|----------|--------------------------|
-| **Returns** | None (void) |
-
-**Example:**
-```typescript
-import { setRpcProvider } from 'iqlabs-solana-sdk';
-
-setRpcProvider('standard');
 ```
 
 ---
