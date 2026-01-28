@@ -1,0 +1,4983 @@
+{
+  "address": "7dL1jKd4CaFHQRV2SU23XJtSCrPXaLpEbq9FteRXup8v",
+  "metadata": {
+    "name": "code_in",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_admin_table",
+      "discriminator": [
+        21,
+        231,
+        129,
+        69,
+        1,
+        245,
+        230,
+        37
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "gate_mint_opt",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "writers_opt",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_ext_table",
+      "discriminator": [
+        55,
+        34,
+        201,
+        171,
+        160,
+        153,
+        73,
+        122
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "gate_mint_opt",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "writers_opt",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_private_table",
+      "discriminator": [
+        90,
+        71,
+        241,
+        246,
+        172,
+        31,
+        146,
+        20
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "gate_mint_opt",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "writers_opt",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_session",
+      "discriminator": [
+        242,
+        193,
+        143,
+        179,
+        150,
+        25,
+        122,
+        227
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  110,
+                  100,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "seq"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "seq",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_table",
+      "discriminator": [
+        214,
+        142,
+        131,
+        250,
+        242,
+        83,
+        135,
+        185
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "receiver",
+          "writable": true,
+          "address": "EWNSTD8tikwqHMcRNuuNbZrnYJUiJdKq9UXLXSEU4wZ1"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "gate_mint_opt",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "writers_opt",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "db_code_in",
+      "discriminator": [
+        38,
+        100,
+        165,
+        242,
+        99,
+        137,
+        206,
+        108
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller / writer. Used for:",
+            "- fee payment (system transfer)",
+            "- writer auth checks",
+            "- gate checks"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account (stores the canonical pointer/metadata for the \"row write\").",
+            "Row-level data is not emitted; clients should read `user_inventory` for row checks."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle account for finalized uploads.",
+            "When provided, instruction may finalize the bundle and use its pubkey as on_chain_path."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "docs": [
+            "The DB root namespace used to derive the table PDA."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "docs": [
+            "Target table.",
+            "This instruction does NOT append row bytes on-chain; it only:",
+            "- enforces writer/gate policies",
+            "- updates `last_timestamp` to record activity"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer_ata",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "db_instruction_code_in",
+      "discriminator": [
+        30,
+        11,
+        100,
+        201,
+        224,
+        121,
+        37,
+        163
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller / writer."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account storing pointer/metadata for this commit."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle PDA."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "docs": [
+            "Main table PDA.",
+            "This instruction does not emit payload; it only enforces policy and touches timestamps."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "docs": [
+            "Instruction table PDA (if you keep it as a separate structure).",
+            "You may optionally update timestamps here as well."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer_ata",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_config",
+      "discriminator": [
+        208,
+        127,
+        21,
+        1,
+        194,
+        190,
+        196,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "merkle_root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_db_root",
+      "discriminator": [
+        189,
+        253,
+        79,
+        50,
+        58,
+        187,
+        182,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "manage_connection",
+      "discriminator": [
+        139,
+        115,
+        11,
+        61,
+        156,
+        234,
+        133,
+        26
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "connection_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "connection_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "new_status",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "post_chunk",
+      "discriminator": [
+        209,
+        8,
+        101,
+        123,
+        165,
+        205,
+        108,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "signer": true
+        },
+        {
+          "name": "session",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "index",
+          "type": "u32"
+        },
+        {
+          "name": "chunk",
+          "type": "string"
+        },
+        {
+          "name": "method",
+          "type": "u8"
+        },
+        {
+          "name": "decode_break",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "request_connection",
+      "discriminator": [
+        247,
+        210,
+        233,
+        144,
+        172,
+        250,
+        188,
+        41
+      ],
+      "accounts": [
+        {
+          "name": "requester",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "connection_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "instruction_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  115,
+                  116,
+                  114,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "requester_user",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "requester"
+              }
+            ]
+          }
+        },
+        {
+          "name": "receiver_user",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "receiver"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table_ref",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  45,
+                  114,
+                  101,
+                  102,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "target_table_ref",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  45,
+                  114,
+                  101,
+                  102,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "connection_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "receiver",
+          "type": "pubkey"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "user_payload",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "send_code",
+      "discriminator": [
+        239,
+        129,
+        35,
+        208,
+        62,
+        168,
+        110,
+        201
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "code_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "code",
+          "type": "string"
+        },
+        {
+          "name": "before_tx",
+          "type": "string"
+        },
+        {
+          "name": "method",
+          "type": "u8"
+        },
+        {
+          "name": "decode_break",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "server_initialize",
+      "discriminator": [
+        193,
+        244,
+        16,
+        234,
+        35,
+        101,
+        175,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "server_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "server_id"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "server_id",
+          "type": "string"
+        },
+        {
+          "name": "server_type",
+          "type": "string"
+        },
+        {
+          "name": "allowed_merkle_root",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "set_merkle_root",
+      "discriminator": [
+        43,
+        24,
+        91,
+        60,
+        240,
+        137,
+        28,
+        102
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "new_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_db_root_table_list",
+      "discriminator": [
+        57,
+        58,
+        185,
+        208,
+        50,
+        95,
+        94,
+        76
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "new_table_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_table",
+      "discriminator": [
+        224,
+        23,
+        10,
+        48,
+        181,
+        73,
+        121,
+        187
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_name",
+          "type": "bytes"
+        },
+        {
+          "name": "column_names",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "id_col",
+          "type": "bytes"
+        },
+        {
+          "name": "ext_keys",
+          "type": {
+            "vec": "bytes"
+          }
+        },
+        {
+          "name": "writers_opt",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_user_metadata",
+      "discriminator": [
+        161,
+        59,
+        199,
+        45,
+        235,
+        43,
+        254,
+        6
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "meta",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "user_initialize",
+      "discriminator": [
+        223,
+        157,
+        253,
+        44,
+        62,
+        158,
+        83,
+        137
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "code_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  100,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_inventory",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  110,
+                  116,
+                  111,
+                  114,
+                  121,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "user_inventory_code_in",
+      "discriminator": [
+        81,
+        177,
+        5,
+        122,
+        213,
+        125,
+        21,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "user_inventory_code_in_for_free",
+      "discriminator": [
+        24,
+        194,
+        135,
+        247,
+        125,
+        51,
+        67,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "session",
+          "writable": true,
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "wallet_connection_code_in",
+      "discriminator": [
+        204,
+        215,
+        244,
+        145,
+        49,
+        183,
+        94,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "docs": [
+            "The caller. Must be party_a or party_b of the connection.",
+            "Also pays fees (if any) and writes UserInventory pointer/metadata."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_inventory",
+          "docs": [
+            "Per-user inventory account that stores the canonical pointer/metadata for this commit."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Optional session bundle PDA (used when finalizing a bundle upload)."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "iq_ata",
+          "optional": true
+        },
+        {
+          "name": "db_root",
+          "docs": [
+            "Root namespace (used to derive the connection PDA)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "connection_table",
+          "docs": [
+            "Connection PDA.",
+            "This instruction enforces connection permissions and updates last_timestamp."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  116,
+                  135,
+                  61,
+                  61,
+                  163,
+                  233,
+                  79,
+                  175,
+                  58,
+                  239,
+                  223,
+                  2,
+                  34,
+                  71,
+                  97,
+                  207,
+                  0,
+                  86,
+                  30,
+                  185,
+                  7,
+                  175,
+                  28,
+                  94,
+                  224,
+                  148,
+                  91,
+                  103,
+                  198,
+                  39,
+                  39
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "connection_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "on_chain_path",
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        },
+        {
+          "name": "session",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "SessionFinalize"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "CodeAccount",
+      "discriminator": [
+        65,
+        67,
+        94,
+        253,
+        193,
+        120,
+        172,
+        223
+      ]
+    },
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Connection",
+      "discriminator": [
+        209,
+        186,
+        115,
+        58,
+        36,
+        236,
+        179,
+        10
+      ]
+    },
+    {
+      "name": "DbRoot",
+      "discriminator": [
+        245,
+        92,
+        214,
+        180,
+        144,
+        59,
+        3,
+        240
+      ]
+    },
+    {
+      "name": "InstructionTable",
+      "discriminator": [
+        97,
+        60,
+        187,
+        146,
+        76,
+        184,
+        212,
+        245
+      ]
+    },
+    {
+      "name": "ServerAccount",
+      "discriminator": [
+        217,
+        98,
+        62,
+        130,
+        20,
+        150,
+        79,
+        126
+      ]
+    },
+    {
+      "name": "SessionAccount",
+      "discriminator": [
+        74,
+        34,
+        65,
+        133,
+        96,
+        163,
+        80,
+        69
+      ]
+    },
+    {
+      "name": "Table",
+      "discriminator": [
+        34,
+        100,
+        138,
+        97,
+        236,
+        129,
+        230,
+        112
+      ]
+    },
+    {
+      "name": "TableRef",
+      "discriminator": [
+        37,
+        238,
+        79,
+        45,
+        243,
+        174,
+        100,
+        47
+      ]
+    },
+    {
+      "name": "UserInventory",
+      "discriminator": [
+        96,
+        175,
+        193,
+        30,
+        100,
+        203,
+        172,
+        39
+      ]
+    },
+    {
+      "name": "UserState",
+      "discriminator": [
+        72,
+        177,
+        85,
+        249,
+        76,
+        167,
+        186,
+        126
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ChunkPosted",
+      "discriminator": [
+        160,
+        1,
+        29,
+        114,
+        247,
+        69,
+        228,
+        43
+      ]
+    },
+    {
+      "name": "SessionFinalized",
+      "discriminator": [
+        33,
+        12,
+        242,
+        91,
+        206,
+        42,
+        163,
+        235
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotAuthorized",
+      "msg": "Not authorized."
+    },
+    {
+      "code": 6001,
+      "name": "InvalidInstructionData",
+      "msg": "Invalid instruction data."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidAccount",
+      "msg": "Invalid account."
+    },
+    {
+      "code": 6003,
+      "name": "TooLong",
+      "msg": "Data too long."
+    },
+    {
+      "code": 6004,
+      "name": "Overflow",
+      "msg": "Overflow."
+    },
+    {
+      "code": 6005,
+      "name": "NeedsRealloc",
+      "msg": "Reallocation required (not performed)."
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds to send code."
+    },
+    {
+      "code": 6007,
+      "name": "ReceiverAccountNotFound",
+      "msg": "Receiver account not found."
+    },
+    {
+      "code": 6008,
+      "name": "InvalidWallet",
+      "msg": "Invalid wallet address."
+    },
+    {
+      "code": 6009,
+      "name": "InvalidReceiver",
+      "msg": "Invalid receiver address."
+    },
+    {
+      "code": 6010,
+      "name": "FundsNotReceived",
+      "msg": "Funds were not received by the expected wallet."
+    },
+    {
+      "code": 6011,
+      "name": "InvalidCodeFormat",
+      "msg": "Invalid code format."
+    },
+    {
+      "code": 6012,
+      "name": "InvalidTransfer",
+      "msg": "Invalid transfer."
+    },
+    {
+      "code": 6013,
+      "name": "NotWhitelisted",
+      "msg": "Not whitelisted (Merkle proof failed)."
+    },
+    {
+      "code": 6014,
+      "name": "SessionFinalized",
+      "msg": "Session already finalized."
+    },
+    {
+      "code": 6015,
+      "name": "EmptyName",
+      "msg": "Name cannot be empty."
+    },
+    {
+      "code": 6016,
+      "name": "EmptyColumns",
+      "msg": "At least one column is required."
+    },
+    {
+      "code": 6017,
+      "name": "EmptyIdCol",
+      "msg": "ID column is required."
+    },
+    {
+      "code": 6018,
+      "name": "IdColNotInColumns",
+      "msg": "ID column must exist in column_names."
+    },
+    {
+      "code": 6019,
+      "name": "TableExists",
+      "msg": "Table already exists."
+    },
+    {
+      "code": 6020,
+      "name": "InvalidMetadataLength",
+      "msg": "Invalid metadata length."
+    },
+    {
+      "code": 6021,
+      "name": "InvalidDbRootId",
+      "msg": "Root id must be <= 32 bytes."
+    },
+    {
+      "code": 6022,
+      "name": "InvalidUtf8",
+      "msg": "Invalid UTF-8."
+    },
+    {
+      "code": 6023,
+      "name": "SchemaMismatch",
+      "msg": "Schema mismatch."
+    },
+    {
+      "code": 6024,
+      "name": "InvalidConnectionStatus",
+      "msg": "Invalid connection status."
+    },
+    {
+      "code": 6025,
+      "name": "InvalidConnectionTransition",
+      "msg": "Invalid connection status transition."
+    },
+    {
+      "code": 6026,
+      "name": "NameTooLong",
+      "msg": "Table name too long."
+    }
+  ],
+  "types": [
+    {
+      "name": "ChunkPosted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session",
+            "type": "pubkey"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          },
+          {
+            "name": "hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "size",
+            "type": "u32"
+          },
+          {
+            "name": "method",
+            "type": "u8"
+          },
+          {
+            "name": "decode_break",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CodeAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "decode_break",
+            "type": "u8"
+          },
+          {
+            "name": "method",
+            "type": "u8"
+          },
+          {
+            "name": "code",
+            "type": "string"
+          },
+          {
+            "name": "before_tx",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Connection",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "db_root_id",
+            "type": "bytes"
+          },
+          {
+            "name": "column_names",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "id_col",
+            "type": "bytes"
+          },
+          {
+            "name": "ext_keys",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "name",
+            "type": "bytes"
+          },
+          {
+            "name": "gate_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "party_a",
+            "type": "pubkey"
+          },
+          {
+            "name": "party_b",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "requester",
+            "type": "u8"
+          },
+          {
+            "name": "blocker",
+            "type": "u8"
+          },
+          {
+            "name": "last_timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DbRoot",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "table_seeds",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "global_table_seeds",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "id",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InstructionTable",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ServerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "server_type",
+            "type": "string"
+          },
+          {
+            "name": "allowed_merkle_root",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SessionAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "total_chunks",
+            "type": "u32"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SessionFinalize",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "total_chunks",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SessionFinalized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_chunks",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Table",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "column_names",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "id_col",
+            "type": "bytes"
+          },
+          {
+            "name": "ext_keys",
+            "type": {
+              "vec": "bytes"
+            }
+          },
+          {
+            "name": "name",
+            "type": "bytes"
+          },
+          {
+            "name": "last_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "gate_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "writers",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TableRef",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserInventory",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "on_chain_path",
+            "type": "string"
+          },
+          {
+            "name": "metadata",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "trail_anchor",
+            "type": "bytes"
+          },
+          {
+            "name": "metadata",
+            "type": "bytes"
+          },
+          {
+            "name": "total_session_files",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}
