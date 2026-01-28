@@ -405,5 +405,6 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 ---
 
 ## Additional Resources
+- [GitHub Repo](https://github.com/IQCoreTeam/iqlabs-solana-sdk)
 - [IQLabs Official X](https://x.com/IQLabsOfficial)
 - [Example Project](https://github.com/IQCoreTeam/IQSdkUsageExampleCliTool)
