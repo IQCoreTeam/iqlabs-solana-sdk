@@ -3,7 +3,6 @@ import {
     Connection,
     PublicKey,
     SystemProgram,
-    type Signer,
 } from "@solana/web3.js";
 
 import {
@@ -32,10 +31,12 @@ import {
     fetchTableMeta,
 } from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
+import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {prepareCodeIn} from "./code_in";
 import {sendTx} from "./writer_utils";
+import IDL_JSON from "../../../idl/code_in.json";
 
-const IDL = require("../../../idl/code_in.json") as Idl;
+const IDL = IDL_JSON as unknown as Idl;
 
 export async function validateRowJson(
     connection: Connection,
@@ -74,7 +75,7 @@ export async function validateRowJson(
 
 export async function resolveSignerAta(
     connection: Connection,
-    signer: Signer,
+    signer: { publicKey: PublicKey },
     gateMint?: PublicKey,
 ) {
     if (!gateMint || gateMint.equals(SystemProgram.programId)) {
@@ -91,12 +92,13 @@ export async function resolveSignerAta(
 
 export async function writeRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
     mode = DEFAULT_CONTRACT_MODE,
 ) {
+    const wallet = toWalletSigner(signer);
     const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const tableSeedBytes = toSeedBytes(tableSeed);
@@ -125,12 +127,12 @@ export async function writeRow(
     );
     if (
         meta.writers.length > 0 &&
-        !meta.writers.some((writer) => writer.equals(signer.publicKey))
+        !meta.writers.some((writer) => writer.equals(wallet.publicKey))
     ) {
         throw new Error("signer not in writers");
     }
 
-    const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
+    const signerAta = await resolveSignerAta(connection, wallet, meta.gateMint);
     const {
         builder,
         user,
@@ -146,7 +148,7 @@ export async function writeRow(
         builder,
         {
             user,
-            signer: signer.publicKey,
+            signer: wallet.publicKey,
             user_inventory: userInventory,
             db_root: dbRoot,
             table: tablePda,
@@ -169,12 +171,13 @@ export async function writeRow(
 
 export async function writeConnectionRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
     rowJson: string,
     mode = DEFAULT_CONTRACT_MODE,
 ) {
+    const wallet = toWalletSigner(signer);
     const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
@@ -210,7 +213,7 @@ export async function writeConnectionRow(
         throw new Error("row_json must be an object");
     }
     const meta = decodeConnectionMeta(connectionInfo.data);
-    const access = evaluateConnectionAccess(meta, signer.publicKey);
+    const access = evaluateConnectionAccess(meta, wallet.publicKey);
     if (!access.allowed) {
         throw new Error(access.message ?? "connection not writable");
     }
@@ -240,7 +243,7 @@ export async function writeConnectionRow(
         builder,
         {
             user,
-            signer: signer.publicKey,
+            signer: wallet.publicKey,
             user_inventory: userInventory,
             db_root: dbRoot,
             connection_table: connectionTable,
@@ -264,7 +267,7 @@ export async function writeConnectionRow(
 
 export async function manageRowData(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     seed: Uint8Array | string,
     rowJson: string,
@@ -272,6 +275,7 @@ export async function manageRowData(
     targetTx?: string | Uint8Array,
     mode = DEFAULT_CONTRACT_MODE,
 ) {
+    const manageWallet = toWalletSigner(signer);
     const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
     const seedBytes = toSeedBytes(seed);
@@ -308,12 +312,12 @@ export async function manageRowData(
         const meta = await fetchTableMeta(connection, programId, dbRootSeed, seedBytes);
         if (
             meta.writers.length > 0 &&
-            !meta.writers.some((writer) => writer.equals(signer.publicKey))
+            !meta.writers.some((writer) => writer.equals(manageWallet.publicKey))
         ) {
             throw new Error("signer not in writers");
         }
 
-        const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
+        const signerAta = await resolveSignerAta(connection, manageWallet, meta.gateMint);
         const {
             builder,
             user,
@@ -329,7 +333,7 @@ export async function manageRowData(
             builder,
             {
                 user,
-                signer: signer.publicKey,
+                signer: manageWallet.publicKey,
                 user_inventory: userInventory,
                 db_root: dbRoot,
                 table,
@@ -375,7 +379,7 @@ export async function manageRowData(
 
 export async function requestConnection(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     partyA: string,
     partyB: string,
@@ -388,7 +392,7 @@ export async function requestConnection(
     // Validate requester
     const programId = getProgramId(mode);
     const builder = createInstructionBuilder(IDL, programId);
-    const requester = signer.publicKey;
+    const requester = toWalletSigner(signer).publicKey;
     const requesterBase58 = requester.toBase58();
     if (requesterBase58 !== partyA && requesterBase58 !== partyB) {
         throw new Error("signer must be partyA or partyB");

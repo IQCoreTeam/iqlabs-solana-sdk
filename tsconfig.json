@@ -9,7 +9,7 @@
     "declarationMap": false,
     "sourceMap": true,
     "esModuleInterop": true,
-    "resolveJsonModule": false,
+    "resolveJsonModule": true,
     "lib": ["ES2020", "DOM"],
     "skipLibCheck": true,
     "strict": false

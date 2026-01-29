@@ -12,8 +12,9 @@ import {
     getTablePda,
 } from "../../contract";
 import {toSeedBytes} from "./seed";
+import IDL_JSON from "../../../idl/code_in.json";
 
-const IDL = require("../../../idl/code_in.json") as Idl;
+const IDL = IDL_JSON as unknown as Idl;
 const ACCOUNT_CODER = new BorshAccountsCoder(IDL);
 
 export function decodeTableMeta(data: Buffer) {

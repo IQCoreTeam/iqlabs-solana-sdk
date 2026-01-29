@@ -21,8 +21,9 @@ import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {ensureUserInitialized, readMagicBytes, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
+import IDL_JSON from "../../../idl/code_in.json";
 
-const IDL = require("../../../idl/code_in.json") as Idl;
+const IDL = IDL_JSON as unknown as Idl;
 
 
 export async function prepareCodeIn(

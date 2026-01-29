@@ -11,8 +11,9 @@ import {
     resolveContractRuntime,
 } from "../../contract";
 import {DEFAULT_CONTRACT_MODE} from "../../constants";
+import IDL_JSON from "../../../idl/code_in.json";
 
-const IDL = require("../../../idl/code_in.json") as Idl;
+const IDL = IDL_JSON as unknown as Idl;
 
 export const readerContext = {
     idl: IDL,
