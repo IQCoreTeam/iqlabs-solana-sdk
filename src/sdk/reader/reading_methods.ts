@@ -3,7 +3,6 @@
 // - Keep logic here; reading_flow.ts just describes the path.
 //
 // ReadOption
-// - isReplay: boolean (true = replay, false = rpc)
 // - freshness: "fresh" | "recent" | "archive"
 //
 // 1) readSessionResult(sessionPubkey, readOption, speed?)
@@ -35,7 +34,6 @@
 //      - reverse and reconstruct result
 //      - return result
 //    Notes:
-//      - linked-list does not use replay
 //      - RPC choice: <=24h -> zeroblock, else -> helius
 
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
@@ -134,7 +132,7 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
 
 export async function readSessionResult(
     sessionPubkey: string,
-    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
@@ -214,7 +212,7 @@ export async function readSessionResult(
 
 export async function readLinkedListResult(
     tailTx: string,
-    readOption: { isReplay: boolean; freshness?: "fresh" | "recent" | "archive" },
+    readOption: { freshness?: "fresh" | "recent" | "archive" },
     mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
