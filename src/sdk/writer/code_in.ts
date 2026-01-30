@@ -27,10 +27,23 @@ const IDL = require("../../../idl/code_in.json") as Idl;
 
 function toChunks(data: string | string[]): string[] {
     if (Array.isArray(data)) return data;
-    if (data.length <= CHUNK_SIZE) return [data];
+    if (Buffer.byteLength(data, "utf8") <= CHUNK_SIZE) return [data];
     const chunks: string[] = [];
-    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        chunks.push(data.slice(i, i + CHUNK_SIZE));
+    let chunk = "";
+    let chunkBytes = 0;
+    for (const char of data) {
+        const charBytes = Buffer.byteLength(char, "utf8");
+        if (chunkBytes + charBytes > CHUNK_SIZE) {
+            chunks.push(chunk);
+            chunk = char;
+            chunkBytes = charBytes;
+        } else {
+            chunk += char;
+            chunkBytes += charBytes;
+        }
+    }
+    if (chunk) {
+        chunks.push(chunk);
     }
     return chunks;
 }
