@@ -112,7 +112,7 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 
 #### `codeIn()`
 
-| **Parameters** | `input`: `{ connection, signer }` object<br>`chunks`: data as string array<br>`mode`: contract mode (optional, default: 'anchor')<br>`filename`: optional filename<br>`method`: upload method (optional)<br>`filetype`: MIME type (optional)<br>`onProgress`: progress callback (optional) |
+| **Parameters** | `input`: `{ connection, signer }` object<br>`data`: string or string array (auto-chunks large data)<br>`mode`: contract mode (optional)<br>`filename`: optional filename<br>`method`: upload method (optional)<br>`filetype`: MIME type (optional)<br>`onProgress`: progress callback (optional) |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
@@ -120,7 +120,7 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 ```typescript
 import iqlabs from 'iqlabs-sdk';
 
-const signature = await iqlabs.writer.codeIn({ connection, signer }, ['Hello, blockchain!']);
+const signature = await iqlabs.writer.codeIn({ connection, signer }, 'Hello, blockchain!');
 ```
 
 ---
