@@ -254,4 +254,3 @@ async function requestConnection(connection, signer, dbRootId, partyA, partyB, t
     // Send transaction
     return (0, writer_utils_1.sendTx)(connection, signer, ix);
 }
-//# sourceMappingURL=iqdb.js.map

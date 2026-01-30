@@ -35,14 +35,13 @@
 //      - reverse and reconstruct result
 //      - return result
 //    Notes:
-//      - RPC choice uses the provided freshness label
+//      - RPC choice: <=24h -> zeroblock, else -> helius
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.readSessionResult = readSessionResult;
 exports.readLinkedListResult = readLinkedListResult;
 const web3_js_1 = require("@solana/web3.js");
 const constants_1 = require("../../constants");
 const connection_helper_1 = require("../utils/connection_helper");
-const rpc_client_1 = require("../utils/rpc_client");
 const concurrency_1 = require("../utils/concurrency");
 const rate_limiter_1 = require("../utils/rate_limiter");
 const session_speed_1 = require("../utils/session_speed");
@@ -121,51 +120,9 @@ const extractSendCode = (tx) => {
 };
 async function readSessionResult(sessionPubkey, readOption, speed, mode = constants_1.DEFAULT_CONTRACT_MODE, onProgress) {
     const connection = (0, connection_helper_1.getReaderConnection)(readOption.freshness);
-    const rpcClient = new rpc_client_1.RpcClient({ connection });
     const sessionKey = new web3_js_1.PublicKey(sessionPubkey);
     const signatures = [];
     let before;
-    const heliusTransactions = await rpcClient.tryFetchTransactionsForAddressAll(sessionKey, {
-        maxSupportedTransactionVersion: 0,
-    });
-    if (heliusTransactions && heliusTransactions.length > 0) {
-        const chunkMap = new Map();
-        const totalTxs = heliusTransactions.length;
-        let completed = 0;
-        let lastPercent = -1;
-        if (onProgress) {
-            onProgress(0);
-            lastPercent = 0;
-        }
-        for (const tx of heliusTransactions) {
-            if (!tx) {
-                continue;
-            }
-            const chunks = extractPostChunk(tx);
-            for (const chunk of chunks) {
-                chunkMap.set(chunk.index, chunk.chunk);
-            }
-            completed += 1;
-            if (onProgress && totalTxs > 0) {
-                const percent = Math.floor((completed / totalTxs) * 100);
-                if (percent !== lastPercent) {
-                    lastPercent = percent;
-                    onProgress(percent);
-                }
-            }
-        }
-        if (chunkMap.size === 0) {
-            throw new Error("no session chunks found");
-        }
-        const result = Array.from(chunkMap.entries())
-            .sort(([a], [b]) => a - b)
-            .map(([, chunk]) => chunk)
-            .join("");
-        if (onProgress && totalTxs > 0 && lastPercent < 100) {
-            onProgress(100);
-        }
-        return { result };
-    }
     //TODO make this pagination well if we need to pagination, or make this bringing all function to the helper function and reuse for needs
     while (true) {
         const page = await connection.getSignaturesForAddress(sessionKey, {
@@ -274,4 +231,3 @@ async function readLinkedListResult(tailTx, readOption, mode = constants_1.DEFAU
     }
     return { result: chunks.reverse().join("") };
 }
-//# sourceMappingURL=reading_methods.js.map

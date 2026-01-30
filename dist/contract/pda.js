@@ -102,4 +102,3 @@ const getUserInventoryPda = (user, programId = (0, profile_1.getProgramId)()) =>
 exports.getUserInventoryPda = getUserInventoryPda;
 const getServerAccountPda = (user, serverId, programId = (0, profile_1.getProgramId)()) => findPda([Buffer.from(serverId), user.toBuffer()], programId);
 exports.getServerAccountPda = getServerAccountPda;
-//# sourceMappingURL=pda.js.map

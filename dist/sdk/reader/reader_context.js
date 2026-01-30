@@ -48,4 +48,3 @@ const resolveReaderModeFromTx = (tx) => {
     return (0, contract_1.resolveContractRuntime)(constants_1.DEFAULT_CONTRACT_MODE);
 };
 exports.resolveReaderModeFromTx = resolveReaderModeFromTx;
-//# sourceMappingURL=reader_context.js.map

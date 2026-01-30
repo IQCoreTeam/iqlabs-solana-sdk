@@ -18,4 +18,3 @@ exports.CONNECTION_STATUS_PENDING = 0;
 exports.CONNECTION_STATUS_APPROVED = 1;
 exports.CONNECTION_STATUS_BLOCKED = 2;
 exports.CONNECTION_BLOCKER_NONE = 255;
-//# sourceMappingURL=constants.js.map

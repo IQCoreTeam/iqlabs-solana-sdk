@@ -19,4 +19,3 @@ __exportStar(require("./discriminators"), exports);
 __exportStar(require("./instructions"), exports);
 __exportStar(require("./pda"), exports);
 __exportStar(require("./profile"), exports);
-//# sourceMappingURL=index.js.map

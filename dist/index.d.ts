@@ -4,9 +4,9 @@ import * as writer from "./sdk/writer";
 import * as wallet from "./sdk/utils/wallet";
 import * as constants from "./sdk/constants";
 import * as utils from "./sdk/utils";
-import { setRpcProvider, setRpcUrl } from "./sdk/utils/connection_helper";
-export { contract, reader, writer, constants, wallet, utils, setRpcUrl, setRpcProvider };
-import { getRpcProvider, getRpcUrl } from "./sdk/utils/connection_helper";
+import { setRpcUrl } from "./sdk/utils/connection_helper";
+export { contract, reader, writer, constants, wallet, utils, setRpcUrl };
+import { getRpcUrl } from "./sdk/utils/connection_helper";
 declare const iqlabs: {
     contract: typeof contract;
     reader: typeof reader;
@@ -15,9 +15,7 @@ declare const iqlabs: {
     wallet: typeof wallet;
     constants: typeof constants;
     setRpcUrl: typeof setRpcUrl;
-    setRpcProvider: typeof setRpcProvider;
     getRpcUrl: typeof getRpcUrl;
-    getRpcProvider: typeof getRpcProvider;
 };
 export { iqlabs };
 export default iqlabs;

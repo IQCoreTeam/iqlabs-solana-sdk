@@ -143,4 +143,3 @@ async function ensureUserInitialized(connection, signer, builder, accounts) {
     await sendTx(connection, signer, ix);
     markAccountExists(accounts.user_inventory, true);
 }
-//# sourceMappingURL=writer_utils.js.map

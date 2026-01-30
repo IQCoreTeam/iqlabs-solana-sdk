@@ -22,4 +22,3 @@ async function resolveAssociatedTokenAccount(connection, owner, mint, requireExi
     }
     return ata;
 }
-//# sourceMappingURL=ata.js.map

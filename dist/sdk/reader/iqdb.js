@@ -137,4 +137,3 @@ async function readTableRows(account, options = {}) {
     }
     return rows;
 }
-//# sourceMappingURL=iqdb.js.map

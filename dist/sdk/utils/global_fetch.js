@@ -123,4 +123,3 @@ function evaluateConnectionAccess(meta, signer) {
     }
     return { allowed: false, status, message: "invalid connection status" };
 }
-//# sourceMappingURL=global_fetch.js.map

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.iqlabs = exports.setRpcProvider = exports.setRpcUrl = exports.utils = exports.wallet = exports.constants = exports.writer = exports.reader = exports.contract = void 0;
+exports.iqlabs = exports.setRpcUrl = exports.utils = exports.wallet = exports.constants = exports.writer = exports.reader = exports.contract = void 0;
 const contract = __importStar(require("./contract"));
 exports.contract = contract;
 const reader = __importStar(require("./sdk/reader"));
@@ -47,7 +47,6 @@ exports.constants = constants;
 const utils = __importStar(require("./sdk/utils"));
 exports.utils = utils;
 const connection_helper_1 = require("./sdk/utils/connection_helper");
-Object.defineProperty(exports, "setRpcProvider", { enumerable: true, get: function () { return connection_helper_1.setRpcProvider; } });
 Object.defineProperty(exports, "setRpcUrl", { enumerable: true, get: function () { return connection_helper_1.setRpcUrl; } });
 const connection_helper_2 = require("./sdk/utils/connection_helper");
 const iqlabs = {
@@ -58,10 +57,7 @@ const iqlabs = {
     wallet,
     constants,
     setRpcUrl: connection_helper_1.setRpcUrl,
-    setRpcProvider: connection_helper_1.setRpcProvider,
     getRpcUrl: connection_helper_2.getRpcUrl,
-    getRpcProvider: connection_helper_2.getRpcProvider,
 };
 exports.iqlabs = iqlabs;
 exports.default = iqlabs;
-//# sourceMappingURL=index.js.map

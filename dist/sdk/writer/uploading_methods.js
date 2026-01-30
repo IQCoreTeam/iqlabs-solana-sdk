@@ -99,4 +99,3 @@ async function uploadSession(connection, signer, builder, programId, user, userS
     });
     return session.toBase58();
 }
-//# sourceMappingURL=uploading_methods.js.map

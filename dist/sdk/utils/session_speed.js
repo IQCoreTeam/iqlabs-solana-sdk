@@ -16,4 +16,3 @@ const resolveSessionSpeed = (speed) => {
     return exports.DEFAULT_SESSION_SPEED;
 };
 exports.resolveSessionSpeed = resolveSessionSpeed;
-//# sourceMappingURL=session_speed.js.map

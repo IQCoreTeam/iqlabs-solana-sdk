@@ -22,4 +22,3 @@ function deriveDmSeed(userA, userB) {
 function toSeedBytes(value) {
     return typeof value === "string" ? deriveSeedBytes(value) : value;
 }
-//# sourceMappingURL=seed.js.map

@@ -127,4 +127,3 @@ const dbCodeInInstruction = (builder, accounts, args) => builder.build("db_code_
 exports.dbCodeInInstruction = dbCodeInInstruction;
 const dbInstructionCodeInInstruction = (builder, accounts, args) => builder.build("db_instruction_code_in", accounts, args);
 exports.dbInstructionCodeInInstruction = dbInstructionCodeInInstruction;
-//# sourceMappingURL=instructions.js.map

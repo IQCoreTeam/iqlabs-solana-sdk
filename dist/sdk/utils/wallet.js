@@ -34,4 +34,3 @@ function toWalletSigner(signer) {
         },
     };
 }
-//# sourceMappingURL=wallet.js.map

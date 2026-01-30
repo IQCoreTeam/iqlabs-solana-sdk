@@ -17,4 +17,3 @@ async function readCodeIn(txSignature, speed, onProgress) {
     const resolvedMode = (0, reader_context_1.resolveReaderModeFromTx)(tx) ?? userMode;
     return await (0, reading_flow_1.readUserInventoryCodeInFromTx)(tx, speed, resolvedMode, onProgress);
 }
-//# sourceMappingURL=read_code_in.js.map

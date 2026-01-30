@@ -9,4 +9,3 @@ Object.defineProperty(exports, "writeRow", { enumerable: true, get: function () 
 Object.defineProperty(exports, "writeConnectionRow", { enumerable: true, get: function () { return iqdb_1.writeConnectionRow; } });
 Object.defineProperty(exports, "manageRowData", { enumerable: true, get: function () { return iqdb_1.manageRowData; } });
 Object.defineProperty(exports, "requestConnection", { enumerable: true, get: function () { return iqdb_1.requestConnection; } });
-//# sourceMappingURL=index.js.map

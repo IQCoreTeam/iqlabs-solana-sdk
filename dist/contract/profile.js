@@ -12,4 +12,3 @@ const resolveContractRuntime = (mode = constants_1.DEFAULT_CONTRACT_MODE) => mod
 exports.resolveContractRuntime = resolveContractRuntime;
 const getProgramId = (mode = constants_1.DEFAULT_CONTRACT_MODE) => DEFAULT_PROGRAM_IDS[(0, exports.resolveContractRuntime)(mode)];
 exports.getProgramId = getProgramId;
-//# sourceMappingURL=profile.js.map

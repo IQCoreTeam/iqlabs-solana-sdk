@@ -1,23 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setRpcUrl = setRpcUrl;
-exports.setRpcProvider = setRpcProvider;
 exports.detectConnectionSettings = detectConnectionSettings;
 exports.getRpcUrl = getRpcUrl;
-exports.getRpcProvider = getRpcProvider;
 exports.chooseRpcUrlForFreshness = chooseRpcUrlForFreshness;
 exports.getConnection = getConnection;
 exports.getReaderConnection = getReaderConnection;
 const web3_js_1 = require("@solana/web3.js");
 // Runtime config that can be set by the consuming app
 let runtimeRpcUrl;
-let runtimeRpcProvider;
 function setRpcUrl(url) {
     runtimeRpcUrl = url;
     // console.log(`[SDK] setRpcUrl(${url})`);
-}
-function setRpcProvider(provider) {
-    runtimeRpcProvider = provider;
 }
 const env = (key) => {
     const value = process.env[key];
@@ -32,35 +26,18 @@ function getNextPublicEnvVars() {
     return {
         rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT,
         heliusRpc: process.env.NEXT_PUBLIC_HELIUS_RPC_URL,
-        rpcProvider: process.env.NEXT_PUBLIC_IQLABS_RPC_PROVIDER,
     };
 }
-const normalizeProvider = (value) => {
-    if (!value) {
-        return undefined;
-    }
-    const trimmed = value.trim().toLowerCase();
-    if (trimmed === "helius") {
-        return "helius";
-    }
-    if (trimmed === "standard" || trimmed === "rpc") {
-        return "standard";
-    }
-    return undefined;
-};
-const inferProviderFromUrl = (url) => url.toLowerCase().includes("helius") ? "helius" : "standard";
 function detectConnectionSettings() {
     const nextPublic = getNextPublicEnvVars();
     const rpcUrl = runtimeRpcUrl ??
         env("IQLABS_RPC_ENDPOINT") ??
         env("SOLANA_RPC_ENDPOINT") ??
-        env("HELIUS_RPC_URL") ??
         nextPublic.rpcEndpoint ??
-        nextPublic.heliusRpc ??
         env("SOLANA_RPC") ??
         env("RPC_ENDPOINT") ??
         env("RPC_URL") ??
-        "https://api.devnet.solana.com";
+        "https://devnet.helius-rpc.com/?api-key=f27e768e-586d-4e00-a35e-ef4d504101f5\n";
     // console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
     return {
         rpcUrl,
@@ -74,13 +51,6 @@ function getRpcUrl() {
     const url = detectConnectionSettings().rpcUrl;
     // console.log(`[SDK] getRpcUrl() = ${url}`);
     return url;
-}
-function getRpcProvider() {
-    const nextPublic = getNextPublicEnvVars();
-    const envProvider = normalizeProvider(env("IQLABS_RPC_PROVIDER")) ??
-        normalizeProvider(env("RPC_PROVIDER")) ??
-        normalizeProvider(nextPublic.rpcProvider);
-    return runtimeRpcProvider ?? envProvider ?? inferProviderFromUrl(getRpcUrl());
 }
 function chooseRpcUrlForFreshness(label) {
     const settings = detectConnectionSettings();
@@ -106,4 +76,3 @@ function getReaderConnection(labelOrUrl, commitment = "confirmed") {
     }
     return new web3_js_1.Connection(labelOrUrl, commitment);
 }
-//# sourceMappingURL=connection_helper.js.map

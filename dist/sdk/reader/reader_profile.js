@@ -65,4 +65,3 @@ async function decideReadMode(txSignature, mode = constants_1.DEFAULT_CONTRACT_M
     const onChainPath = resolveOnChainPath(tx, mode);
     return (0, exports.resolveReadMode)(onChainPath, tx.blockTime);
 }
-//# sourceMappingURL=reader_profile.js.map
