@@ -112,34 +112,32 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 
 #### `codeIn()`
 
-| **Parameters** | `connection`: Solana RPC connection<br>`signer`: signing wallet<br>`data`: data to upload (single string or array)<br>`mode`: contract mode (default: 'anchor') |
+| **Parameters** | `input`: `{ connection, signer }` object<br>`data`: string or string array (auto-chunks large data)<br>`mode`: contract mode (optional)<br>`filename`: optional filename<br>`method`: upload method (optional)<br>`filetype`: MIME type (optional)<br>`onProgress`: progress callback (optional) |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
 **Example:**
 ```typescript
-import { codeIn } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-// Upload a single file
-const signature = await codeIn(connection, signer, 'Hello, blockchain!');
-
-// Upload multiple files
-const multiSig = await codeIn(connection, signer, ['file1.txt', 'file2.txt', 'file3.txt']);
+const signature = await iqlabs.writer.codeIn({ connection, signer }, 'Hello, blockchain!');
 ```
 
 ---
 
 #### `readCodeIn()`
 
-| **Parameters** | `txSignature`: transaction signature<br>`connection`: (optional) Solana RPC connection |
+| **Parameters** | `txSignature`: transaction signature<br>`speed`: rate limit profile (optional): 'light' \| 'medium' \| 'heavy' \| 'extreme'<br>`onProgress`: progress callback (optional) |
 |----------|--------------------------|
-| **Returns** | Stored data (string) |
+| **Returns** | `{ metadata: string, data: string \| null }` |
 
 **Example:**
 ```typescript
-import { readCodeIn } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-const data = await readCodeIn('5Xg7...', connection);
+iqlabs.setRpcUrl('https://api.devnet.solana.com');
+
+const { metadata, data } = await iqlabs.reader.readCodeIn('5Xg7...');
 console.log(data); // 'Hello, blockchain!'
 ```
 
@@ -155,9 +153,9 @@ console.log(data); // 'Hello, blockchain!'
 
 **Example:**
 ```typescript
-import { requestConnection } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-await requestConnection(
+await iqlabs.writer.requestConnection(
   connection, signer, 'my-db',
   myWalletAddress, friendWalletAddress,
   'dm_table', ['message', 'timestamp'], 'message_id', []
@@ -174,20 +172,20 @@ await requestConnection(
 
 **Example:**
 ```typescript
-import { contract } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
 // Approve a friend request
-const approveIx = contract.manageConnectionInstruction(
+const approveIx = iqlabs.contract.manageConnectionInstruction(
   builder,
   { db_root, connection_table, signer: myPubkey },
-  { db_root_id, connection_seed, new_status: contract.CONNECTION_STATUS_APPROVED }
+  { db_root_id, connection_seed, new_status: iqlabs.contract.CONNECTION_STATUS_APPROVED }
 );
 
 // Block a user
-const blockIx = contract.manageConnectionInstruction(
+const blockIx = iqlabs.contract.manageConnectionInstruction(
   builder,
   { db_root, connection_table, signer: myPubkey },
-  { db_root_id, connection_seed, new_status: contract.CONNECTION_STATUS_BLOCKED }
+  { db_root_id, connection_seed, new_status: iqlabs.contract.CONNECTION_STATUS_BLOCKED }
 );
 ```
 
@@ -201,9 +199,9 @@ const blockIx = contract.manageConnectionInstruction(
 
 **Example:**
 ```typescript
-import { readConnection } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-const { status, requester, blocker } = await readConnection('my-db', walletA, walletB);
+const { status, requester, blocker } = await iqlabs.reader.readConnection('my-db', walletA, walletB);
 console.log(status); // 'pending' | 'approved' | 'blocked'
 ```
 
@@ -217,9 +215,9 @@ console.log(status); // 'pending' | 'approved' | 'blocked'
 
 **Example:**
 ```typescript
-import { writeConnectionRow } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-await writeConnectionRow(
+await iqlabs.writer.writeConnectionRow(
   connection, signer, 'my-db', connectionSeed,
   JSON.stringify({ message_id: '123', message: 'Hello friend!', timestamp: Date.now() })
 );
@@ -238,10 +236,10 @@ Fetch all connections (friend requests) for a user by analyzing their UserState 
 
 **Example:**
 ```typescript
-import { fetchUserConnections } from 'iqlabs-sdk/reader';
+import iqlabs from 'iqlabs-sdk';
 
 // Fetch all connections (across all apps!)
-const connections = await fetchUserConnections(myPubkey, {
+const connections = await iqlabs.reader.fetchUserConnections(myPubkey, {
   speed: 'light',  // 6 RPS (default)
   limit: 100
 });
@@ -273,15 +271,15 @@ connections.forEach(conn => {
 
 **Example:**
 ```typescript
-import { writeRow } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
 // Write the first row to create the table
-await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
+await iqlabs.writer.writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
   id: 1, name: 'Alice', email: 'alice@example.com'
 }));
 
 // Add another row to the same table
-await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
+await iqlabs.writer.writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
   id: 2, name: 'Bob', email: 'bob@example.com'
 }));
 ```
@@ -296,12 +294,12 @@ await writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
 
 **Example:**
 ```typescript
-import { readTableRows, contract } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-const dbRootPda = contract.pda.getDbRootPda('my-db');
-const tablePda = contract.pda.getTablePda(dbRootPda, 'users');
+const dbRootPda = iqlabs.contract.getDbRootPda('my-db');
+const tablePda = iqlabs.contract.getTablePda(dbRootPda, 'users');
 const accountInfo = await connection.getAccountInfo(tablePda);
-const rows = readTableRows(accountInfo);
+const rows = iqlabs.reader.readTableRows(accountInfo);
 
 console.log(`Total rows: ${rows.length}`);
 ```
@@ -316,9 +314,9 @@ console.log(`Total rows: ${rows.length}`);
 
 **Example:**
 ```typescript
-import { getTablelistFromRoot } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-const tables = await getTablelistFromRoot('my-db');
+const tables = await iqlabs.reader.getTablelistFromRoot('my-db');
 console.log('Table list:', tables);
 ```
 
@@ -332,9 +330,9 @@ console.log('Table list:', tables);
 
 **Example:**
 ```typescript
-import { fetchInventoryTransactions } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-const myFiles = await fetchInventoryTransactions(myPubkey, 20);
+const myFiles = await iqlabs.reader.fetchInventoryTransactions(myPubkey, 20);
 myFiles.forEach(tx => {
   let metadata: { data?: unknown } | null = null;
   try {
@@ -366,9 +364,9 @@ myFiles.forEach(tx => {
 
 **Example:**
 ```typescript
-import { setRpcUrl } from 'iqlabs-sdk';
+import iqlabs from 'iqlabs-sdk';
 
-setRpcUrl('https://your-rpc.example.com');
+iqlabs.setRpcUrl('https://your-rpc.example.com');
 ```
 
 ---
@@ -389,4 +387,4 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 
 ## Additional Resources
 - [IQLabs Official X](https://x.com/IQLabsOfficial)
-- [Example Project](https://github.com/IQCoreTeam/IQSdkUsageExampleCliTool)
+- [IQ Gateway](https://github.com/IQCoreTeam/iq-gateway)

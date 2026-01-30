@@ -16,6 +16,7 @@ import {
     DIRECT_METADATA_MAX_BYTES,
     DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
+    CHUNK_SIZE,
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
@@ -24,17 +25,26 @@ import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
+function toChunks(data: string | string[]): string[] {
+    if (Array.isArray(data)) return data;
+    if (data.length <= CHUNK_SIZE) return [data];
+    const chunks: string[] = [];
+    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        chunks.push(data.slice(i, i + CHUNK_SIZE));
+    }
+    return chunks;
+}
 
 export async function prepareCodeIn(
     input: {connection: Connection; signer: SignerInput},
-    chunks: string[],
+    data: string | string[],
     mode: string = DEFAULT_CONTRACT_MODE,
     filename?: string,
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
 ) {
-    // Basic validation and input setup
+    const chunks = toChunks(data);
     const totalChunks = chunks.length;
     if (totalChunks === 0) {
         throw new Error("chunks is empty");
@@ -156,7 +166,7 @@ export async function prepareCodeIn(
 
 export async function codeIn(
     input: {connection: Connection; signer: SignerInput},
-    chunks: string[],
+    data: string | string[],
     mode: string = DEFAULT_CONTRACT_MODE,
     filename?: string,
     method = 0,
@@ -175,7 +185,7 @@ export async function codeIn(
         iqAta,
     } = await prepareCodeIn(
         input,
-        chunks,
+        data,
         mode,
         filename,
         method,
