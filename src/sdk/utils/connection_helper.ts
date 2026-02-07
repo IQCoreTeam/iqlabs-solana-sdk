@@ -41,7 +41,7 @@ export function detectConnectionSettings(): {
         env("SOLANA_RPC") ??
         env("RPC_ENDPOINT") ??
         env("RPC_URL") ??
-        "https://devnet.helius-rpc.com/?api-key=f27e768e-586d-4e00-a35e-ef4d504101f5\n";
+        "https://api.mainnet-beta.solana.com";
 
     // console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
 

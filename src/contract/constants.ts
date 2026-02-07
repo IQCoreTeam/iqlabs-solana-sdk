@@ -1,7 +1,7 @@
 export const DEFAULT_ANCHOR_PROGRAM_ID =
-    "7dL1jKd4CaFHQRV2SU23XJtSCrPXaLpEbq9FteRXup8v";
+    "9KLLchQVJpGkw4jPuUmnvqESdR7mtNCYr3qS4iQLabs";
 export const DEFAULT_PINOCCHIO_PROGRAM_ID =
-    "7dL1jKd4CaFHQRV2SU23XJtSCrPXaLpEbq9FteRXup8v";
+    "9KLLchQVJpGkw4jPuUmnvqESdR7mtNCYr3qS4iQLabs";
 export const SEED_CONFIG = "configmY}AGBJiqLabs";
 export const SEED_DB_ROOT = "rootmY}AGBJiqLabs";
 export const SEED_TABLE = "tablemY}AGBJiqLabs";
