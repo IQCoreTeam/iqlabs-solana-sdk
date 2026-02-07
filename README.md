@@ -118,7 +118,7 @@ There is no dedicated "create table" function. The first write via [`writeRow()`
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 const signature = await iqlabs.writer.codeIn({ connection, signer }, 'Hello, blockchain!');
 ```
@@ -133,7 +133,7 @@ const signature = await iqlabs.writer.codeIn({ connection, signer }, 'Hello, blo
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 iqlabs.setRpcUrl('https://api.devnet.solana.com');
 
@@ -153,7 +153,7 @@ console.log(data); // 'Hello, blockchain!'
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 await iqlabs.writer.requestConnection(
   connection, signer, 'my-db',
@@ -172,7 +172,7 @@ await iqlabs.writer.requestConnection(
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 // Approve a friend request
 const approveIx = iqlabs.contract.manageConnectionInstruction(
@@ -199,7 +199,7 @@ const blockIx = iqlabs.contract.manageConnectionInstruction(
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 const { status, requester, blocker } = await iqlabs.reader.readConnection('my-db', walletA, walletB);
 console.log(status); // 'pending' | 'approved' | 'blocked'
@@ -215,7 +215,7 @@ console.log(status); // 'pending' | 'approved' | 'blocked'
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 await iqlabs.writer.writeConnectionRow(
   connection, signer, 'my-db', connectionSeed,
@@ -236,7 +236,7 @@ Fetch all connections (friend requests) for a user by analyzing their UserState 
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 // Fetch all connections (across all apps!)
 const connections = await iqlabs.reader.fetchUserConnections(myPubkey, {
@@ -271,7 +271,7 @@ connections.forEach(conn => {
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 // Write the first row to create the table
 await iqlabs.writer.writeRow(connection, signer, 'my-db', 'users', JSON.stringify({
@@ -295,7 +295,7 @@ await iqlabs.writer.writeRow(connection, signer, 'my-db', 'users', JSON.stringif
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 // Basic usage
 const rows = await iqlabs.reader.readTableRows(tablePda, { limit: 50 });
@@ -322,7 +322,7 @@ Collects all (or up to `maxSignatures`) transaction signatures for an account. L
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 // Collect all signatures
 const allSigs = await iqlabs.reader.collectSignatures(tablePda);
@@ -346,7 +346,7 @@ const rows = await iqlabs.reader.readTableRows(tablePda, { signatures: chunk });
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 const tables = await iqlabs.reader.getTablelistFromRoot('my-db');
 console.log('Table list:', tables);
@@ -362,7 +362,7 @@ console.log('Table list:', tables);
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 const myFiles = await iqlabs.reader.fetchInventoryTransactions(myPubkey, 20);
 myFiles.forEach(tx => {
@@ -396,7 +396,7 @@ myFiles.forEach(tx => {
 
 **Example:**
 ```typescript
-import iqlabs from 'iqlabs-sdk';
+import iqlabs from '@iqlabs-official/solana-sdk';
 
 iqlabs.setRpcUrl('https://your-rpc.example.com');
 ```
