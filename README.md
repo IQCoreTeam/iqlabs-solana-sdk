@@ -288,20 +288,52 @@ await iqlabs.writer.writeRow(connection, signer, 'my-db', 'users', JSON.stringif
 
 #### `readTableRows()`
 
-| **Parameters** | `accountInfo`: table account info |
+| **Parameters** | `account`: table PDA (PublicKey or string)<br>`options`: optional settings |
 |----------|--------------------------|
-| **Returns** | Row array (Row[]) |
+| **Options** | `limit`: max number of rows to fetch<br>`before`: signature cursor for pagination<br>`signatures`: pre-collected signature array (skips RPC fetch if provided)<br>`speed`: rate limit profile ('light', 'medium', 'heavy', 'extreme') |
+| **Returns** | `Array<Record<string, unknown>>` |
 
 **Example:**
 ```typescript
 import iqlabs from 'iqlabs-sdk';
 
-const dbRootPda = iqlabs.contract.getDbRootPda('my-db');
-const tablePda = iqlabs.contract.getTablePda(dbRootPda, 'users');
-const accountInfo = await connection.getAccountInfo(tablePda);
-const rows = iqlabs.reader.readTableRows(accountInfo);
+// Basic usage
+const rows = await iqlabs.reader.readTableRows(tablePda, { limit: 50 });
 
-console.log(`Total rows: ${rows.length}`);
+// Cursor-based pagination
+const olderRows = await iqlabs.reader.readTableRows(tablePda, { limit: 50, before: 'sig...' });
+
+// With pre-collected signatures (skips signature fetching, decodes directly)
+const sigs = await iqlabs.reader.collectSignatures(tablePda);
+const targetIdx = sigs.indexOf('abc123');
+const slice = sigs.slice(targetIdx - 25, targetIdx + 25);
+const rows = await iqlabs.reader.readTableRows(tablePda, { signatures: slice });
+```
+
+---
+
+#### `collectSignatures()`
+
+Collects all (or up to `maxSignatures`) transaction signatures for an account. Lightweight — no transaction decoding, only signature strings. Useful for pagination: fetch the full signature list once, then slice and pass to `readTableRows()`.
+
+| **Parameters** | `account`: table PDA (PublicKey or string)<br>`maxSignatures`: max number of signatures to collect (optional, fetches all if omitted) |
+|----------|--------------------------|
+| **Returns** | `string[]` (signature strings) |
+
+**Example:**
+```typescript
+import iqlabs from 'iqlabs-sdk';
+
+// Collect all signatures
+const allSigs = await iqlabs.reader.collectSignatures(tablePda);
+
+// Collect up to 3000 signatures
+const sigs = await iqlabs.reader.collectSignatures(tablePda, 3000);
+
+// Use with readTableRows to read from the middle
+const targetIdx = sigs.indexOf('abc123');
+const chunk = sigs.slice(targetIdx - 25, targetIdx + 25);
+const rows = await iqlabs.reader.readTableRows(tablePda, { signatures: chunk });
 ```
 
 ---
@@ -378,7 +410,6 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 - `manageRowData()` (`writer`)
 - `readUserState()` (`reader`)
 - `readInventoryMetadata()` (`reader`)
-- `fetchAccountTransactions()` (`reader`)
 - `getSessionPdaList()` (`reader`)
 - `deriveDmSeed()` (`utils`/`reader`)
 - `toSeedBytes()` (`utils`)
