@@ -126,10 +126,12 @@ export async function getTablelistFromRoot(
 // make 2 function and call them by branch with mutable? option,  is that mutable, we need to sort , "I can change the word mutable if that's not awesome"
 export async function readTableRows(
     account: PublicKey | string,
-    options: { before?: string; limit?: number; speed?: string } = {},
+    options: { before?: string; limit?: number; signatures?: string[]; speed?: string } = {},
 ): Promise<Array<Record<string, unknown>>> {
-    const {before, limit, speed} = options;
-    const signatures = await fetchAccountTransactions(account, {before, limit});
+    const {before, limit, signatures: preloadedSigs, speed} = options;
+    const signatures = preloadedSigs
+        ? preloadedSigs.map(s => ({signature: s}))
+        : await fetchAccountTransactions(account, {before, limit});
     const speedKey = resolveSessionSpeed(speed);
     const limiter = createRateLimiter(SESSION_SPEED_PROFILES[speedKey].maxRps);
     const rows: Array<Record<string, unknown>> = [];
@@ -168,4 +170,34 @@ export async function readTableRows(
     }
 
     return rows;
+}
+
+export async function collectSignatures(
+    account: PublicKey | string,
+    maxSignatures?: number,
+): Promise<string[]> {
+    const pubkey = typeof account === "string" ? new PublicKey(account) : account;
+    const connection = getConnection();
+    const result: string[] = [];
+    let before: string | undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+        const page = await connection.getSignaturesForAddress(pubkey, {
+            limit: 1000,
+            before,
+        });
+        for (const entry of page) {
+            result.push(entry.signature);
+        }
+        hasMore = page.length === 1000;
+        if (hasMore) {
+            before = page[page.length - 1].signature;
+        }
+        if (maxSignatures && result.length >= maxSignatures) {
+            return result.slice(0, maxSignatures);
+        }
+    }
+
+    return result;
 }
