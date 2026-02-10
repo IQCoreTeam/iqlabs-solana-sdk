@@ -33,7 +33,7 @@ import {
 } from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {prepareCodeIn} from "./code_in";
-import {sendTx} from "./writer_utils";
+import {sendTx, sendWithRetry} from "./writer_utils";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
@@ -131,40 +131,41 @@ export async function writeRow(
     }
 
     const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
-    const {
-        builder,
-        user,
-        userInventory,
-        onChainPath,
-        metadata,
-        sessionAccount,
-        sessionFinalize,
-        feeReceiver,
-        iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
-    const ix = dbCodeInInstruction(
-        builder,
-        {
+    return sendWithRetry(connection, signer, async (forceChunked) => {
+        const {
+            builder,
             user,
-            signer: signer.publicKey,
-            user_inventory: userInventory,
-            db_root: dbRoot,
-            table: tablePda,
-            signer_ata: signerAta ?? undefined,
-            system_program: SystemProgram.programId,
-            receiver: feeReceiver,
-            session: sessionAccount,
-            iq_ata: iqAta ?? undefined,
-        },
-        {
-            db_root_id: dbRootSeed,
-            table_seed: tableSeedBytes,
-            on_chain_path: onChainPath,
+            userInventory,
+            onChainPath,
             metadata,
-            session: sessionFinalize,
-        },
-    );
-    return sendTx(connection, signer, ix);
+            sessionAccount,
+            sessionFinalize,
+            feeReceiver,
+            iqAta,
+        } = await prepareCodeIn({connection, signer}, [rowJson], mode, {forceChunked});
+        return dbCodeInInstruction(
+            builder,
+            {
+                user,
+                signer: signer.publicKey,
+                user_inventory: userInventory,
+                db_root: dbRoot,
+                table: tablePda,
+                signer_ata: signerAta ?? undefined,
+                system_program: SystemProgram.programId,
+                receiver: feeReceiver,
+                session: sessionAccount,
+                iq_ata: iqAta ?? undefined,
+            },
+            {
+                db_root_id: dbRootSeed,
+                table_seed: tableSeedBytes,
+                on_chain_path: onChainPath,
+                metadata,
+                session: sessionFinalize,
+            },
+        );
+    });
 }
 
 export async function writeConnectionRow(
@@ -225,41 +226,41 @@ export async function writeConnectionRow(
         throw new Error(`missing id_col: ${meta.idCol}`);
     }
 
-    const {
-        builder,
-        user,
-        userInventory,
-        onChainPath,
-        metadata,
-        sessionAccount,
-        sessionFinalize,
-        feeReceiver,
-        iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
-    const ix = walletConnectionCodeInInstruction(
-        builder,
-        {
+    return sendWithRetry(connection, signer, async (forceChunked) => {
+        const {
+            builder,
             user,
-            signer: signer.publicKey,
-            user_inventory: userInventory,
-            db_root: dbRoot,
-            connection_table: connectionTable,
-            table_ref: tableRef,
-            system_program: SystemProgram.programId,
-            receiver: feeReceiver,
-            session: sessionAccount,
-            iq_ata: iqAta ?? undefined,
-        },
-        {
-            db_root_id: dbRootSeed,
-            connection_seed: connectionSeedBuffer,
-            on_chain_path: onChainPath,
+            userInventory,
+            onChainPath,
             metadata,
-            session: sessionFinalize,
-        },
-    );
-
-    return sendTx(connection, signer, ix);
+            sessionAccount,
+            sessionFinalize,
+            feeReceiver,
+            iqAta,
+        } = await prepareCodeIn({connection, signer}, [rowJson], mode, {forceChunked});
+        return walletConnectionCodeInInstruction(
+            builder,
+            {
+                user,
+                signer: signer.publicKey,
+                user_inventory: userInventory,
+                db_root: dbRoot,
+                connection_table: connectionTable,
+                table_ref: tableRef,
+                system_program: SystemProgram.programId,
+                receiver: feeReceiver,
+                session: sessionAccount,
+                iq_ata: iqAta ?? undefined,
+            },
+            {
+                db_root_id: dbRootSeed,
+                connection_seed: connectionSeedBuffer,
+                on_chain_path: onChainPath,
+                metadata,
+                session: sessionFinalize,
+            },
+        );
+    });
 }
 
 export async function manageRowData(
@@ -314,49 +315,50 @@ export async function manageRowData(
         }
 
         const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
-        const {
-            builder,
-            user,
-            userInventory,
-            onChainPath,
-            metadata,
-            sessionAccount,
-            sessionFinalize,
-            feeReceiver,
-            iqAta,
-        } = await prepareCodeIn({connection, signer}, [rowJson], mode);
-        const ix = dbInstructionCodeInInstruction(
-            builder,
-            {
+        return sendWithRetry(connection, signer, async (forceChunked) => {
+            const {
+                builder,
                 user,
-                signer: signer.publicKey,
-                user_inventory: userInventory,
-                db_root: dbRoot,
-                table,
-                instruction_table: instructionTable,
-                signer_ata: signerAta ?? undefined,
-                system_program: SystemProgram.programId,
-                receiver: feeReceiver,
-                session: sessionAccount,
-                iq_ata: iqAta ?? undefined,
-            },
-            {
-                db_root_id: dbRootSeed,
-                table_seed: seedBytes,
-                table_name:
-                    typeof tableName === "string"
-                        ? Buffer.from(tableName, "utf8")
-                        : tableName,
-                target_tx:
-                    typeof targetTx === "string"
-                        ? Buffer.from(targetTx, "utf8")
-                        : targetTx,
-                on_chain_path: onChainPath,
+                userInventory,
+                onChainPath,
                 metadata,
-                session: sessionFinalize,
-            },
-        );
-        return sendTx(connection, signer, ix);
+                sessionAccount,
+                sessionFinalize,
+                feeReceiver,
+                iqAta,
+            } = await prepareCodeIn({connection, signer}, [rowJson], mode, {forceChunked});
+            return dbInstructionCodeInInstruction(
+                builder,
+                {
+                    user,
+                    signer: signer.publicKey,
+                    user_inventory: userInventory,
+                    db_root: dbRoot,
+                    table,
+                    instruction_table: instructionTable,
+                    signer_ata: signerAta ?? undefined,
+                    system_program: SystemProgram.programId,
+                    receiver: feeReceiver,
+                    session: sessionAccount,
+                    iq_ata: iqAta ?? undefined,
+                },
+                {
+                    db_root_id: dbRootSeed,
+                    table_seed: seedBytes,
+                    table_name:
+                        typeof tableName === "string"
+                            ? Buffer.from(tableName, "utf8")
+                            : tableName,
+                    target_tx:
+                        typeof targetTx === "string"
+                            ? Buffer.from(targetTx, "utf8")
+                            : targetTx,
+                    on_chain_path: onChainPath,
+                    metadata,
+                    session: sessionFinalize,
+                },
+            );
+        });
     }
     if (connectionInfo) {
         return writeConnectionRow(

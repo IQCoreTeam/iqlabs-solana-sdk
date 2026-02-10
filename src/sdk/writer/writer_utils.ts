@@ -1,6 +1,13 @@
-import {Connection, Transaction, TransactionInstruction, type PublicKey} from "@solana/web3.js";
+import {Connection, Transaction, TransactionInstruction, type PublicKey, PACKET_DATA_SIZE} from "@solana/web3.js";
 import {userInitializeInstruction, type InstructionBuilder} from "../../contract";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
+
+export class TransactionTooLargeError extends Error {
+    constructor(size: number) {
+        super(`Transaction too large for inline: ${size} > ${PACKET_DATA_SIZE}`);
+        this.name = "TransactionTooLargeError";
+    }
+}
 
 const ACCOUNT_CACHE_TTL_MS = 120_000;
 
@@ -149,10 +156,29 @@ export async function sendTx(
     tx.feePayer = wallet.publicKey;
 
     const signed = await wallet.signTransaction(tx);
-    const signature = await connection.sendRawTransaction(signed.serialize());
+    const serialized = signed.serialize();
+    if (serialized.length > PACKET_DATA_SIZE) {
+        throw new TransactionTooLargeError(serialized.length);
+    }
+    const signature = await connection.sendRawTransaction(serialized);
     await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight});
 
     return signature;
+}
+
+export async function sendWithRetry(
+    connection: Connection,
+    signer: SignerInput,
+    buildIx: (forceChunked: boolean) => Promise<TransactionInstruction | TransactionInstruction[]>,
+): Promise<string> {
+    try {
+        return await sendTx(connection, signer, await buildIx(false));
+    } catch (e) {
+        if (e instanceof TransactionTooLargeError) {
+            return sendTx(connection, signer, await buildIx(true));
+        }
+        throw e;
+    }
 }
 
 export async function ensureUserInitialized(

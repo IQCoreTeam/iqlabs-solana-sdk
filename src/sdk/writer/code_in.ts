@@ -20,7 +20,7 @@ import {
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
-import {ensureUserInitialized, readMagicBytes, sendTx} from "./writer_utils";
+import {ensureUserInitialized, readMagicBytes, sendWithRetry} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
@@ -52,11 +52,15 @@ export async function prepareCodeIn(
     input: {connection: Connection; signer: SignerInput},
     data: string | string[],
     mode: string = DEFAULT_CONTRACT_MODE,
-    filename?: string,
-    method = 0,
-    filetype = "",
-    onProgress?: (percent: number) => void,
+    opts: {
+        filename?: string;
+        method?: number;
+        filetype?: string;
+        onProgress?: (percent: number) => void;
+        forceChunked?: boolean;
+    } = {},
 ) {
+    const {filename, method = 0, filetype = "", onProgress, forceChunked = false} = opts;
     const chunks = toChunks(data);
     const totalChunks = chunks.length;
     if (totalChunks === 0) {
@@ -109,6 +113,7 @@ export async function prepareCodeIn(
             ? JSON.stringify({...baseMetadata, data: chunks[0]})
             : "";
     const useInline =
+        !forceChunked &&
         inlineMetadata.length > 0 &&
         Buffer.byteLength(inlineMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
     const metadata = useInline ? inlineMetadata : JSON.stringify(baseMetadata);
@@ -185,42 +190,34 @@ export async function codeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
-) {
-    const {
-        builder,
-        user,
-        userInventory,
-        onChainPath,
-        metadata,
-        sessionAccount,
-        sessionFinalize,
-        feeReceiver,
-        iqAta,
-    } = await prepareCodeIn(
-        input,
-        data,
-        mode,
-        filename,
-        method,
-        filetype,
-        onProgress,
-    );
-    const dbIx = userInventoryCodeInInstruction(
-        builder,
-        {
+): Promise<string> {
+    const signature = await sendWithRetry(input.connection, input.signer, async (forceChunked) => {
+        const {
+            builder,
             user,
-            user_inventory: userInventory,
-            system_program: SystemProgram.programId,
-            receiver: feeReceiver,
-            session: sessionAccount,
-            iq_ata: iqAta ?? undefined,
-        },
-        {on_chain_path: onChainPath, metadata, session: sessionFinalize},
-    );
-
-    const signature = await sendTx(input.connection, input.signer, dbIx);
-    if (onProgress) {
-        onProgress(100);
-    }
+            userInventory,
+            onChainPath,
+            metadata,
+            sessionAccount,
+            sessionFinalize,
+            feeReceiver,
+            iqAta,
+        } = await prepareCodeIn(input, data, mode, {
+            filename, method, filetype, onProgress, forceChunked,
+        });
+        return userInventoryCodeInInstruction(
+            builder,
+            {
+                user,
+                user_inventory: userInventory,
+                system_program: SystemProgram.programId,
+                receiver: feeReceiver,
+                session: sessionAccount,
+                iq_ata: iqAta ?? undefined,
+            },
+            {on_chain_path: onChainPath, metadata, session: sessionFinalize},
+        );
+    });
+    if (onProgress) onProgress(100);
     return signature;
 }
