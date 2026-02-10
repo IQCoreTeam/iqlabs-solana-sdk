@@ -418,4 +418,4 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 
 ## Additional Resources
 - [IQLabs Official X](https://x.com/IQLabsOfficial)
-- [IQ Gateway](https://github.com/IQCoreTeam/iq-gateway)
+- [IQLabs Official Website](https://iqlabs.dev)
