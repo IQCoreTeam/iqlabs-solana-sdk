@@ -38,13 +38,11 @@
 
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getReaderConnection} from "../utils/connection_helper";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import {decodeReaderInstruction} from "./reader_utils";
-import {readerContext} from "./reader_context";
 
 const resolveSessionConfig = (speed?: string) => {
     const resolvedSpeed = resolveSessionSpeed(speed);
@@ -70,50 +68,16 @@ const extractAnchorInstruction = (
     return null;
 };
 
-const extractPinocchioPostChunk = (data: Buffer) => {
-    if (data.length < 22 || data[0] !== 0x04) {
-        return null;
-    }
-    let offset = 1 + 16;
-    const index = data.readUInt32LE(offset);
-    offset += 4;
-    const remaining = data.subarray(offset);
-    if (remaining.length === 0) {
-        return null;
-    }
-    if (remaining.length >= 5) {
-        const stringLen = remaining.readUInt32LE(0);
-        const payloadEnd = 4 + stringLen;
-        if (payloadEnd < remaining.length) {
-            const chunk = remaining.subarray(4, payloadEnd).toString("utf8");
-            return {index, chunk};
-        }
-    }
-    if (remaining.length <= 1) {
-        return null;
-    }
-    const chunk = remaining.subarray(1).toString("utf8");
-    return {index, chunk};
-};
-
 const extractPostChunk = (tx: VersionedTransactionResponse) => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
     const chunks: Array<{ index: number; chunk: string }> = [];
 
     for (const ix of message.compiledInstructions) {
-        const programId = accountKeys.get(ix.programIdIndex);
         const decoded = decodeReaderInstruction(ix, accountKeys);
         if (decoded && decoded.name === "post_chunk") {
             const data = decoded.data as { index: number; chunk: string };
             chunks.push({index: data.index, chunk: data.chunk});
-            continue;
-        }
-        if (programId?.equals(readerContext.pinocchioProgramId)) {
-            const parsed = extractPinocchioPostChunk(Buffer.from(ix.data));
-            if (parsed) {
-                chunks.push(parsed);
-            }
         }
     }
 
@@ -134,7 +98,6 @@ export async function readSessionResult(
     sessionPubkey: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
@@ -213,7 +176,6 @@ export async function readSessionResult(
 export async function readLinkedListResult(
     tailTx: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
-    mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
 ): Promise<{ result: string }> {

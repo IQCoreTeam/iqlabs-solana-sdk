@@ -3,17 +3,12 @@ import {PublicKey, VersionedTransactionResponse} from "@solana/web3.js";
 import {
     getUserInventoryPda,
     getUserPda,
-    resolveContractRuntime,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection, getReaderConnection} from "../utils/connection_helper";
 import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
 
-import {
-    readerContext,
-    resolveReaderModeFromTx, resolveReaderProgramId,
-} from "./reader_context";
+import {readerContext} from "./reader_context";
 
 import {
     decodeUserInventoryCodeIn,
@@ -70,7 +65,6 @@ export async function readSession(
     sessionPubkey: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string | null }> {
     const connection = getReaderConnection(readOption.freshness);
@@ -78,13 +72,12 @@ export async function readSession(
     if (!info) {
         throw new Error("session account not found");
     }
-    return readSessionResult(sessionPubkey, readOption, speed, mode, onProgress);
+    return readSessionResult(sessionPubkey, readOption, speed, onProgress);
 }
 
 export async function readLinkedListFromTail(
     tailTx: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
-    mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
 ): Promise<{ result: string }> {
@@ -98,7 +91,6 @@ export async function readLinkedListFromTail(
     return readLinkedListResult(
         tailTx,
         readOption,
-        mode,
         onProgress,
         expectedTotalChunks,
     );
@@ -107,16 +99,10 @@ export async function readLinkedListFromTail(
 export async function readUserInventoryCodeInFromTx(
     tx: VersionedTransactionResponse,
     speed?: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
     onProgress?: (percent: number) => void,
 ): Promise<{ metadata: string; data: string | null }> {
     const blockTime = tx.blockTime;
-    const userMode = resolveContractRuntime(mode);
-    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
-    const {onChainPath, metadata, inlineData} = extractCodeInPayload(
-        tx,
-        resolvedMode,
-    );
+    const {onChainPath, metadata, inlineData} = extractCodeInPayload(tx);
     let totalChunks: number | undefined;
     try {
         const parsed = JSON.parse(metadata) as { total_chunks?: unknown };
@@ -146,7 +132,6 @@ export async function readUserInventoryCodeInFromTx(
             onChainPath,
             readOption,
             speed,
-            resolvedMode,
             onProgress,
         );
         return {metadata, data: result};
@@ -154,7 +139,6 @@ export async function readUserInventoryCodeInFromTx(
     const {result} = await readLinkedListFromTail(
         onChainPath,
         readOption,
-        resolvedMode,
         onProgress,
         totalChunks,
     );
@@ -163,7 +147,6 @@ export async function readUserInventoryCodeInFromTx(
 
 export async function readUserState(
     userPubkey: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{
     owner: string;
     metadata: string | null;
@@ -172,7 +155,7 @@ export async function readUserState(
 }> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const programId = resolveReaderProgramId(mode);
+    const programId = readerContext.anchorProgramId;
     const userState = getUserPda(user, programId);
     const info = await connection.getAccountInfo(userState);
     if (!info) {

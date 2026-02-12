@@ -7,14 +7,13 @@ import {
     getConnectionTablePda,
     getDbRootPda,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {decodeConnectionMeta} from "../utils/global_fetch";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {readCodeIn} from "./read_code_in";
-import {readerContext, resolveReaderProgramId} from "./reader_context";
+import {readerContext} from "./reader_context";
 import {fetchAccountTransactions} from "./reader_utils";
 
 const resolveConnectionStatus = (status: number) => {
@@ -34,7 +33,6 @@ export async function readConnection(
     dbRootId: Uint8Array<any> | string,
     partyA: string,
     partyB: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{
     status: "pending" | "approved" | "blocked" | "unknown";
     requester: "a" | "b";
@@ -42,7 +40,7 @@ export async function readConnection(
 }> {
     const connection = getConnection();
     const dbRootSeed = toSeedBytes(dbRootId);
-    const programId = resolveReaderProgramId(mode);
+    const programId = readerContext.anchorProgramId;
     const dbRoot = getDbRootPda(dbRootSeed, programId);
     const connectionSeed = deriveDmSeed(partyA, partyB);
     const connectionTable = getConnectionTablePda(
@@ -70,9 +68,8 @@ export async function readConnection(
 export async function getTablelistFromRoot(
     connection: Connection,
     dbRootId: Uint8Array | string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = resolveReaderProgramId(mode);
+    const programId = readerContext.anchorProgramId;
     const dbRootSeed = toSeedBytes(dbRootId);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
     const info = await connection.getAccountInfo(dbRoot);

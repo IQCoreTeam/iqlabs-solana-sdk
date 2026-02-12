@@ -6,11 +6,10 @@ import {
     userInventoryCodeInInstruction,
     getCodeAccountPda,
     getUserInventoryPda,
-    getProgramId,
+    PROGRAM_ID,
     getSessionPda,
     getUserPda,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {
     DEFAULT_LINKED_LIST_THRESHOLD,
     DIRECT_METADATA_MAX_BYTES,
@@ -51,7 +50,6 @@ function toChunks(data: string | string[]): string[] {
 export async function prepareCodeIn(
     input: {connection: Connection; signer: SignerInput},
     data: string | string[],
-    mode: string = DEFAULT_CONTRACT_MODE,
     filename?: string,
     method = 0,
     filetype = "",
@@ -66,7 +64,7 @@ export async function prepareCodeIn(
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
-    const programId = getProgramId(mode);
+    const programId = PROGRAM_ID;
 
     const builder = createInstructionBuilder(IDL, programId);
     const user = wallet.publicKey;
@@ -180,7 +178,6 @@ export async function prepareCodeIn(
 export async function codeIn(
     input: {connection: Connection; signer: SignerInput},
     data: string | string[],
-    mode: string = DEFAULT_CONTRACT_MODE,
     filename?: string,
     method = 0,
     filetype = "",
@@ -199,7 +196,6 @@ export async function codeIn(
     } = await prepareCodeIn(
         input,
         data,
-        mode,
         filename,
         method,
         filetype,

@@ -1,9 +1,6 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
-import {resolveReaderModeFromTx} from "./reader_context";
 import {decodeReaderInstruction} from "./reader_utils";
-import {resolveContractRuntime} from "../../contract";
 
 const DAY_SECONDS = 86_400;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
@@ -11,7 +8,6 @@ const SIG_MIN_LEN = 80;
 
 const resolveOnChainPath = (
     tx: VersionedTransactionResponse,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): string => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys(
@@ -19,8 +15,6 @@ const resolveOnChainPath = (
             ? {accountKeysFromLookups: tx.meta.loadedAddresses}
             : undefined,
     );
-    const userMode = resolveContractRuntime(mode);
-    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
 
     for (const ix of message.compiledInstructions) {
         const decoded = decodeReaderInstruction(ix, accountKeys);
@@ -72,7 +66,6 @@ export const resolveReadMode = (
 
 export async function decideReadMode(
     txSignature: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<{ freshness?: "fresh" | "recent" | "archive" }> {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
@@ -81,6 +74,6 @@ export async function decideReadMode(
     if (!tx) {
         throw new Error("transaction not found");
     }
-    const onChainPath = resolveOnChainPath(tx, mode);
+    const onChainPath = resolveOnChainPath(tx);
     return resolveReadMode(onChainPath, tx.blockTime);
 }

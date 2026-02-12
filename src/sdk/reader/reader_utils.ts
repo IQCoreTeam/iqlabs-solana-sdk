@@ -7,18 +7,12 @@ import {
 import {
     getSessionPda,
     getUserPda,
-    resolveContractRuntime,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {getConnection} from "../utils/connection_helper";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
 
-import {
-    readerContext,
-    resolveReaderModeFromTx,
-    resolveReaderProgramId,
-} from "./reader_context";
+import {readerContext} from "./reader_context";
 
 const {instructionCoder} = readerContext;
 export const decodeReaderInstruction = (
@@ -30,8 +24,7 @@ export const decodeReaderInstruction = (
         return null;
     }
     const isAnchor = programId.equals(readerContext.anchorProgramId);
-    const isPinocchio = programId.equals(readerContext.pinocchioProgramId);
-    if (!isAnchor && !isPinocchio) {
+    if (!isAnchor) {
         return null;
     }
     return instructionCoder.decode(Buffer.from(ix.data));
@@ -40,12 +33,9 @@ export const decodeReaderInstruction = (
 // ----- user_inventory_code_in decoding -----
 export const decodeUserInventoryCodeIn = (
     tx: VersionedTransactionResponse,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string } => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
-    const userMode = resolveContractRuntime(mode);
-    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
 
     for (const ix of message.compiledInstructions) {
         const decoded = decodeReaderInstruction(ix, accountKeys);
@@ -69,9 +59,8 @@ export const decodeUserInventoryCodeIn = (
 // ----- user_inventory_code_in metadata parsing -----
 export const extractCodeInPayload = (
     tx: VersionedTransactionResponse,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): { onChainPath: string; metadata: string; inlineData: string | null } => {
-    const {onChainPath, metadata} = decodeUserInventoryCodeIn(tx, mode);
+    const {onChainPath, metadata} = decodeUserInventoryCodeIn(tx);
     if (onChainPath.length > 0) {
         return {onChainPath, metadata, inlineData: null};
     }
@@ -114,11 +103,10 @@ export async function fetchAccountTransactions( // this use for bringing the db 
 
 export async function getSessionPdaList(
     userPubkey: string,
-    mode: string = DEFAULT_CONTRACT_MODE,
 ): Promise<string[]> {
     const connection = getConnection();
     const user = new PublicKey(userPubkey);
-    const programId = resolveReaderProgramId(mode);
+    const programId = readerContext.anchorProgramId;
     const userState = getUserPda(user, programId);
     const info = await connection.getAccountInfo(userState);
     if (!info) {
@@ -144,7 +132,6 @@ export async function fetchUserConnections(
         limit?: number;
         before?: string;
         speed?: "light" | "medium" | "heavy" | "extreme";
-        mode?: string;
     },
 ): Promise<
     Array<{
@@ -161,8 +148,7 @@ export async function fetchUserConnections(
     const {decodeConnectionMeta} = await import("../utils/global_fetch");
 
     // 1. Calculate UserState PDA
-    const mode = options?.mode ?? DEFAULT_CONTRACT_MODE;
-    const programId = resolveReaderProgramId(mode);
+    const programId = readerContext.anchorProgramId;
     const pubkey = typeof userPubkey === "string" ? new PublicKey(userPubkey) : userPubkey;
     const userState = getUserPda(pubkey, programId);
 

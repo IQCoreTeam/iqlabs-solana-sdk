@@ -13,7 +13,7 @@ import {
     SEED_TARGET,
     SEED_USER,
 } from "./constants";
-import {getProgramId} from "./profile";
+import {PROGRAM_ID} from "./profile";
 
 type Bytes = Uint8Array<any>;
 
@@ -48,7 +48,7 @@ const getProgramIdSeed = (programId: PublicKey): Buffer =>
 
 export const getDbRootPda = (
     dbRootId: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_DB_ROOT_BYTES,
@@ -59,7 +59,7 @@ export const getDbRootPda = (
 export const getTablePda = (
     dbRoot: PublicKey,
     tableSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_TABLE_BYTES,
@@ -71,7 +71,7 @@ export const getTablePda = (
 export const getInstructionTablePda = (
     dbRoot: PublicKey,
     tableSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_TABLE_BYTES,
@@ -84,7 +84,7 @@ export const getInstructionTablePda = (
 export const getConnectionTablePda = (
     dbRoot: PublicKey,
     connectionSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_CONNECTION_BYTES,
@@ -96,7 +96,7 @@ export const getConnectionTablePda = (
 export const getConnectionInstructionTablePda = (
     dbRoot: PublicKey,
     connectionSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_CONNECTION_BYTES,
@@ -109,7 +109,7 @@ export const getConnectionInstructionTablePda = (
 export const getConnectionTableRefPda = (
     dbRoot: PublicKey,
     connectionSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_TABLE_REF_BYTES,
@@ -121,7 +121,7 @@ export const getConnectionTableRefPda = (
 export const getTargetTableRefPda = (
     dbRoot: PublicKey,
     tableSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_TABLE_REF_BYTES,
@@ -134,7 +134,7 @@ export const getTargetTableRefPda = (
 export const getTargetConnectionTableRefPda = (
     dbRoot: PublicKey,
     connectionSeed: Bytes,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_TABLE_REF_BYTES,
@@ -146,7 +146,7 @@ export const getTargetConnectionTableRefPda = (
 
 export const getUserPda = (
     user: PublicKey,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_USER_BYTES,
@@ -157,7 +157,7 @@ export const getUserPda = (
 export const getSessionPda = (
     user: PublicKey,
     seq: bigint | number,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([
         SEED_BUNDLE_BYTES,
@@ -168,19 +168,19 @@ export const getSessionPda = (
 
 export const getCodeAccountPda = (
     user: PublicKey,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([SEED_CODE_ACCOUNT_BYTES, user.toBuffer()], programId);
 
 export const getUserInventoryPda = (
     user: PublicKey,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([SEED_USER_INVENTORY_BYTES, user.toBuffer()], programId);
 
 export const getServerAccountPda = (
     user: PublicKey,
     serverId: string,
-    programId: PublicKey = getProgramId(),
+    programId: PublicKey = PROGRAM_ID,
 ) =>
     findPda([Buffer.from(serverId), user.toBuffer()], programId);

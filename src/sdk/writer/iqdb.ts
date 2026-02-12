@@ -16,13 +16,12 @@ import {
     getConnectionTableRefPda,
     getDbRootPda,
     getInstructionTablePda,
-    getProgramId,
+    PROGRAM_ID,
     getTargetConnectionTableRefPda,
     getTablePda,
     getUserPda,
     requestConnectionInstruction,
 } from "../../contract";
-import {DEFAULT_CONTRACT_MODE} from "../../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {
     decodeConnectionMeta,
@@ -97,10 +96,9 @@ export async function writeRow(
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
-    mode = DEFAULT_CONTRACT_MODE,
     skipConfirmation = false,
 ) {
-    const programId = getProgramId(mode);
+    const programId = PROGRAM_ID;
     const dbRootSeed = toSeedBytes(dbRootId);
     const tableSeedBytes = toSeedBytes(tableSeed);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
@@ -137,7 +135,7 @@ export async function writeRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+    } = await prepareCodeIn({connection, signer}, [rowJson]);
     const ix = dbCodeInInstruction(
         builder,
         {
@@ -169,9 +167,8 @@ export async function writeConnectionRow(
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
     rowJson: string,
-    mode = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = getProgramId(mode);
+    const programId = PROGRAM_ID;
     const dbRootSeed = toSeedBytes(dbRootId);
     const connectionSeedBytes = toSeedBytes(connectionSeed);
     const connectionSeedBuffer = Buffer.from(connectionSeedBytes);
@@ -231,7 +228,7 @@ export async function writeConnectionRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+    } = await prepareCodeIn({connection, signer}, [rowJson]);
     const ix = walletConnectionCodeInInstruction(
         builder,
         {
@@ -266,9 +263,8 @@ export async function manageRowData(
     rowJson: string,
     tableName?: string | Uint8Array,
     targetTx?: string | Uint8Array,
-    mode = DEFAULT_CONTRACT_MODE,
 ) {
-    const programId = getProgramId(mode);
+    const programId = PROGRAM_ID;
     const dbRootSeed = toSeedBytes(dbRootId);
     const seedBytes = toSeedBytes(seed);
     const dbRoot = getDbRootPda(dbRootSeed, programId);
@@ -320,7 +316,7 @@ export async function manageRowData(
             sessionFinalize,
             feeReceiver,
             iqAta,
-        } = await prepareCodeIn({connection, signer}, [rowJson], mode);
+        } = await prepareCodeIn({connection, signer}, [rowJson]);
         const ix = dbInstructionCodeInInstruction(
             builder,
             {
@@ -361,7 +357,6 @@ export async function manageRowData(
             dbRootSeed,
             seedBytes,
             rowJson,
-            mode,
         );
 
     }
@@ -379,10 +374,9 @@ export async function requestConnection(
     columns: Array<string | Uint8Array>,
     idCol: string | Uint8Array,
     extKeys: Array<string | Uint8Array>,
-    mode = DEFAULT_CONTRACT_MODE,
 ) {
     // Validate requester
-    const programId = getProgramId(mode);
+    const programId = PROGRAM_ID;
     const builder = createInstructionBuilder(IDL, programId);
     const requester = signer.publicKey;
     const requesterBase58 = requester.toBase58();

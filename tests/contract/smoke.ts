@@ -5,16 +5,14 @@ import {PublicKey, Keypair} from "@solana/web3.js";
 import {BN, type Idl} from "@coral-xyz/anchor";
 import {
     DEFAULT_ANCHOR_PROGRAM_ID,
-    DEFAULT_PINOCCHIO_PROGRAM_ID,
     createInstructionBuilder,
     createSessionInstruction,
     getCodeAccountPda,
-    getDbAccountPda,
     getDbRootPda,
-    getProgramId,
+    PROGRAM_ID,
     getSessionPda,
     getUserPda,
-    resolveContractRuntime,
+    getUserInventoryPda,
     userInitializeInstruction,
 } from "../../src/contract";
 
@@ -31,13 +29,11 @@ const dbRootId = new Uint8Array([1, 2, 3, 4]);
 const userState = getUserPda(user, programId);
 const session = getSessionPda(user, 1n, programId);
 const codeAccount = getCodeAccountPda(user, programId);
-const dbAccount = getDbAccountPda(user, programId);
 const dbRoot = getDbRootPda(dbRootId, programId);
 
 assert.ok(userState instanceof PublicKey);
 assert.ok(session instanceof PublicKey);
 assert.ok(codeAccount instanceof PublicKey);
-assert.ok(dbAccount instanceof PublicKey);
 assert.ok(dbRoot instanceof PublicKey);
 
 const idl = loadIdl();
@@ -57,24 +53,17 @@ assert.equal(createSessionIx.programId.toBase58(), programId.toBase58());
 assert.equal(createSessionIx.keys.length, 4);
 assert.ok(createSessionIx.data.length > 0);
 
+const userInventory = getUserInventoryPda(user, programId);
 const userInitIx = userInitializeInstruction(builder, {
   user,
   code_account: codeAccount,
   user_state: userState,
-  db_account: dbAccount,
+  user_inventory: userInventory,
 });
 
 assert.equal(userInitIx.programId.toBase58(), programId.toBase58());
 
-const pinocchioRuntime = resolveContractRuntime("pinocchio");
-assert.equal(pinocchioRuntime, "pinocchio");
-const inferredAnchor = resolveContractRuntime("anything_else");
-assert.equal(inferredAnchor, "anchor");
-
-const defaultAnchorProgram = getProgramId("anchor");
-assert.equal(defaultAnchorProgram.toBase58(), DEFAULT_ANCHOR_PROGRAM_ID);
-const defaultPinocchioProgram = getProgramId("pinocchio");
-assert.equal(defaultPinocchioProgram.toBase58(), DEFAULT_PINOCCHIO_PROGRAM_ID);
+assert.equal(PROGRAM_ID.toBase58(), DEFAULT_ANCHOR_PROGRAM_ID);
 
 const customProgramId = Keypair.generate().publicKey;
 const customUserState = getUserPda(user, customProgramId);

@@ -1,6 +1,4 @@
-import {resolveContractRuntime} from "../../contract";
 import {getConnection} from "../utils/connection_helper";
-import {resolveReaderModeFromTx} from "./reader_context";
 import {readUserInventoryCodeInFromTx} from "./reading_flow";
 
 export async function readCodeIn(
@@ -16,7 +14,5 @@ export async function readCodeIn(
         throw new Error("transaction not found");
     }
 
-    const userMode = resolveContractRuntime();
-    const resolvedMode = resolveReaderModeFromTx(tx) ?? userMode;
-    return await readUserInventoryCodeInFromTx(tx, speed, resolvedMode, onProgress);
+    return await readUserInventoryCodeInFromTx(tx, speed, onProgress);
 }
