@@ -135,6 +135,7 @@ export async function sendTx(
     connection: Connection,
     signer: SignerInput,
     instructions: TransactionInstruction | TransactionInstruction[],
+    skipConfirmation = false,
 ) {
     const wallet = toWalletSigner(signer);
     const tx = new Transaction();
@@ -150,7 +151,10 @@ export async function sendTx(
 
     const signed = await wallet.signTransaction(tx);
     const signature = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight});
+
+    if (!skipConfirmation) {
+        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight});
+    }
 
     return signature;
 }

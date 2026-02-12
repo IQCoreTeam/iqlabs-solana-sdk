@@ -70,6 +70,8 @@ export async function validateRowJson(
     if (!Object.prototype.hasOwnProperty.call(row, requiredId)) {
         throw new Error(`missing id_col: ${requiredId}`);
     }
+
+    return meta;
 }
 
 export async function resolveSignerAta(
@@ -96,6 +98,7 @@ export async function writeRow(
     tableSeed: Uint8Array | string,
     rowJson: string,
     mode = DEFAULT_CONTRACT_MODE,
+    skipConfirmation = false,
 ) {
     const programId = getProgramId(mode);
     const dbRootSeed = toSeedBytes(dbRootId);
@@ -109,19 +112,12 @@ export async function writeRow(
         dbRootSeed,
         tableSeedBytes,
     );
-    await validateRowJson(
+    const meta = await validateRowJson(
         connection,
         programId,
         dbRootSeed,
         tableSeedBytes,
         rowJson,
-    );
-
-    const meta = await fetchTableMeta(
-        connection,
-        programId,
-        dbRootSeed,
-        tableSeedBytes,
     );
     if (
         meta.writers.length > 0 &&
@@ -164,7 +160,7 @@ export async function writeRow(
             session: sessionFinalize,
         },
     );
-    return sendTx(connection, signer, ix);
+    return sendTx(connection, signer, ix, skipConfirmation);
 }
 
 export async function writeConnectionRow(
