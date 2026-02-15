@@ -54,6 +54,7 @@ export async function prepareCodeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
+    options?: {maxInlineBytes?: number},
 ) {
     const chunks = toChunks(data);
     const totalChunks = chunks.length;
@@ -106,9 +107,10 @@ export async function prepareCodeIn(
         totalChunks === 1
             ? JSON.stringify({...baseMetadata, data: chunks[0]})
             : "";
+    const maxInline = options?.maxInlineBytes ?? DIRECT_METADATA_MAX_BYTES;
     const useInline =
         inlineMetadata.length > 0 &&
-        Buffer.byteLength(inlineMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
+        Buffer.byteLength(inlineMetadata, "utf8") <= maxInline;
     const metadata = useInline ? inlineMetadata : JSON.stringify(baseMetadata);
 
     // Upload chunks (linked-list vs session)

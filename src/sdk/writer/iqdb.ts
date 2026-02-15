@@ -33,6 +33,7 @@ import {
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {prepareCodeIn} from "./code_in";
 import {sendTx} from "./writer_utils";
+import {DB_DIRECT_METADATA_MAX_BYTES} from "../constants";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
@@ -135,7 +136,7 @@ export async function writeRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson]);
+    } = await prepareCodeIn({connection, signer}, [rowJson], undefined, 0, "", undefined, {maxInlineBytes: DB_DIRECT_METADATA_MAX_BYTES});
     const ix = dbCodeInInstruction(
         builder,
         {
@@ -228,7 +229,7 @@ export async function writeConnectionRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson]);
+    } = await prepareCodeIn({connection, signer}, [rowJson], undefined, 0, "", undefined, {maxInlineBytes: DB_DIRECT_METADATA_MAX_BYTES});
     const ix = walletConnectionCodeInInstruction(
         builder,
         {
@@ -316,7 +317,7 @@ export async function manageRowData(
             sessionFinalize,
             feeReceiver,
             iqAta,
-        } = await prepareCodeIn({connection, signer}, [rowJson]);
+        } = await prepareCodeIn({connection, signer}, [rowJson], undefined, 0, "", undefined, {maxInlineBytes: DB_DIRECT_METADATA_MAX_BYTES});
         const ix = dbInstructionCodeInInstruction(
             builder,
             {
