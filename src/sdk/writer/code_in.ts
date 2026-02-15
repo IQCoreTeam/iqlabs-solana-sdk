@@ -16,6 +16,7 @@ import {
     DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
     CHUNK_SIZE,
+    MAX_FILENAME_LENGTH,
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
@@ -47,6 +48,13 @@ function toChunks(data: string | string[]): string[] {
     return chunks;
 }
 
+export interface PrepareCodeInOptions {
+    /** Never inline data into metadata — always upload via chunks first. */
+    neverInline?: boolean;
+    /** Hard cap on final metadata byte size. Throws if exceeded. */
+    maxMetadataBytes?: number;
+}
+
 export async function prepareCodeIn(
     input: {connection: Connection; signer: SignerInput},
     data: string | string[],
@@ -54,7 +62,7 @@ export async function prepareCodeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
-    options?: {maxInlineBytes?: number},
+    options?: PrepareCodeInOptions,
 ) {
     const chunks = toChunks(data);
     const totalChunks = chunks.length;
@@ -93,25 +101,45 @@ export async function prepareCodeIn(
         seq = BigInt(decoded.total_session_files.toString());
     }
 
-    // File metadata payload
+    // Validate filename length
     const magic = readMagicBytes(chunks[0]);
     const resolvedFiletype = filetype || magic.mime;
     const safeFilename = filename ?? `${seq}.${magic.ext}`;
+    if (Buffer.byteLength(safeFilename, "utf8") > MAX_FILENAME_LENGTH) {
+        throw new Error(
+            `filename too long: ${Buffer.byteLength(safeFilename, "utf8")} bytes (max ${MAX_FILENAME_LENGTH})`,
+        );
+    }
+
+    // Metadata payload — type + offset fields only
     const baseMetadata = {
         filetype: resolvedFiletype,
         method,
         filename: safeFilename,
         total_chunks: totalChunks,
     };
+
+    // Decide whether to inline data into metadata
+    const neverInline = options?.neverInline ?? false;
     const inlineMetadata =
-        totalChunks === 1
+        !neverInline && totalChunks === 1
             ? JSON.stringify({...baseMetadata, data: chunks[0]})
             : "";
-    const maxInline = options?.maxInlineBytes ?? DIRECT_METADATA_MAX_BYTES;
     const useInline =
         inlineMetadata.length > 0 &&
-        Buffer.byteLength(inlineMetadata, "utf8") <= maxInline;
+        Buffer.byteLength(inlineMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
     const metadata = useInline ? inlineMetadata : JSON.stringify(baseMetadata);
+
+    // Enforce hard metadata size cap
+    const maxMetadataBytes = options?.maxMetadataBytes;
+    if (maxMetadataBytes !== undefined) {
+        const metadataSize = Buffer.byteLength(metadata, "utf8");
+        if (metadataSize > maxMetadataBytes) {
+            throw new Error(
+                `metadata too large: ${metadataSize} bytes (max ${maxMetadataBytes})`,
+            );
+        }
+    }
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
