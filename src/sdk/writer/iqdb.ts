@@ -57,14 +57,12 @@ export async function validateRowJson(
 
     const meta = await fetchTableMeta(connection, programId, dbRootId, tableSeed);
     const requiredId = idCol ?? meta.idCol;
-    const allowedKeys = new Set([...meta.columns, meta.idCol]);
     const row = parsed as Record<string, unknown>;
 
-    for (const key of Object.keys(row)) {
-        if (!allowedKeys.has(key)) {
-            throw new Error(`unknown key: ${key}`);
-        }
-    }
+    // Extra keys in the row JSON are allowed.  The on-chain program stores
+    // the payload as raw bytes and never inspects individual field names.
+    // Tables created before a new column was added (e.g. reply_to) still
+    // accept writes that include it — only the id column is required.
 
     if (!Object.prototype.hasOwnProperty.call(row, requiredId)) {
         throw new Error(`missing id_col: ${requiredId}`);
@@ -207,13 +205,8 @@ export async function writeConnectionRow(
     if (!access.allowed) {
         throw new Error(access.message ?? "connection not writable");
     }
-    const allowedKeys = new Set([...meta.columns, meta.idCol]);
     const row = parsed as Record<string, unknown>;
-    for (const key of Object.keys(row)) {
-        if (!allowedKeys.has(key)) {
-            throw new Error(`unknown key: ${key}`);
-        }
-    }
+    // Extra keys allowed — on-chain program stores raw bytes.
     if (!Object.prototype.hasOwnProperty.call(row, meta.idCol)) {
         throw new Error(`missing id_col: ${meta.idCol}`);
     }
