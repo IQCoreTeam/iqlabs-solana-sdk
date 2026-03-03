@@ -21,6 +21,7 @@ import {
     getTablePda,
     getUserPda,
     requestConnectionInstruction,
+    updateUserMetadataInstruction,
 } from "../../contract";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {
@@ -362,6 +363,35 @@ export async function manageRowData(
     }
 
     throw new Error("table/connection not found");
+}
+
+export async function updateUserMetadata(
+    connection: Connection,
+    signer: Signer,
+    dbRootId: Uint8Array | string,
+    meta: Uint8Array | string,
+) {
+    const programId = PROGRAM_ID;
+    const builder = createInstructionBuilder(IDL, programId);
+    const dbRootSeed = toSeedBytes(dbRootId);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
+    const user = getUserPda(signer.publicKey, programId);
+    const metaBytes = typeof meta === "string" ? Buffer.from(meta, "utf8") : meta;
+
+    const ix = updateUserMetadataInstruction(
+        builder,
+        {
+            user,
+            db_root: dbRoot,
+            signer: signer.publicKey,
+            system_program: SystemProgram.programId,
+        },
+        {
+            db_root_id: dbRootSeed,
+            meta: metaBytes,
+        },
+    );
+    return sendTx(connection, signer, ix);
 }
 
 export async function requestConnection(

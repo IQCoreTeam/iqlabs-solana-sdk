@@ -413,6 +413,26 @@ iqlabs.utils.setRpcUrl('https://your-rpc.example.com');
 
 ---
 
+### User Metadata
+
+#### `updateUserMetadata()`
+
+| **Parameters** | `connection`: Solana RPC Connection<br>`signer`: Signer<br>`dbRootId`: database ID (Uint8Array or string)<br>`meta`: metadata to store (Uint8Array or string) |
+|----------|--------------------------|
+| **Returns** | Transaction signature (string) |
+
+**Example:**
+```typescript
+import iqlabs from '@iqlabs-official/solana-sdk';
+
+await iqlabs.writer.updateUserMetadata(
+  connection, signer, 'my-db',
+  JSON.stringify({ name: 'Alice', bio: 'gm' })
+);
+```
+
+---
+
 ## Advanced Functions
 
 These functions are advanced/internal, so this doc lists them only. If you are looking for any of the following functions, please see our API docs (in progress).

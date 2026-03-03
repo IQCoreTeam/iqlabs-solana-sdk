@@ -5,4 +5,5 @@ export {
     writeConnectionRow,
     manageRowData,
     requestConnection,
+    updateUserMetadata,
 } from "./iqdb";
