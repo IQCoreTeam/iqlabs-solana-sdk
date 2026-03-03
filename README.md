@@ -408,7 +408,21 @@ myFiles.forEach(tx => {
 ```typescript
 import iqlabs from '@iqlabs-official/solana-sdk';
 
-iqlabs.utils.setRpcUrl('https://your-rpc.example.com');
+iqlabs.setRpcUrl('https://your-rpc.example.com');
+```
+
+### `getRpcUrl()`
+
+Returns the currently configured RPC URL.
+
+| Parameter | Type | Description |
+|---|---|---|
+| **Returns** | `string` | The current RPC URL |
+
+**Example:**
+```typescript
+const url = iqlabs.getRpcUrl();
+console.log(url); // https://api.mainnet-beta.solana.com
 ```
 
 ---
