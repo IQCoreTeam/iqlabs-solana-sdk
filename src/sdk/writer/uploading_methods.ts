@@ -11,7 +11,7 @@ import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import type {SignerInput} from "../utils/wallet";
-import {sendTx, sendTxWithRetries} from "./writer_utils";
+import {sendTx} from "./writer_utils";
 
 const resolveUploadConfig = (options?: { speed?: string }) => {
     const resolvedSpeed = resolveSessionSpeed(options?.speed);
@@ -140,7 +140,7 @@ export async function uploadSession(
                 decode_break: 0,
             },
         );
-        await sendTxWithRetries(connection, signer, ix);
+        await sendTx(connection, signer, ix);
         completed += 1;
         if (onProgress && totalChunks > 0) {
             const percent = Math.floor((completed / totalChunks) * 100);
