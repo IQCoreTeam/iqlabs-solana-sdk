@@ -11,7 +11,7 @@ import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
 import type {SignerInput} from "../utils/wallet";
-import {sendTx} from "./writer_utils";
+import {sendTx, sendTxWithRetries} from "./writer_utils";
 
 const resolveUploadConfig = (options?: { speed?: string }) => {
     const resolvedSpeed = resolveSessionSpeed(options?.speed);
@@ -107,11 +107,24 @@ export async function uploadSession(
             },
             {seq: new BN(seq.toString())},
         );
-        await sendTx(connection, signer, createIx);
+
+        const firstIx = postChunkInstruction(
+            builder,
+            { user, session },
+            {
+                index: 0,
+                chunk: chunks[0],
+                method,
+                decode_break: 0,
+            }
+        );
+
+        await sendTx(connection, signer, [createIx, firstIx]);
+        completed = 1;
     }
 
     const limiter = createRateLimiter(config.maxRps);
-    const payloads = chunks.map((chunk, index) => ({chunk, index}));
+    const payloads = chunks.slice(1).map((chunk, i) => ({ chunk, index: i + 1 }))
 
     await runWithConcurrency(payloads, config.maxConcurrency, async (payload) => {
         if (limiter) {
@@ -127,7 +140,7 @@ export async function uploadSession(
                 decode_break: 0,
             },
         );
-        await sendTx(connection, signer, ix);
+        await sendTxWithRetries(connection, signer, ix);
         completed += 1;
         if (onProgress && totalChunks > 0) {
             const percent = Math.floor((completed / totalChunks) * 100);

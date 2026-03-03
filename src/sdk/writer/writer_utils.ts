@@ -159,6 +159,59 @@ export async function sendTx(
     return signature;
 }
 
+export async function sendTxWithRetries(
+    connection: Connection,
+    signer: SignerInput,
+    instructions: TransactionInstruction | TransactionInstruction[],
+    skipConfirmation = false,
+    maxRetries = 3,
+    retryDelayMs = 600
+) {
+    let lastError: any;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++){
+        try {
+            const wallet = toWalletSigner(signer);
+            const tx = new Transaction()
+            if (Array.isArray(instructions)) {
+                tx.add(...instructions);
+            } else {
+                tx.add(instructions);
+            }
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = wallet.publicKey;
+
+            const signed = await wallet.signTransaction(tx);
+            const signature = await connection.sendRawTransaction(signed.serialize());
+
+            if (!skipConfirmation) {
+                await connection.confirmTransaction(
+                    {
+                        signature, blockhash, lastValidBlockHeight
+                    }
+                )
+            }
+
+            return signature;
+        } catch (error: any) {
+            lastError = error
+
+            if (attempt === maxRetries) {
+                break;
+            }
+
+            const delay = retryDelayMs * (attempt + 1);
+            console.warn(`[sendTxWithRetry] Attempt ${attempt + 1}/${maxRetries + 1} failed. Retrying in ${delay}ms...`, error?.message)
+
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+
+    console.error(`[sendTxWithRetry] Failed after ${maxRetries + 1} attempts`);
+    throw lastError || new Error('Unknown transaction error after retries');
+}
+
 export async function ensureUserInitialized(
     connection: Connection,
     signer: SignerInput,

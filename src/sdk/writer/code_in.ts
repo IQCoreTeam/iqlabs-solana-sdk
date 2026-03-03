@@ -54,6 +54,7 @@ export async function prepareCodeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
+    speed?: string,
 ) {
     const chunks = toChunks(data);
     const totalChunks = chunks.length;
@@ -128,6 +129,7 @@ export async function prepareCodeIn(
                 chunks,
                 method,
                 onProgress,
+                {speed}
             );
         } else {
             onChainPath = await uploadSession(
@@ -140,7 +142,7 @@ export async function prepareCodeIn(
                 seq,
                 chunks,
                 method,
-                {onProgress},
+                {onProgress, speed},
             );
             sessionAccount = getSessionPda(user, seq, programId);
             sessionFinalize = {
@@ -182,6 +184,7 @@ export async function codeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
+    speed?: string,
 ) {
     const {
         builder,
@@ -200,6 +203,7 @@ export async function codeIn(
         method,
         filetype,
         onProgress,
+        speed,
     );
     const dbIx = userInventoryCodeInInstruction(
         builder,
