@@ -98,6 +98,7 @@ export async function writeRow(
     tableSeed: Uint8Array | string,
     rowJson: string,
     skipConfirmation = false,
+    remainingAccounts?: PublicKey[],
 ) {
     const programId = PROGRAM_ID;
     const dbRootSeed = toSeedBytes(dbRootId);
@@ -158,6 +159,7 @@ export async function writeRow(
             metadata,
             session: sessionFinalize,
         },
+        remainingAccounts,
     );
     return sendTx(connection, signer, ix, skipConfirmation);
 }

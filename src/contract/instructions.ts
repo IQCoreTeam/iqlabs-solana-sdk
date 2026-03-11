@@ -477,7 +477,16 @@ export const dbCodeInInstruction = (
         metadata: string;
         session: SessionFinalize | null;
     },
-) => builder.build("db_code_in", accounts, args);
+    remainingAccounts?: PublicKey[],
+) => {
+    const ix = builder.build("db_code_in", accounts, args);
+    if (remainingAccounts?.length) {
+        for (const pubkey of remainingAccounts) {
+            ix.keys.push({pubkey, isSigner: false, isWritable: false});
+        }
+    }
+    return ix;
+};
 
 export const dbInstructionCodeInInstruction = (
     builder: InstructionBuilder,

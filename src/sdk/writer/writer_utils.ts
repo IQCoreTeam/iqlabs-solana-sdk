@@ -150,7 +150,21 @@ export async function sendTx(
     tx.feePayer = wallet.publicKey;
 
     const signed = await wallet.signTransaction(tx);
-    const signature = await connection.sendRawTransaction(signed.serialize());
+    let raw: Buffer;
+    try {
+        raw = signed.serialize();
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("too large")) {
+            throw new Error(
+                "Transaction size exceeded. " +
+                "If you are passing many remainingAccounts, reduce the number of accounts " +
+                "or store data via inscription and pass the txid instead.",
+            );
+        }
+        throw e;
+    }
+    const signature = await connection.sendRawTransaction(raw);
 
     if (!skipConfirmation) {
         await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight});
