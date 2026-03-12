@@ -1,7 +1,4 @@
-/**
- * Low-level crypto primitives using Web Crypto API.
- * Works in browsers and Node.js 18+.
- */
+/** Low-level crypto primitives (Web Crypto API). Browser + Node 18+. */
 
 import { hexToBytes, bytesToHex } from "./encoding";
 
@@ -13,7 +10,7 @@ function getSubtle(): SubtleCrypto {
     return s;
 }
 
-function getRandomBytes(n: number): Uint8Array {
+export function getRandomBytes(n: number): Uint8Array {
     return globalThis.crypto.getRandomValues(new Uint8Array(n));
 }
 
@@ -21,8 +18,6 @@ function getRandomBytes(n: number): Uint8Array {
 function buf(data: Uint8Array): ArrayBuffer {
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
 }
-
-// ── HKDF-SHA256 ─────────────────────────────────────────────────────────────
 
 export async function hkdfDerive(ikm: Uint8Array, salt: string, info: string): Promise<Uint8Array> {
     const subtle = getSubtle();
@@ -34,8 +29,6 @@ export async function hkdfDerive(ikm: Uint8Array, salt: string, info: string): P
     );
     return new Uint8Array(bits);
 }
-
-// ── AES-256-GCM ─────────────────────────────────────────────────────────────
 
 export async function aesEncrypt(
     keyBytes: Uint8Array,
@@ -63,8 +56,6 @@ export async function aesDecrypt(
     return new Uint8Array(plain);
 }
 
-// ── PBKDF2-SHA256 ───────────────────────────────────────────────────────────
-
 export async function pbkdf2Derive(password: string, saltHex: string): Promise<Uint8Array> {
     const subtle = getSubtle();
     const km = await subtle.importKey("raw", buf(enc.encode(password)), "PBKDF2", false, ["deriveKey"]);
@@ -77,7 +68,3 @@ export async function pbkdf2Derive(password: string, saltHex: string): Promise<U
     );
     return new Uint8Array(await subtle.exportKey("raw", key));
 }
-
-// ── Random ──────────────────────────────────────────────────────────────────
-
-export { getRandomBytes };
