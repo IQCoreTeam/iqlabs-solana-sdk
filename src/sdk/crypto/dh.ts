@@ -16,11 +16,14 @@ import { hexToBytes, bytesToHex } from "./encoding";
 import { hkdfDerive, aesEncrypt, aesDecrypt, getRandomBytes } from "./primitives";
 import type { DhEncryptResult } from "./types";
 
-const SALT = "iqlabs-dh-aes-v1";
-const INFO = "aes-256-gcm-key";
-const KEY_DERIVE_SALT = "iqlabs-x25519-v1";
+// Protocol constants for HKDF domain separation.
+// These are NOT secrets — they prevent cross-protocol key reuse.
+// Changing them would break all existing encrypted data.
+const DH_HKDF_SALT = "iq-sdk-dh-aes-v1";
+const DH_HKDF_INFO = "aes-256-gcm-key";
+const KEY_DERIVE_SALT = "iq-sdk-x25519-v1";
 const KEY_DERIVE_INFO = "x25519-private-key";
-const KEY_DERIVE_MSG = "iqlabs-key-v1";
+const KEY_DERIVE_MSG = "iq-sdk-derive-encryption-key-v1";
 
 /**
  * Derive a deterministic X25519 keypair from a wallet signature.
@@ -56,7 +59,7 @@ export async function dhEncrypt(
     const senderPriv = getRandomBytes(32);
     const senderPub = x25519.getPublicKey(senderPriv);
     const shared = x25519.getSharedSecret(senderPriv, hexToBytes(recipientPubHex));
-    const aesKey = await hkdfDerive(shared, SALT, INFO);
+    const aesKey = await hkdfDerive(shared, DH_HKDF_SALT, DH_HKDF_INFO);
     const { iv, ciphertext } = await aesEncrypt(aesKey, plaintext);
     return { senderPub: bytesToHex(senderPub), iv, ciphertext };
 }
@@ -76,6 +79,6 @@ export async function dhDecrypt(
     ciphertextHex: string,
 ): Promise<Uint8Array> {
     const shared = x25519.getSharedSecret(privKey, hexToBytes(senderPubHex));
-    const aesKey = await hkdfDerive(shared, SALT, INFO);
+    const aesKey = await hkdfDerive(shared, DH_HKDF_SALT, DH_HKDF_INFO);
     return aesDecrypt(aesKey, ivHex, ciphertextHex);
 }
