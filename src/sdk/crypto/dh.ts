@@ -34,11 +34,23 @@ export async function deriveX25519Keypair(
     return { privKey, pubKey: x25519.getPublicKey(privKey) };
 }
 
+function validatePubKey(hex: string, label: string): Uint8Array {
+    if (!/^[0-9a-f]{64}$/i.test(hex)) {
+        throw new Error(`${label}: must be 64 hex chars (32 bytes), got ${hex.length}`);
+    }
+    const bytes = hexToBytes(hex);
+    if (bytes.every((b) => b === 0)) {
+        throw new Error(`${label}: zero key is not valid`);
+    }
+    return bytes;
+}
+
 /** Encrypt plaintext to a recipient's X25519 public key (hex). */
 export async function dhEncrypt(recipientPubHex: string, plaintext: Uint8Array): Promise<DhEncryptResult> {
+    const recipientPub = validatePubKey(recipientPubHex, "recipientPubHex");
     const senderPriv = getRandomBytes(32);
     const senderPub = x25519.getPublicKey(senderPriv);
-    const shared = x25519.getSharedSecret(senderPriv, hexToBytes(recipientPubHex));
+    const shared = x25519.getSharedSecret(senderPriv, recipientPub);
     const aesKey = await hkdfDerive(shared, DH_HKDF_SALT, DH_HKDF_INFO);
     const { iv, ciphertext } = await aesEncrypt(aesKey, plaintext);
     return { senderPub: bytesToHex(senderPub), iv, ciphertext };
@@ -51,7 +63,8 @@ export async function dhDecrypt(
     ivHex: string,
     ciphertextHex: string,
 ): Promise<Uint8Array> {
-    const shared = x25519.getSharedSecret(privKey, hexToBytes(senderPubHex));
+    const senderPub = validatePubKey(senderPubHex, "senderPubHex");
+    const shared = x25519.getSharedSecret(privKey, senderPub);
     const aesKey = await hkdfDerive(shared, DH_HKDF_SALT, DH_HKDF_INFO);
     return aesDecrypt(aesKey, ivHex, ciphertextHex);
 }
