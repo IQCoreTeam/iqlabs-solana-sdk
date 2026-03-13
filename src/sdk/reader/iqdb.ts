@@ -103,8 +103,7 @@ export async function getTablelistFromRoot(
     };
 }
 
-///TODO we need to support the function that read the table's and instruction aswell and sort it, it will be good for
-// make 2 function and call them by branch with mutable? option,  is that mutable, we need to sort , "I can change the word mutable if that's not awesome"
+// TODO: Add a variant that reads both table rows and instructions, with optional sorting.
 export async function readTableRows(
     account: PublicKey | string,
     options: { before?: string; limit?: number; signatures?: string[]; speed?: string } = {},

@@ -2,7 +2,7 @@ import iqlabs from "../../src/index";
 
 const { crypto } = iqlabs;
 const enc = new TextEncoder();
-const dec = new TextDecoder();
+
 
 let passed = 0;
 let failed = 0;
