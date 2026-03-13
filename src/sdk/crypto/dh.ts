@@ -7,7 +7,7 @@
 
 // @ts-ignore — @noble/curves exports require .js suffix for Node CJS compat
 import { x25519 } from "@noble/curves/ed25519.js";
-import { hexToBytes, bytesToHex } from "./encoding";
+import { bytesToHex, validatePubKey } from "./encoding";
 import { hkdfDerive, aesEncrypt, aesDecrypt, getRandomBytes } from "./primitives";
 
 export interface DhEncryptResult {
@@ -32,17 +32,6 @@ export async function deriveX25519Keypair(
     const sigBytes = await signMessage(new TextEncoder().encode(KEY_DERIVE_MSG));
     const privKey = await hkdfDerive(sigBytes, KEY_DERIVE_SALT, KEY_DERIVE_INFO);
     return { privKey, pubKey: x25519.getPublicKey(privKey) };
-}
-
-function validatePubKey(hex: string, label: string): Uint8Array {
-    if (!/^[0-9a-f]{64}$/i.test(hex)) {
-        throw new Error(`${label}: must be 64 hex chars (32 bytes), got ${hex.length}`);
-    }
-    const bytes = hexToBytes(hex);
-    if (bytes.every((b) => b === 0)) {
-        throw new Error(`${label}: zero key is not valid`);
-    }
-    return bytes;
 }
 
 /** Encrypt plaintext to a recipient's X25519 public key (hex). */

@@ -1,33 +1,17 @@
 import {Connection, PublicKey} from "@solana/web3.js";
 
 import {
-    CONNECTION_STATUS_APPROVED,
-    CONNECTION_STATUS_BLOCKED,
-    CONNECTION_STATUS_PENDING,
     getConnectionTablePda,
     getDbRootPda,
 } from "../../contract";
 import {getConnection} from "../utils/connection_helper";
-import {decodeConnectionMeta} from "../utils/global_fetch";
+import {decodeConnectionMeta, resolveConnectionStatus} from "../utils/global_fetch";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {readCodeIn} from "./read_code_in";
 import {readerContext} from "./reader_context";
 import {fetchAccountTransactions} from "./reader_utils";
-
-const resolveConnectionStatus = (status: number) => {
-    if (status === CONNECTION_STATUS_PENDING) {
-        return "pending";
-    }
-    if (status === CONNECTION_STATUS_APPROVED) {
-        return "approved";
-    }
-    if (status === CONNECTION_STATUS_BLOCKED) {
-        return "blocked";
-    }
-    return "unknown";
-};
 
 export async function readConnection(
     dbRootId: Uint8Array<any> | string,

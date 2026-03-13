@@ -1,4 +1,4 @@
-export { hexToBytes, bytesToHex } from "./encoding";
+export { hexToBytes, bytesToHex, validatePubKey } from "./encoding";
 export { deriveX25519Keypair, dhEncrypt, dhDecrypt } from "./dh";
 export { passwordEncrypt, passwordDecrypt } from "./password";
 export { multiEncrypt, multiDecrypt } from "./multi";

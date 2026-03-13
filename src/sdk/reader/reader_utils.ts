@@ -14,6 +14,14 @@ import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_spee
 
 import {readerContext} from "./reader_context";
 
+export const CODE_IN_INSTRUCTION_NAMES = [
+    "user_inventory_code_in",
+    "user_inventory_code_in_for_free",
+    "db_code_in",
+    "db_instruction_code_in",
+    "wallet_connection_code_in",
+] as const;
+
 const {instructionCoder} = readerContext;
 export const decodeReaderInstruction = (
     ix: MessageCompiledInstruction,
@@ -42,13 +50,7 @@ export const decodeUserInventoryCodeIn = (
         if (!decoded) {
             continue;
         }
-        if (
-            decoded.name === "user_inventory_code_in" ||
-            decoded.name === "user_inventory_code_in_for_free" ||
-            decoded.name === "db_code_in" ||
-            decoded.name === "db_instruction_code_in" ||
-            decoded.name === "wallet_connection_code_in"
-        ) {
+        if (CODE_IN_INSTRUCTION_NAMES.includes(decoded.name as any)) {
             const data = decoded.data as { on_chain_path: string; metadata: string };
             return {onChainPath: data.on_chain_path, metadata: data.metadata};
         }
@@ -145,7 +147,7 @@ export async function fetchUserConnections(
         timestamp?: number;
     }>
 > {
-    const {decodeConnectionMeta} = await import("../utils/global_fetch");
+    const {decodeConnectionMeta, resolveConnectionStatus} = await import("../utils/global_fetch");
 
     // 1. Calculate UserState PDA
     const programId = readerContext.anchorProgramId;
@@ -231,11 +233,7 @@ export async function fetchUserConnections(
                 const partyA = meta.partyA.toBase58();
                 const partyB = meta.partyB.toBase58();
 
-                const statusNum = meta.status;
-                const status: "pending" | "approved" | "blocked" =
-                    statusNum === 0 ? "pending" :
-                    statusNum === 1 ? "approved" :
-                    statusNum === 2 ? "blocked" : "pending";
+                const status = resolveConnectionStatus(meta.status) as "pending" | "approved" | "blocked";
 
                 const requester: "a" | "b" = meta.requester === 0 ? "a" : "b";
                 const blocker: "a" | "b" | "none" =

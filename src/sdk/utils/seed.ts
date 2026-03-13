@@ -9,12 +9,8 @@ export function deriveSeedBytes(value: string): Uint8Array {
     return keccak_256(Buffer.from(value, "utf8"));
 }
 
-export function sortPubkeys(userA: string, userB: string): [string, string] {
-    return userA < userB ? [userA, userB] : [userB, userA];
-}
-
 export function deriveDmSeed(userA: string, userB: string): Uint8Array {
-    const [sortedA, sortedB] = sortPubkeys(userA, userB);
+    const [sortedA, sortedB] = userA < userB ? [userA, userB] : [userB, userA];
     return deriveSeedBytes(`${sortedA}:${sortedB}`);
 }
 

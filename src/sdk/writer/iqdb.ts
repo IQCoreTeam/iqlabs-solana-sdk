@@ -210,16 +210,9 @@ export async function writeConnectionRow(
     if (!access.allowed) {
         throw new Error(access.message ?? "connection not writable");
     }
-    const allowedKeys = new Set([...meta.columns, meta.idCol]);
-    const row = parsed as Record<string, unknown>;
-    for (const key of Object.keys(row)) {
-        if (!allowedKeys.has(key)) {
-            throw new Error(`unknown key: ${key}`);
-        }
-    }
-    if (!Object.prototype.hasOwnProperty.call(row, meta.idCol)) {
-        throw new Error(`missing id_col: ${meta.idCol}`);
-    }
+    // Connection payloads are application-defined (plain or encrypted).
+    // The on-chain program stores the blob without key validation,
+    // so the SDK should not enforce column-name checks here.
 
     const {
         builder,

@@ -12,3 +12,14 @@ export function bytesToHex(buf: Uint8Array): string {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 }
+
+export function validatePubKey(hex: string, label: string): Uint8Array {
+    if (!/^[0-9a-f]{64}$/i.test(hex)) {
+        throw new Error(`${label}: must be 64 hex chars (32 bytes), got ${hex.length}`);
+    }
+    const bytes = hexToBytes(hex);
+    if (bytes.every((b) => b === 0)) {
+        throw new Error(`${label}: zero key is not valid`);
+    }
+    return bytes;
+}
