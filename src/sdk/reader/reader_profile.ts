@@ -1,6 +1,6 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
 import {getConnection} from "../utils/connection_helper";
-import {decodeReaderInstruction} from "./reader_utils";
+import {CODE_IN_INSTRUCTION_NAMES, decodeReaderInstruction} from "./reader_utils";
 
 const DAY_SECONDS = 86_400;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
@@ -21,13 +21,7 @@ const resolveOnChainPath = (
         if (!decoded) {
             continue;
         }
-        if (
-            decoded.name === "user_inventory_code_in" ||
-            decoded.name === "user_inventory_code_in_for_free" ||
-            decoded.name === "db_code_in" ||
-            decoded.name === "db_instruction_code_in" ||
-            decoded.name === "wallet_connection_code_in"
-        ) {
+        if (CODE_IN_INSTRUCTION_NAMES.includes(decoded.name as any)) {
             const data = decoded.data as { on_chain_path: string };
             return data.on_chain_path;
         }

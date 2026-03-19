@@ -26,9 +26,9 @@ export function decodeTableMeta(data: Buffer) {
 
     return {
         columns: decoded.column_names.map((value) =>
-            Buffer.from(value).toString("utf8"),
+            Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
-        idCol: Buffer.from(decoded.id_col).toString("utf8"),
+        idCol: Buffer.from(decoded.id_col).toString("utf8").replace(/\0+$/, ""),
         gateMint: decoded.gate_mint,
         writers: decoded.writers,
     };
@@ -50,15 +50,15 @@ export function decodeConnectionMeta(data: Buffer) {
     };
 
     return {
-        dbRootId: Buffer.from(decoded.db_root_id).toString("utf8"),
+        dbRootId: Buffer.from(decoded.db_root_id).toString("utf8").replace(/\0+$/, ""),
         columns: decoded.column_names.map((value) =>
-            Buffer.from(value).toString("utf8"),
+            Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
-        idCol: Buffer.from(decoded.id_col).toString("utf8"),
+        idCol: Buffer.from(decoded.id_col).toString("utf8").replace(/\0+$/, ""),
         extKeys: decoded.ext_keys.map((value) =>
-            Buffer.from(value).toString("utf8"),
+            Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
-        name: Buffer.from(decoded.name).toString("utf8"),
+        name: Buffer.from(decoded.name).toString("utf8").replace(/\0+$/, ""),
         gateMint: decoded.gate_mint,
         partyA: decoded.party_a,
         partyB: decoded.party_b,
@@ -140,17 +140,17 @@ export async function fetchConnectionMeta(
     return decodeConnectionMeta(info.data);
 }
 
+export function resolveConnectionStatus(status: number): "pending" | "approved" | "blocked" | "unknown" {
+    if (status === CONNECTION_STATUS_PENDING) return "pending";
+    if (status === CONNECTION_STATUS_APPROVED) return "approved";
+    if (status === CONNECTION_STATUS_BLOCKED) return "blocked";
+    return "unknown";
+}
+
 export function evaluateConnectionAccess(
     meta: ReturnType<typeof decodeConnectionMeta>,
     signer: PublicKey) {
-    let status: string = '';
-    if (meta.status === CONNECTION_STATUS_PENDING) {
-        status = "pending";
-    } else if (meta.status === CONNECTION_STATUS_APPROVED) {
-        status = "approved";
-    } else if (meta.status === CONNECTION_STATUS_BLOCKED) {
-        status = "blocked";
-    }
+    const status = resolveConnectionStatus(meta.status);
     let signerIdx: number = -1;
     if (signer.equals(meta.partyA)) {
         signerIdx = 0;

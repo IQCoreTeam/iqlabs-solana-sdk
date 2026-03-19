@@ -10,3 +10,4 @@ bun.lockb
 .idea/
 *.swp
 *.swo
+cache/

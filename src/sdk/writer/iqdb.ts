@@ -6,6 +6,7 @@ import {
     type Signer,
     type TransactionInstruction,
 } from "@solana/web3.js";
+import {type SignerInput} from "../utils/wallet";
 
 import {
     createInstructionBuilder,
@@ -171,7 +172,7 @@ export async function validateRowJson(
 
 export async function resolveSignerAta(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     gateMint?: PublicKey,
 ) {
     if (!gateMint || gateMint.equals(SystemProgram.programId)) {
@@ -188,7 +189,7 @@ export async function resolveSignerAta(
 
 export async function writeRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
@@ -261,7 +262,7 @@ export async function writeRow(
 
 export async function writeConnectionRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
     rowJson: string,
@@ -305,16 +306,9 @@ export async function writeConnectionRow(
     if (!access.allowed) {
         throw new Error(access.message ?? "connection not writable");
     }
-    const allowedKeys = new Set([...meta.columns, meta.idCol]);
-    const row = parsed as Record<string, unknown>;
-    for (const key of Object.keys(row)) {
-        if (!allowedKeys.has(key)) {
-            throw new Error(`unknown key: ${key}`);
-        }
-    }
-    if (!Object.prototype.hasOwnProperty.call(row, meta.idCol)) {
-        throw new Error(`missing id_col: ${meta.idCol}`);
-    }
+    // Connection payloads are application-defined (plain or encrypted).
+    // The on-chain program stores the blob without key validation,
+    // so the SDK should not enforce column-name checks here.
 
     const {
         builder,
@@ -355,7 +349,7 @@ export async function writeConnectionRow(
 
 export async function manageRowData(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     seed: Uint8Array | string,
     rowJson: string,
@@ -464,7 +458,7 @@ export async function manageRowData(
 
 export async function updateUserMetadata(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     meta: Uint8Array | string,
 ) {
@@ -493,7 +487,7 @@ export async function updateUserMetadata(
 
 export async function requestConnection(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     partyA: string,
     partyB: string,
