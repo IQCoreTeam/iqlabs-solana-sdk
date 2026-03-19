@@ -2447,6 +2447,43 @@
       ]
     },
     {
+      "name": "realloc_account",
+      "discriminator": [
+        51,
+        237,
+        126,
+        233,
+        52,
+        244,
+        186,
+        244
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "target",
+          "docs": [
+            "Validated inside the instruction (must be owned by this program)."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_size",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "request_connection",
       "discriminator": [
         247,
@@ -2459,6 +2496,11 @@
         41
       ],
       "accounts": [
+        {
+          "name": "fee_receiver",
+          "writable": true,
+          "address": "EWNSTD8tikwqHMcRNuuNbZrnYJUiJdKq9UXLXSEU4wZ1"
+        },
         {
           "name": "requester",
           "writable": true,

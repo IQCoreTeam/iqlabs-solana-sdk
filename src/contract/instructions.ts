@@ -30,6 +30,7 @@ export type InstructionName =
     | "server_initialize"
     | "set_merkle_root"
     | "update_db_root_table_list"
+    | "realloc_account"
     | "update_table"
     | "update_user_metadata"
     | "user_initialize"
@@ -270,6 +271,16 @@ export const postChunkInstruction = (
         decode_break: number;
     },
 ) => builder.build("post_chunk", accounts, args);
+
+export const reallocAccountInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        payer: PublicKey;
+        target: PublicKey;
+        system_program?: PublicKey;
+    },
+    args: { new_size: BN },
+) => builder.build("realloc_account", accounts, args);
 
 export const requestConnectionInstruction = (
     builder: InstructionBuilder,

@@ -1,13 +1,17 @@
-import {type Idl} from "@coral-xyz/anchor";
+import {BN, BorshAccountsCoder, type Idl} from "@coral-xyz/anchor";
 import {
     Connection,
     PublicKey,
     SystemProgram,
+    type Signer,
+    type TransactionInstruction,
 } from "@solana/web3.js";
 import {type SignerInput} from "../utils/wallet";
 
 import {
     createInstructionBuilder,
+    createTableInstruction,
+    reallocAccountInstruction,
     walletConnectionCodeInInstruction,
     dbInstructionCodeInInstruction,
     dbCodeInInstruction,
@@ -32,10 +36,102 @@ import {
     fetchTableMeta,
 } from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
+import {DEFAULT_WRITE_FEE_RECEIVER} from "../constants";
 import {prepareCodeIn} from "./code_in";
 import {sendTx} from "./writer_utils";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
+const ACCOUNT_CODER = new BorshAccountsCoder(IDL);
+
+// ~20 tables worth of extra space per realloc
+const REALLOC_EXTRA = 2048;
+// trigger realloc when free bytes drop below this
+const REALLOC_THRESHOLD = 128;
+
+const vecVecSerializedSize = (vv: Uint8Array[]) =>
+    4 + vv.reduce((s, v) => s + 4 + v.length, 0);
+
+function buildReallocIxIfNeeded(
+    builder: ReturnType<typeof createInstructionBuilder>,
+    payer: PublicKey,
+    target: PublicKey,
+    accountData: Buffer,
+): TransactionInstruction | null {
+    const decoded = ACCOUNT_CODER.decode("DbRoot", accountData) as {
+        table_seeds: Uint8Array[];
+        global_table_seeds: Uint8Array[];
+        id: Uint8Array;
+    };
+
+    const usedBytes = 8 + 32
+        + vecVecSerializedSize(decoded.table_seeds)
+        + vecVecSerializedSize(decoded.global_table_seeds)
+        + 4 + decoded.id.length;
+
+    if (accountData.length - usedBytes >= REALLOC_THRESHOLD) return null;
+
+    return reallocAccountInstruction(
+        builder,
+        {payer, target, system_program: SystemProgram.programId},
+        {new_size: new BN(accountData.length + REALLOC_EXTRA)},
+    );
+}
+
+export async function createTable(
+    connection: Connection,
+    signer: Signer,
+    dbRootId: Uint8Array | string,
+    tableSeed: Uint8Array | string,
+    tableName: Uint8Array | string,
+    columnNames: Array<Uint8Array | string>,
+    idCol: Uint8Array | string,
+    extKeys: Array<Uint8Array | string>,
+    gateMint?: PublicKey,
+    writers?: PublicKey[],
+) {
+    const programId = PROGRAM_ID;
+    const builder = createInstructionBuilder(IDL, programId);
+    const dbRootSeed = toSeedBytes(dbRootId);
+    const tableSeedBytes = toSeedBytes(tableSeed);
+    const dbRoot = getDbRootPda(dbRootSeed, programId);
+    const table = getTablePda(dbRoot, tableSeedBytes, programId);
+    const instructionTable = getInstructionTablePda(dbRoot, tableSeedBytes, programId);
+
+    const dbRootInfo = await connection.getAccountInfo(dbRoot);
+    if (!dbRootInfo) throw new Error("db_root not found");
+
+    const toBytes = (v: string | Uint8Array) =>
+        typeof v === "string" ? Buffer.from(v, "utf8") : v;
+
+    const ixs: TransactionInstruction[] = [];
+
+    const reallocIx = buildReallocIxIfNeeded(builder, signer.publicKey, dbRoot, dbRootInfo.data);
+    if (reallocIx) ixs.push(reallocIx);
+
+    ixs.push(createTableInstruction(
+        builder,
+        {
+            db_root: dbRoot,
+            receiver: new PublicKey(DEFAULT_WRITE_FEE_RECEIVER),
+            signer: signer.publicKey,
+            table,
+            instruction_table: instructionTable,
+            system_program: SystemProgram.programId,
+        },
+        {
+            db_root_id: dbRootSeed,
+            table_seed: tableSeedBytes,
+            table_name: toBytes(tableName),
+            column_names: columnNames.map(toBytes),
+            id_col: toBytes(idCol),
+            ext_keys: extKeys.map(toBytes),
+            gate_mint_opt: gateMint ?? null,
+            writers_opt: writers ?? null,
+        },
+    ));
+
+    return sendTx(connection, signer, ixs);
+}
 
 export async function validateRowJson(
     connection: Connection,
