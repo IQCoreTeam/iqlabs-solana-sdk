@@ -3,8 +3,8 @@ import {
     Connection,
     PublicKey,
     SystemProgram,
-    type Signer,
 } from "@solana/web3.js";
+import {type SignerInput} from "../utils/wallet";
 
 import {
     createInstructionBuilder,
@@ -76,7 +76,7 @@ export async function validateRowJson(
 
 export async function resolveSignerAta(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     gateMint?: PublicKey,
 ) {
     if (!gateMint || gateMint.equals(SystemProgram.programId)) {
@@ -93,7 +93,7 @@ export async function resolveSignerAta(
 
 export async function writeRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     rowJson: string,
@@ -166,7 +166,7 @@ export async function writeRow(
 
 export async function writeConnectionRow(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     connectionSeed: Uint8Array | string,
     rowJson: string,
@@ -253,7 +253,7 @@ export async function writeConnectionRow(
 
 export async function manageRowData(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     seed: Uint8Array | string,
     rowJson: string,
@@ -362,7 +362,7 @@ export async function manageRowData(
 
 export async function updateUserMetadata(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     meta: Uint8Array | string,
 ) {
@@ -391,7 +391,7 @@ export async function updateUserMetadata(
 
 export async function requestConnection(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     partyA: string,
     partyB: string,
