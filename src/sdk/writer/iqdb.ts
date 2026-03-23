@@ -15,6 +15,7 @@ import {
     walletConnectionCodeInInstruction,
     dbInstructionCodeInInstruction,
     dbCodeInInstruction,
+    GateType,
     getConnectionInstructionTablePda,
     getConnectionTablePda,
     getConnectionTableRefPda,
@@ -86,7 +87,7 @@ export async function createTable(
     columnNames: Array<Uint8Array | string>,
     idCol: Uint8Array | string,
     extKeys: Array<Uint8Array | string>,
-    gateMint?: PublicKey,
+    gate?: { mint: PublicKey; amount?: number; gateType?: GateType },
     writers?: PublicKey[],
 ) {
     const programId = PROGRAM_ID;
@@ -125,7 +126,9 @@ export async function createTable(
             column_names: columnNames.map(toBytes),
             id_col: toBytes(idCol),
             ext_keys: extKeys.map(toBytes),
-            gate_mint_opt: gateMint ?? null,
+            gate_opt: gate
+                ? { mint: gate.mint, amount: new BN(gate.amount ?? 1), gate_type: gate.gateType ?? GateType.Token }
+                : null,
             writers_opt: writers ?? null,
         },
     ));
@@ -173,9 +176,9 @@ export async function validateRowJson(
 export async function resolveSignerAta(
     connection: Connection,
     signer: SignerInput,
-    gateMint?: PublicKey,
+    gateMint: PublicKey,
 ) {
-    if (!gateMint || gateMint.equals(SystemProgram.programId)) {
+    if (gateMint.equals(PublicKey.default)) {
         return null;
     }
 
@@ -185,6 +188,39 @@ export async function resolveSignerAta(
         gateMint,
         true,
     );
+}
+
+const METAPLEX_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+function getMetadataPda(mint: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("metadata"), METAPLEX_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        METAPLEX_PROGRAM_ID,
+    )[0];
+}
+
+async function resolveGateAccounts(
+    connection: Connection,
+    signer: SignerInput,
+    gate: { mint: PublicKey; gateType: number },
+) {
+    const signerAta = await resolveSignerAta(connection, signer, gate.mint);
+    if (!signerAta) return { signerAta: undefined, metadataAccount: undefined };
+
+    // For collection gates, we need the metadata PDA of the NFT mint (not the collection key).
+    // The client must resolve which NFT they hold; for now the ATA mint is used.
+    // Collection gate metadata resolution requires reading the ATA to get the actual NFT mint.
+    let metadataAccount: PublicKey | undefined;
+    if (gate.gateType === GateType.Collection) {
+        const ataInfo = await connection.getAccountInfo(signerAta);
+        if (ataInfo && ataInfo.data.length >= 64) {
+            // SPL token account layout: mint is at offset 0, 32 bytes
+            const nftMint = new PublicKey(ataInfo.data.subarray(0, 32));
+            metadataAccount = getMetadataPda(nftMint);
+        }
+    }
+
+    return { signerAta, metadataAccount };
 }
 
 export async function writeRow(
@@ -222,7 +258,7 @@ export async function writeRow(
         throw new Error("signer not in writers");
     }
 
-    const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
+    const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
     const {
         builder,
         user,
@@ -242,7 +278,8 @@ export async function writeRow(
             user_inventory: userInventory,
             db_root: dbRoot,
             table: tablePda,
-            signer_ata: signerAta ?? undefined,
+            signer_ata: signerAta,
+            metadata_account: metadataAccount,
             system_program: SystemProgram.programId,
             receiver: feeReceiver,
             session: sessionAccount,
@@ -397,7 +434,7 @@ export async function manageRowData(
             throw new Error("signer not in writers");
         }
 
-        const signerAta = await resolveSignerAta(connection, signer, meta.gateMint);
+        const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
         const {
             builder,
             user,
@@ -418,7 +455,8 @@ export async function manageRowData(
                 db_root: dbRoot,
                 table,
                 instruction_table: instructionTable,
-                signer_ata: signerAta ?? undefined,
+                signer_ata: signerAta,
+                metadata_account: metadataAccount,
                 system_program: SystemProgram.programId,
                 receiver: feeReceiver,
                 session: sessionAccount,

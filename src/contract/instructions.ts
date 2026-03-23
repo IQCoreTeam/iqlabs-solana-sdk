@@ -9,6 +9,20 @@ export type Bytes = Uint8Array;
 export type OptionalPubkey = PublicKey | null;
 export type OptionalPubkeyList = PublicKey[] | null;
 
+/** Gate type enum for user-friendly gate configuration */
+export enum GateType {
+    /** Exact token mint match + minimum amount check */
+    Token = 0,
+    /** NFT collection check via Metaplex metadata verification */
+    Collection = 1,
+}
+
+export type GateConfigArgs = {
+    mint: PublicKey;
+    amount: BN;
+    gate_type: number;
+};
+
 export type InstructionName =
     | "create_admin_table"
     | "create_ext_table"
@@ -128,7 +142,7 @@ export type TableCreateArgs = {
     column_names: Bytes[];
     id_col: Bytes;
     ext_keys: Bytes[];
-    gate_mint_opt: OptionalPubkey;
+    gate_opt: GateConfigArgs | null;
     writers_opt: OptionalPubkeyList;
 };
 
@@ -374,6 +388,7 @@ export const updateTableInstruction = (
         column_names: Bytes[];
         id_col: Bytes;
         ext_keys: Bytes[];
+        gate_opt: GateConfigArgs | null;
         writers_opt: OptionalPubkeyList;
     },
 ) => builder.build("update_table", accounts, args);
@@ -476,6 +491,7 @@ export const dbCodeInInstruction = (
         db_root: PublicKey;
         table: PublicKey;
         signer_ata?: PublicKey;
+        metadata_account?: PublicKey;
         system_program?: PublicKey;
         receiver: PublicKey;
         session?: PublicKey;
@@ -509,6 +525,7 @@ export const dbInstructionCodeInInstruction = (
         table: PublicKey;
         instruction_table: PublicKey;
         signer_ata?: PublicKey;
+        metadata_account?: PublicKey;
         system_program?: PublicKey;
         receiver: PublicKey;
         session?: PublicKey;

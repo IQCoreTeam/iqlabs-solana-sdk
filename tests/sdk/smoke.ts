@@ -105,14 +105,12 @@ async function testSeedUtils() {
 async function testEvaluateConnectionAccess() {
   const partyA = Keypair.generate().publicKey;
   const partyB = Keypair.generate().publicKey;
-  const gateMint = Keypair.generate().publicKey;
-
   const baseMeta = {
     columns: [],
     idCol: "id",
     extKeys: [],
     name: "dm",
-    gateMint,
+    gate: { mint: Keypair.generate().publicKey, amount: { toNumber: () => 0 }, gateType: 0 },
     partyA,
     partyB,
     status: CONNECTION_STATUS_PENDING,

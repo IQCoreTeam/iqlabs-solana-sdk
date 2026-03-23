@@ -20,7 +20,7 @@ export function decodeTableMeta(data: Buffer) {
     const decoded = ACCOUNT_CODER.decode("Table", data) as {
         column_names: Uint8Array[];
         id_col: Uint8Array;
-        gate_mint: PublicKey;
+        gate: { mint: PublicKey; amount: { toNumber(): number }; gateType: number };
         writers: PublicKey[];
     };
 
@@ -29,7 +29,7 @@ export function decodeTableMeta(data: Buffer) {
             Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
         idCol: Buffer.from(decoded.id_col).toString("utf8").replace(/\0+$/, ""),
-        gateMint: decoded.gate_mint,
+        gate: decoded.gate,
         writers: decoded.writers,
     };
 }
@@ -41,7 +41,7 @@ export function decodeConnectionMeta(data: Buffer) {
         id_col: Uint8Array;
         ext_keys: Uint8Array[];
         name: Uint8Array;
-        gate_mint: PublicKey;
+        gate: { mint: PublicKey; amount: { toNumber(): number }; gateType: number };
         party_a: PublicKey;
         party_b: PublicKey;
         status: number;
@@ -59,7 +59,7 @@ export function decodeConnectionMeta(data: Buffer) {
             Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
         name: Buffer.from(decoded.name).toString("utf8").replace(/\0+$/, ""),
-        gateMint: decoded.gate_mint,
+        gate: decoded.gate,
         partyA: decoded.party_a,
         partyB: decoded.party_b,
         status: decoded.status,

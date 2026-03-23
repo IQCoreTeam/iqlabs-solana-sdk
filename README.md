@@ -11,6 +11,7 @@
    - [User State PDA](#user-state-pda)
    - [Connection PDA](#connection-pda)
    - [Database Tables](#database-tables)
+   - [Token & Collection Gating](#token--collection-gating)
    - [Encryption (Crypto)](#encryption-crypto)
 
 2. [Function Details](#function-details)
@@ -106,6 +107,41 @@ You can create tables explicitly with [`createTable()`](#createtable), or implic
 - [`readTableRows()`](#readtablerows): read rows from a table
 - [`getTablelistFromRoot()`](#gettablelistfromroot): list all tables in a database
 - [`fetchInventoryTransactions()`](#fetchinventorytransactions): list uploaded files
+
+---
+
+### Token & Collection Gating
+
+Tables can be gated so that only users holding a specific token or NFT collection can write data.
+
+#### Gate Types
+
+| Type | `GateType` | Description |
+|------|-----------|-------------|
+| **Token** | `GateType.Token` | User must hold >= `amount` of the specified SPL token mint |
+| **Collection** | `GateType.Collection` | User must hold any NFT from the specified Metaplex verified collection |
+
+#### How it works
+
+- **Table creator** sets the gate when creating or updating a table
+- **Writers** don't need to do anything special — the SDK automatically resolves the required token account (and metadata account for collections) when calling `writeRow()` or `manageRowData()`
+- If no gate is set, the table is public (default behavior, no change for existing users)
+
+#### Gate parameter
+
+```typescript
+gate?: {
+  mint: PublicKey;       // token mint address OR collection address
+  amount?: number;       // minimum token amount (default: 1, ignored for collections)
+  gateType?: GateType;   // GateType.Token (default) or GateType.Collection
+}
+```
+
+#### Notes
+
+- For **token gates**, `amount` specifies the minimum balance required (e.g., 100 means "must hold >= 100 tokens")
+- For **collection gates**, the user can present any NFT from that collection. `amount` is ignored (NFTs always have amount=1)
+- Omitting the `gate` parameter or passing `undefined` creates a public table with no restrictions
 
 ---
 
@@ -300,7 +336,7 @@ connections.forEach(conn => {
 
 #### `createTable()`
 
-| **Parameters** | `connection`: Solana RPC Connection<br>`signer`: Signer<br>`dbRootId`: database ID (Uint8Array or string)<br>`tableSeed`: table seed (Uint8Array or string)<br>`tableName`: display name (string or Uint8Array)<br>`columnNames`: column names (Array\<string \| Uint8Array\>)<br>`idCol`: ID column (string or Uint8Array)<br>`extKeys`: extension keys (Array\<string \| Uint8Array\>)<br>`gateMint`: optional SPL token gate (PublicKey)<br>`writers`: optional writer whitelist (PublicKey[]) |
+| **Parameters** | `connection`: Solana RPC Connection<br>`signer`: Signer<br>`dbRootId`: database ID (Uint8Array or string)<br>`tableSeed`: table seed (Uint8Array or string)<br>`tableName`: display name (string or Uint8Array)<br>`columnNames`: column names (Array\<string \| Uint8Array\>)<br>`idCol`: ID column (string or Uint8Array)<br>`extKeys`: extension keys (Array\<string \| Uint8Array\>)<br>`gate`: optional access gate (see [Token & Collection Gating](#token--collection-gating))<br>`writers`: optional writer whitelist (PublicKey[]) |
 |----------|--------------------------|
 | **Returns** | Transaction signature (string) |
 
@@ -308,9 +344,24 @@ connections.forEach(conn => {
 ```typescript
 import iqlabs from '@iqlabs-official/solana-sdk';
 
+// No gate (public table)
 await iqlabs.writer.createTable(
   connection, signer, 'my-db', 'users', 'Users Table',
   ['name', 'email'], 'user_id', []
+);
+
+// With token gate (must hold >= 100 tokens)
+await iqlabs.writer.createTable(
+  connection, signer, 'my-db', 'vip', 'VIP Table',
+  ['name'], 'user_id', [],
+  { mint: tokenMintPubkey, amount: 100, gateType: iqlabs.contract.GateType.Token }
+);
+
+// With NFT collection gate (must hold any NFT from the collection)
+await iqlabs.writer.createTable(
+  connection, signer, 'my-db', 'holders', 'Holder Table',
+  ['name'], 'user_id', [],
+  { mint: collectionPubkey, gateType: iqlabs.contract.GateType.Collection }
 );
 ```
 

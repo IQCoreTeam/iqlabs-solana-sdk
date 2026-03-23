@@ -312,9 +312,13 @@
           }
         },
         {
-          "name": "gate_mint_opt",
+          "name": "gate_opt",
           "type": {
-            "option": "pubkey"
+            "option": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           }
         },
         {
@@ -632,9 +636,13 @@
           }
         },
         {
-          "name": "gate_mint_opt",
+          "name": "gate_opt",
           "type": {
-            "option": "pubkey"
+            "option": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           }
         },
         {
@@ -952,9 +960,13 @@
           }
         },
         {
-          "name": "gate_mint_opt",
+          "name": "gate_opt",
           "type": {
-            "option": "pubkey"
+            "option": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           }
         },
         {
@@ -1455,9 +1467,13 @@
           }
         },
         {
-          "name": "gate_mint_opt",
+          "name": "gate_opt",
           "type": {
-            "option": "pubkey"
+            "option": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           }
         },
         {
@@ -1680,6 +1696,10 @@
         },
         {
           "name": "signer_ata",
+          "optional": true
+        },
+        {
+          "name": "metadata_account",
           "optional": true
         }
       ],
@@ -2021,6 +2041,10 @@
         },
         {
           "name": "signer_ata",
+          "optional": true
+        },
+        {
+          "name": "metadata_account",
           "optional": true
         }
       ],
@@ -2402,6 +2426,371 @@
         {
           "name": "new_status",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "migrate_2026mar23_connection",
+      "discriminator": [
+        38,
+        46,
+        199,
+        31,
+        21,
+        219,
+        127,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "connection_table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  110,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  65,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "connection_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "connection_seed",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "migrate_2026mar23_table",
+      "discriminator": [
+        213,
+        127,
+        108,
+        162,
+        87,
+        246,
+        7,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "db_root"
+              },
+              {
+                "kind": "arg",
+                "path": "table_seed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "table_seed",
+          "type": "bytes"
         }
       ]
     },
@@ -3603,6 +3992,16 @@
           }
         },
         {
+          "name": "gate_opt",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
+          }
+        },
+        {
           "name": "writers_opt",
           "type": {
             "option": {
@@ -4781,8 +5180,12 @@
             "type": "bytes"
           },
           {
-            "name": "gate_mint",
-            "type": "pubkey"
+            "name": "gate",
+            "type": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           },
           {
             "name": "party_a",
@@ -4835,6 +5238,26 @@
           {
             "name": "id",
             "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GateConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "gate_type",
+            "type": "u8"
           }
         ]
       }
@@ -4953,8 +5376,12 @@
             "type": "i64"
           },
           {
-            "name": "gate_mint",
-            "type": "pubkey"
+            "name": "gate",
+            "type": {
+              "defined": {
+                "name": "GateConfig"
+              }
+            }
           },
           {
             "name": "writers",
