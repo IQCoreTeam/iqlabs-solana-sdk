@@ -142,8 +142,9 @@ async function readSessionViaGtfa(
 
     // decode post_chunk from raw json response
     const {instructionCoder} = (await import("./reader_context")).readerContext;
-    // @ts-ignore — bs58 has no type declarations
+    // @ts-ignore — bs58 v6 exports default only
     const bs58mod = await import("bs58");
+    // @ts-ignore
     const decode58: (s: string) => Uint8Array = bs58mod.decode ?? bs58mod.default?.decode ?? bs58mod.default;
     const programId = (await import("../../contract")).DEFAULT_ANCHOR_PROGRAM_ID;
 
