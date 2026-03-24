@@ -622,6 +622,25 @@ console.log(url); // https://api.mainnet-beta.solana.com
 
 ---
 
+### Helius Optimization
+
+When the RPC URL points to a Helius endpoint (`helius-rpc.com`), the SDK automatically uses `getTransactionsForAddress` (gTFA) for reading session files. This fetches 100 full transactions per call instead of individual `getTransaction` calls.
+
+**Result:** Large file reads are ~100x faster (e.g. 580KB file: 468s → 4.6s).
+
+No code changes needed — just set a Helius RPC URL:
+
+```typescript
+iqlabs.setRpcUrl('https://mainnet.helius-rpc.com/?api-key=YOUR_KEY');
+
+// readCodeIn automatically uses gTFA when available
+const { data, metadata } = await iqlabs.reader.readCodeIn(txSignature);
+```
+
+Falls back to standard sequential reads on any non-Helius RPC. Requires a paid Helius plan for gTFA access.
+
+---
+
 ### User Metadata
 
 #### `updateUserMetadata()`

@@ -38,7 +38,7 @@
 
 import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 
-import {getReaderConnection} from "../utils/connection_helper";
+import {getReaderConnection, getRpcUrl} from "../utils/connection_helper";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
@@ -94,12 +94,101 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
     return {code: data.code, beforeTx: data.before_tx};
 };
 
+// bulk session read via helius getTransactionsForAddress — returns null if unavailable
+async function readSessionViaGtfa(
+    sessionPubkey: string,
+    onProgress?: (percent: number) => void,
+): Promise<{ result: string } | null> {
+    const rpcUrl = getRpcUrl();
+    if (!rpcUrl.includes("helius-rpc.com") && !rpcUrl.includes("helius.dev")) return null;
+    if (onProgress) onProgress(0);
+
+    const allTxs: VersionedTransactionResponse[] = [];
+    let paginationToken: string | undefined;
+
+    try {
+        while (true) {
+            const res = await fetch(rpcUrl, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "getTransactionsForAddress",
+                    params: [sessionPubkey, {
+                        limit: 100,
+                        transactionDetails: "full",
+                        ...(paginationToken ? {paginationToken} : {}),
+                    }],
+                }),
+            });
+            if (!res.ok) return null;
+            const json = await res.json() as {
+                result?: { data?: VersionedTransactionResponse[]; paginationToken?: string };
+                error?: unknown;
+            };
+            if (json.error) return null;
+            const data = json.result?.data ?? [];
+            if (data.length === 0) break;
+            allTxs.push(...data);
+            paginationToken = json.result?.paginationToken;
+            if (!paginationToken || data.length < 100) break;
+        }
+    } catch {
+        return null;
+    }
+
+    if (allTxs.length === 0) return null;
+
+    // decode post_chunk from raw json response
+    const {instructionCoder} = (await import("./reader_context")).readerContext;
+    // @ts-ignore — bs58 has no type declarations
+    const bs58mod = await import("bs58");
+    const decode58: (s: string) => Uint8Array = bs58mod.decode ?? bs58mod.default?.decode ?? bs58mod.default;
+    const programId = (await import("../../contract")).DEFAULT_ANCHOR_PROGRAM_ID;
+
+    const chunkMap = new Map<number, string>();
+    for (let i = 0; i < allTxs.length; i++) {
+        const tx = allTxs[i] as any;
+        const msg = tx.transaction?.message;
+        if (!msg) continue;
+        const keys: string[] = msg.accountKeys ?? [];
+        for (const ix of msg.instructions ?? []) {
+            if (keys[ix.programIdIndex] !== programId) continue;
+            try {
+                const decoded = instructionCoder.decode(
+                    Buffer.from(typeof decode58 === "function" ? decode58(ix.data) : ix.data),
+                    "base58",
+                );
+                if (decoded?.name === "post_chunk") {
+                    const d = decoded.data as { index: number; chunk: string };
+                    chunkMap.set(d.index, d.chunk);
+                }
+            } catch {}
+        }
+        if (onProgress) onProgress(Math.floor(((i + 1) / allTxs.length) * 100));
+    }
+
+    if (chunkMap.size === 0) return null;
+    if (onProgress) onProgress(100);
+    return {
+        result: Array.from(chunkMap.entries())
+            .sort(([a], [b]) => a - b)
+            .map(([, chunk]) => chunk)
+            .join(""),
+    };
+}
+
 export async function readSessionResult(
     sessionPubkey: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: string,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
+    // try bulk read first, fall back to sequential
+    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress);
+    if (bulk) return bulk;
+
     const connection = getReaderConnection(readOption.freshness);
     const sessionKey = new PublicKey(sessionPubkey);
     const signatures = [];
