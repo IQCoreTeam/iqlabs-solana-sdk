@@ -38,6 +38,8 @@ export type InstructionName =
     | "initialize_config"
     | "initialize_db_root"
     | "manage_connection"
+    | "manage_table_creators"
+    | "onboard_table"
     | "post_chunk"
     | "request_connection"
     | "send_code"
@@ -271,6 +273,32 @@ export const manageConnectionInstruction = (
         new_status: number;
     },
 ) => builder.build("manage_connection", accounts, args);
+
+export const manageTableCreatorsInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        signer: PublicKey;
+        db_root: PublicKey;
+        system_program?: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        table_creators: PublicKey[];
+        ext_creators: PublicKey[];
+    },
+) => builder.build("manage_table_creators", accounts, args);
+
+export const onboardTableInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        signer: PublicKey;
+        db_root: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        table_seed: Bytes;
+    },
+) => builder.build("onboard_table", accounts, args);
 
 export const postChunkInstruction = (
     builder: InstructionBuilder,
