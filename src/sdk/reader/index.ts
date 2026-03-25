@@ -7,6 +7,7 @@ export {
     collectSignatures,
     getTablelistFromRoot,
 } from "./iqdb";
+export { fetchTableMeta, decodeTableMeta } from "../utils/global_fetch";
 export {
     readUserState,
     readInventoryMetadata,

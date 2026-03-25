@@ -20,6 +20,7 @@ export function decodeTableMeta(data: Buffer) {
     const decoded = ACCOUNT_CODER.decode("Table", data) as {
         column_names: Uint8Array[];
         id_col: Uint8Array;
+        name: Uint8Array;
         gate: { mint: PublicKey; amount: { toNumber(): number }; gateType: number };
         writers: PublicKey[];
     };
@@ -29,6 +30,7 @@ export function decodeTableMeta(data: Buffer) {
             Buffer.from(value).toString("utf8").replace(/\0+$/, ""),
         ),
         idCol: Buffer.from(decoded.id_col).toString("utf8").replace(/\0+$/, ""),
+        name: Buffer.from(decoded.name).toString("utf8").replace(/\0+$/, ""),
         gate: decoded.gate,
         writers: decoded.writers,
     };
