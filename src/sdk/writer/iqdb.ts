@@ -126,9 +126,7 @@ export async function createTable(
             column_names: columnNames.map(toBytes),
             id_col: toBytes(idCol),
             ext_keys: extKeys.map(toBytes),
-            gate_opt: gate
-                ? { mint: gate.mint, amount: new BN(gate.amount ?? 1), gate_type: gate.gateType ?? GateType.Token }
-                : null,
+            gate_mint_opt: gate ? gate.mint : null,
             writers_opt: writers ?? null,
         },
     ));
@@ -258,7 +256,10 @@ export async function writeRow(
         throw new Error("signer not in writers");
     }
 
-    const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
+    const hasGate = meta.gate && !meta.gate.mint.equals(SystemProgram.programId);
+    const { signerAta, metadataAccount } = hasGate
+        ? await resolveGateAccounts(connection, signer, meta.gate)
+        : { signerAta: undefined, metadataAccount: undefined };
     const {
         builder,
         user,
@@ -434,7 +435,10 @@ export async function manageRowData(
             throw new Error("signer not in writers");
         }
 
-        const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
+        const hasGate = meta.gate && !meta.gate.mint.equals(SystemProgram.programId);
+    const { signerAta, metadataAccount } = hasGate
+        ? await resolveGateAccounts(connection, signer, meta.gate)
+        : { signerAta: undefined, metadataAccount: undefined };
         const {
             builder,
             user,

@@ -1,10 +1,10 @@
 import {type VersionedTransactionResponse} from "@solana/web3.js";
 import {getConnection} from "../utils/connection_helper";
 import {CODE_IN_INSTRUCTION_NAMES, decodeReaderInstruction} from "./reader_utils";
+import {SIG_MIN_LEN} from "../constants";
 
 const DAY_SECONDS = 86_400;
 const WEEK_SECONDS = 7 * DAY_SECONDS;
-const SIG_MIN_LEN = 80;
 
 const resolveOnChainPath = (
     tx: VersionedTransactionResponse,

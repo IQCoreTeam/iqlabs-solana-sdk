@@ -144,7 +144,7 @@ export type TableCreateArgs = {
     column_names: Bytes[];
     id_col: Bytes;
     ext_keys: Bytes[];
-    gate_opt: GateConfigArgs | null;
+    gate_mint_opt: PublicKey | null;
     writers_opt: OptionalPubkeyList;
 };
 
@@ -416,7 +416,7 @@ export const updateTableInstruction = (
         column_names: Bytes[];
         id_col: Bytes;
         ext_keys: Bytes[];
-        gate_opt: GateConfigArgs | null;
+        gate_mint_opt: PublicKey | null;
         writers_opt: OptionalPubkeyList;
     },
 ) => builder.build("update_table", accounts, args);
