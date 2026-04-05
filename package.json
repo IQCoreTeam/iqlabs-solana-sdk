@@ -3,6 +3,36 @@
   "version": "0.1.16",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./crypto": {
+      "types": "./dist/sdk/crypto/index.d.ts",
+      "default": "./dist/sdk/crypto/index.js"
+    },
+    "./reader": {
+      "types": "./dist/sdk/reader/index.d.ts",
+      "default": "./dist/sdk/reader/index.js"
+    },
+    "./writer": {
+      "types": "./dist/sdk/writer/index.d.ts",
+      "default": "./dist/sdk/writer/index.js"
+    },
+    "./contract": {
+      "types": "./dist/contract/index.d.ts",
+      "default": "./dist/contract/index.js"
+    },
+    "./utils": {
+      "types": "./dist/sdk/utils/index.d.ts",
+      "default": "./dist/sdk/utils/index.js"
+    },
+    "./constants": {
+      "types": "./dist/sdk/constants.d.ts",
+      "default": "./dist/sdk/constants.js"
+    }
+  },
   "files": [
     "dist",
     "idl"

@@ -5,3 +5,6 @@ export const DEFAULT_WRITE_FEE_RECEIVER =
     "EWNSTD8tikwqHMcRNuuNbZrnYJUiJdKq9UXLXSEU4wZ1";
 export const DEFAULT_IQ_MINT =
     "3uXACfojUrya7VH51jVC1DCHq3uzK4A7g469Q954LABS";
+
+/** Minimum length of a base58 Solana transaction signature (~88 chars). */
+export const SIG_MIN_LEN = 80;
