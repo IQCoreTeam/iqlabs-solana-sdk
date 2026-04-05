@@ -312,13 +312,9 @@
           }
         },
         {
-          "name": "gate_opt",
+          "name": "gate_mint_opt",
           "type": {
-            "option": {
-              "defined": {
-                "name": "GateConfig"
-              }
-            }
+            "option": "pubkey"
           }
         },
         {
@@ -636,13 +632,9 @@
           }
         },
         {
-          "name": "gate_opt",
+          "name": "gate_mint_opt",
           "type": {
-            "option": {
-              "defined": {
-                "name": "GateConfig"
-              }
-            }
+            "option": "pubkey"
           }
         },
         {
@@ -960,13 +952,9 @@
           }
         },
         {
-          "name": "gate_opt",
+          "name": "gate_mint_opt",
           "type": {
-            "option": {
-              "defined": {
-                "name": "GateConfig"
-              }
-            }
+            "option": "pubkey"
           }
         },
         {
@@ -1467,13 +1455,9 @@
           }
         },
         {
-          "name": "gate_opt",
+          "name": "gate_mint_opt",
           "type": {
-            "option": {
-              "defined": {
-                "name": "GateConfig"
-              }
-            }
+            "option": "pubkey"
           }
         },
         {

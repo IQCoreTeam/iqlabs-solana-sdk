@@ -126,9 +126,7 @@ export async function createTable(
             column_names: columnNames.map(toBytes),
             id_col: toBytes(idCol),
             ext_keys: extKeys.map(toBytes),
-            gate_opt: gate
-                ? { mint: gate.mint, amount: new BN(gate.amount ?? 1), gate_type: gate.gateType ?? GateType.Token }
-                : null,
+            gate_mint_opt: gate ? gate.mint : null,
             writers_opt: writers ?? null,
         },
     ));
