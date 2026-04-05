@@ -258,7 +258,10 @@ export async function writeRow(
         throw new Error("signer not in writers");
     }
 
-    const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
+    const hasGate = meta.gate && !meta.gate.mint.equals(SystemProgram.programId);
+    const { signerAta, metadataAccount } = hasGate
+        ? await resolveGateAccounts(connection, signer, meta.gate)
+        : { signerAta: undefined, metadataAccount: undefined };
     const {
         builder,
         user,
@@ -434,7 +437,10 @@ export async function manageRowData(
             throw new Error("signer not in writers");
         }
 
-        const { signerAta, metadataAccount } = await resolveGateAccounts(connection, signer, meta.gate);
+        const hasGate = meta.gate && !meta.gate.mint.equals(SystemProgram.programId);
+    const { signerAta, metadataAccount } = hasGate
+        ? await resolveGateAccounts(connection, signer, meta.gate)
+        : { signerAta: undefined, metadataAccount: undefined };
         const {
             builder,
             user,
