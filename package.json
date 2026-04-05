@@ -3,6 +3,16 @@
   "version": "0.1.16",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./crypto": "./dist/sdk/crypto/index.js",
+    "./reader": "./dist/sdk/reader/index.js",
+    "./writer": "./dist/sdk/writer/index.js",
+    "./contract": "./dist/contract/index.js",
+    "./utils": "./dist/sdk/utils/index.js",
+    "./constants": "./dist/sdk/constants.js",
+    "./idl/*": "./idl/*"
+  },
   "files": [
     "dist",
     "idl"
