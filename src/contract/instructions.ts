@@ -4,6 +4,9 @@ import {
     TransactionInstruction,
     type AccountMeta,
 } from "@solana/web3.js";
+import {PROGRAM_ID} from "./profile";
+
+export const IQ_IDL: Idl = require("../../idl/code_in.json");
 
 export type Bytes = Uint8Array;
 export type OptionalPubkey = PublicKey | null;
@@ -112,8 +115,8 @@ const toAccountMeta = (
 };
 
 export const createInstructionBuilder = (
-    idl: Idl,
-    programId: PublicKey,
+    idl: Idl = IQ_IDL,
+    programId: PublicKey = PROGRAM_ID,
 ): InstructionBuilder => {
     const coder = new BorshInstructionCoder(idl);
     const instructions = (idl.instructions ?? []) as IdlInstruction[];
