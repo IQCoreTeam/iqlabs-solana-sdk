@@ -292,6 +292,10 @@
           "type": "bytes"
         },
         {
+          "name": "table_hint",
+          "type": "bytes"
+        },
+        {
           "name": "table_name",
           "type": "bytes"
         },
@@ -616,6 +620,10 @@
           "type": "bytes"
         },
         {
+          "name": "table_hint",
+          "type": "bytes"
+        },
+        {
           "name": "table_name",
           "type": "bytes"
         },
@@ -937,6 +945,10 @@
         },
         {
           "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_hint",
           "type": "bytes"
         },
         {
@@ -1444,6 +1456,10 @@
         },
         {
           "name": "table_seed",
+          "type": "bytes"
+        },
+        {
+          "name": "table_hint",
           "type": "bytes"
         },
         {
@@ -3546,6 +3562,108 @@
       ]
     },
     {
+      "name": "update_db_root_global_table_list",
+      "discriminator": [
+        249,
+        80,
+        158,
+        187,
+        113,
+        37,
+        21,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "new_global_table_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
       "name": "update_db_root_table_list",
       "discriminator": [
         57,
@@ -5074,12 +5192,18 @@
           },
           {
             "name": "table_seeds",
+            "docs": [
+              "Human-readable hints (not hashed seeds). To derive the table PDA, hash with keccak256."
+            ],
             "type": {
               "vec": "bytes"
             }
           },
           {
             "name": "global_table_seeds",
+            "docs": [
+              "Human-readable hints (not hashed seeds). To derive the table PDA, hash with keccak256."
+            ],
             "type": {
               "vec": "bytes"
             }

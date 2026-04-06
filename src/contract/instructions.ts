@@ -46,6 +46,7 @@ export type InstructionName =
     | "server_initialize"
     | "set_merkle_root"
     | "update_db_root_table_list"
+    | "update_db_root_global_table_list"
     | "realloc_account"
     | "update_table"
     | "update_user_metadata"
@@ -140,6 +141,7 @@ export const createInstructionBuilder = (
 export type TableCreateArgs = {
     db_root_id: Bytes;
     table_seed: Bytes;
+    table_hint: Bytes;
     table_name: Bytes;
     column_names: Bytes[];
     id_col: Bytes;
@@ -401,6 +403,18 @@ export const updateDbRootTableListInstruction = (
         new_table_seeds: Bytes[];
     },
 ) => builder.build("update_db_root_table_list", accounts, args);
+
+export const updateDbRootGlobalTableListInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        db_root: PublicKey;
+        signer: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        new_global_table_seeds: Bytes[];
+    },
+) => builder.build("update_db_root_global_table_list", accounts, args);
 
 export const updateTableInstruction = (
     builder: InstructionBuilder,

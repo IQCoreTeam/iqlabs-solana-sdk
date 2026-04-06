@@ -44,19 +44,23 @@ import {sendTx} from "./writer_utils";
 const IDL = require("../../../idl/code_in.json") as Idl;
 const ACCOUNT_CODER = new BorshAccountsCoder(IDL);
 
-// ~20 tables worth of extra space per realloc
+// Default extra space per realloc
 const REALLOC_EXTRA = 2048;
-// trigger realloc when free bytes drop below this
-const REALLOC_THRESHOLD = 128;
 
 const vecVecSerializedSize = (vv: Uint8Array[]) =>
     4 + vv.reduce((s, v) => s + 4 + v.length, 0);
 
+/**
+ * Build a realloc instruction if the DbRoot account doesn't have enough
+ * space for the incoming hint. Guarantees at least `neededExtra` bytes
+ * of free space after realloc, plus REALLOC_EXTRA for future headroom.
+ */
 function buildReallocIxIfNeeded(
     builder: ReturnType<typeof createInstructionBuilder>,
     payer: PublicKey,
     target: PublicKey,
     accountData: Buffer,
+    neededExtra = 0,
 ): TransactionInstruction | null {
     const decoded = ACCOUNT_CODER.decode("DbRoot", accountData) as {
         table_seeds: Uint8Array[];
@@ -69,12 +73,18 @@ function buildReallocIxIfNeeded(
         + vecVecSerializedSize(decoded.global_table_seeds)
         + 4 + decoded.id.length;
 
-    if (accountData.length - usedBytes >= REALLOC_THRESHOLD) return null;
+    const freeBytes = accountData.length - usedBytes;
+    const minRequired = Math.max(neededExtra, 128);
+
+    if (freeBytes >= minRequired) return null;
+
+    // Grow enough for the immediate need + headroom for future entries
+    const growBy = Math.max(REALLOC_EXTRA, minRequired - freeBytes + REALLOC_EXTRA);
 
     return reallocAccountInstruction(
         builder,
         {payer, target, system_program: SystemProgram.programId},
-        {new_size: new BN(accountData.length + REALLOC_EXTRA)},
+        {new_size: new BN(accountData.length + growBy)},
     );
 }
 
@@ -89,6 +99,7 @@ export async function createTable(
     extKeys: Array<Uint8Array | string>,
     gate?: { mint: PublicKey; amount?: number; gateType?: GateType },
     writers?: PublicKey[],
+    tableHint?: Uint8Array | string,
 ) {
     const programId = PROGRAM_ID;
     const builder = createInstructionBuilder(IDL, programId);
@@ -98,15 +109,22 @@ export async function createTable(
     const table = getTablePda(dbRoot, tableSeedBytes, programId);
     const instructionTable = getInstructionTablePda(dbRoot, tableSeedBytes, programId);
 
-    const dbRootInfo = await connection.getAccountInfo(dbRoot);
-    if (!dbRootInfo) throw new Error("db_root not found");
-
     const toBytes = (v: string | Uint8Array) =>
         typeof v === "string" ? Buffer.from(v, "utf8") : v;
 
+    // table_hint defaults to the original tableSeed string for backwards compat
+    const hintBytes = tableHint
+        ? toBytes(tableHint)
+        : typeof tableSeed === "string" ? Buffer.from(tableSeed, "utf8") : tableSeedBytes;
+
+    const dbRootInfo = await connection.getAccountInfo(dbRoot);
+    if (!dbRootInfo) throw new Error("db_root not found");
+
     const ixs: TransactionInstruction[] = [];
 
-    const reallocIx = buildReallocIxIfNeeded(builder, signer.publicKey, dbRoot, dbRootInfo.data);
+    // hint is stored twice (table_seeds + global_table_seeds), so need space for both
+    const hintSpace = (4 + hintBytes.length) * 2;
+    const reallocIx = buildReallocIxIfNeeded(builder, signer.publicKey, dbRoot, dbRootInfo.data, hintSpace);
     if (reallocIx) ixs.push(reallocIx);
 
     ixs.push(createTableInstruction(
@@ -122,6 +140,7 @@ export async function createTable(
         {
             db_root_id: dbRootSeed,
             table_seed: tableSeedBytes,
+            table_hint: hintBytes,
             table_name: toBytes(tableName),
             column_names: columnNames.map(toBytes),
             id_col: toBytes(idCol),

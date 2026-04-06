@@ -21,7 +21,7 @@ export function decodeTableMeta(data: Buffer) {
         column_names: Uint8Array[];
         id_col: Uint8Array;
         name: Uint8Array;
-        gate: { mint: PublicKey; amount: { toNumber(): number }; gateType: number };
+        gate: { mint: PublicKey; amount: { toNumber(): number }; gate_type: number };
         writers: PublicKey[];
     };
 
@@ -31,7 +31,11 @@ export function decodeTableMeta(data: Buffer) {
         ),
         idCol: Buffer.from(decoded.id_col).toString("utf8").replace(/\0+$/, ""),
         name: Buffer.from(decoded.name).toString("utf8").replace(/\0+$/, ""),
-        gate: decoded.gate,
+        gate: {
+            mint: decoded.gate.mint,
+            amount: decoded.gate.amount,
+            gateType: decoded.gate.gate_type,
+        },
         writers: decoded.writers,
     };
 }
