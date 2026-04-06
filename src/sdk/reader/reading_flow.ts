@@ -16,8 +16,9 @@ import {
     fetchAccountTransactions,
 } from "./reader_utils";
 
+import {SIG_MIN_LEN} from "../constants";
+
 const {accountCoder} = readerContext;
-const SIG_MIN_LEN = 80;
 
 export async function readInventoryMetadata(
     txSignature: string,
