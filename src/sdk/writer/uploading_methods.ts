@@ -140,7 +140,7 @@ export async function uploadSession(
                 decode_break: 0,
             },
         );
-        await sendTx(connection, signer, ix);
+        await sendTx(connection, signer, ix, true);
         completed += 1;
         if (onProgress && totalChunks > 0) {
             const percent = Math.floor((completed / totalChunks) * 100);
