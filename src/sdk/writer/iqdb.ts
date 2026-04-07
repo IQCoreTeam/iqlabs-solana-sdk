@@ -291,7 +291,7 @@ export async function writeRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson]);
+    } = await prepareCodeIn({connection, signer}, rowJson);
     const ix = dbCodeInInstruction(
         builder,
         {
@@ -379,7 +379,7 @@ export async function writeConnectionRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, [rowJson]);
+    } = await prepareCodeIn({connection, signer}, rowJson);
     const ix = walletConnectionCodeInInstruction(
         builder,
         {
@@ -470,7 +470,7 @@ export async function manageRowData(
             sessionFinalize,
             feeReceiver,
             iqAta,
-        } = await prepareCodeIn({connection, signer}, [rowJson]);
+        } = await prepareCodeIn({connection, signer}, rowJson);
         const ix = dbInstructionCodeInInstruction(
             builder,
             {
