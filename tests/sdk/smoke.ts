@@ -9,7 +9,6 @@ import {
 import {
   deriveDmSeed,
   deriveSeedBytes,
-  sortPubkeys,
   toSeedBytes,
 } from "../../src/sdk/utils/seed";
 import {
@@ -88,18 +87,15 @@ async function testSeedUtils() {
   const expected = keccak_256(Buffer.from(text, "utf8"));
   assert.equal(bytesToHex(hashed), bytesToHex(expected));
 
-  const [a, b] = sortPubkeys("z-user", "a-user");
-  assert.equal(a, "a-user");
-  assert.equal(b, "z-user");
-
   const dmSeed = deriveDmSeed("user-2", "user-1");
   const manual = keccak_256(Buffer.from("user-1:user-2", "utf8"));
   assert.equal(bytesToHex(dmSeed), bytesToHex(manual));
 
   const sample = new Uint8Array([5, 6, 7]);
-  assert.equal(toSeedBytes(sample), sample);
+  const fromBytes = toSeedBytes(sample);
+  assert.equal(bytesToHex(fromBytes), bytesToHex(sample));
   const viaString = toSeedBytes("abc");
-  assert.notEqual(viaString, sample);
+  assert.notEqual(bytesToHex(viaString), bytesToHex(sample));
 }
 
 async function testEvaluateConnectionAccess() {
@@ -126,11 +122,11 @@ async function testEvaluateConnectionAccess() {
     return evaluateConnectionAccess(meta, signer);
   };
 
+  // Requester (partyA) can send in pending state (X/Twitter DM request semantics)
   const pendingRequester = evaluate({}, partyA);
   assert.deepEqual(pendingRequester, {
-    allowed: false,
+    allowed: true,
     status: "pending",
-    message: "Ask the other party to open the connection.",
   });
 
   const pendingOther = evaluate({}, partyB);
