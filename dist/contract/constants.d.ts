@@ -1,0 +1,16 @@
+export declare const DEFAULT_ANCHOR_PROGRAM_ID = "9KLLchQVJpGkw4jPuUmnvqESdR7mtNCYr3qS4iQLabs";
+export declare const SEED_CONFIG = "configmY}AGBJiqLabs";
+export declare const SEED_DB_ROOT = "rootmY}AGBJiqLabs";
+export declare const SEED_TABLE = "tablemY}AGBJiqLabs";
+export declare const SEED_TABLE_REF = "table-refmY}AGBJiqLabs";
+export declare const SEED_INSTRUCTION = "instructionmY}AGBJiqLabs";
+export declare const SEED_TARGET = "targetmY}AGBJiqLabs";
+export declare const SEED_USER = "usermY}AGBJiqLabs";
+export declare const SEED_BUNDLE = "bundlemY}AGBJiqLabs";
+export declare const SEED_CONNECTION = "connectionmY}AGAJiqLabs";
+export declare const SEED_CODE_ACCOUNT = "codemY}AGBJiqLabs";
+export declare const SEED_USER_INVENTORY = "inventorymY}AGBJiqLabs";
+export declare const CONNECTION_STATUS_PENDING = 0;
+export declare const CONNECTION_STATUS_APPROVED = 1;
+export declare const CONNECTION_STATUS_BLOCKED = 2;
+export declare const CONNECTION_BLOCKER_NONE = 255;
