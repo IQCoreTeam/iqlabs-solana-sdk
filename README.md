@@ -676,6 +676,62 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 
 ---
 
+## Using with Wallet Standard / `@solana/kit` / Privy / MPC
+
+The SDK's writer methods (`writeRow`, `codeIn`, `manageRowData`, …) accept
+a `SignerInput` that covers three shapes:
+
+1. `Keypair` — raw local keys (node / CLI / devnet testing)
+2. `WalletSigner` — the legacy wallet-adapter shape (`{publicKey, signTransaction, signAllTransactions}`) produced by `@solana/wallet-adapter`, Anchor, etc.
+3. **Bytes-based signer** — for anything in the kit era that signs serialized transaction bytes: Solana Wallet Standard wallets, Privy v3, MPC services (Turnkey / Fireblocks / Dynamic / Magic), backend / custom signers
+
+For #3, wrap the bytes-signing callback with `createBytesSigner` from
+`@iqlabs-official/solana-sdk/utils` — it returns a `WalletSigner` the SDK
+accepts unchanged.
+
+```ts
+import iqlabs from "@iqlabs-official/solana-sdk";
+import { createBytesSigner } from "@iqlabs-official/solana-sdk/utils";
+
+const signer = createBytesSigner({
+  address: wallet.address,                       // base58 pubkey string
+  signTransaction: async (bytes) => signedBytes, // your (bytes) => bytes signer
+});
+await iqlabs.writer.writeRow(connection, signer, dbRootId, tableSeed, rowJson);
+```
+
+### Privy v3 example
+
+Privy's `useSignTransaction()` hook returns `signTransaction({transaction, wallet}) → {signedTransaction}`:
+
+```tsx
+import { useSignTransaction, useWallets } from "@privy-io/react-auth/solana";
+import { createBytesSigner } from "@iqlabs-official/solana-sdk/utils";
+
+function useIqSigner() {
+  const { signTransaction } = useSignTransaction();
+  const { wallets } = useWallets();
+  const wallet = wallets[0];
+  if (!wallet) return null;
+
+  return createBytesSigner({
+    address: wallet.address,
+    signTransaction: async (bytes) => {
+      const { signedTransaction } = await signTransaction({ transaction: bytes, wallet });
+      return signedTransaction;
+    },
+  });
+}
+```
+
+### Compatibility notes
+
+- `@solana/kit` and `@solana/web3.js@^1` are **different npm packages** and install side by side. No peer-dep conflict.
+- To convert a kit `Address` to a v1 `PublicKey`, use `new PublicKey(address)` — kit's `Address` is a branded base58 string.
+- `createBytesSigner` exposes an optional `signAllTransactions` for providers that support batch signing (Privy's `signTransaction(...inputs)` overload, etc.). Falls back to serial if omitted. iqlabs-sdk currently only calls `signTransaction` internally, so wiring the batch path is a small forward-compat nicety, not required.
+
+---
+
 ## Additional Resources
 - [IQLabs Official X](https://x.com/IQLabsOfficial)
 - [IQLabs Official Website](https://iqlabs.dev)
