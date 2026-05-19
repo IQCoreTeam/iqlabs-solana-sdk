@@ -1,11 +1,11 @@
 export const DEFAULT_SESSION_SPEED = "light" as const;
 export const SESSION_SPEED_PROFILES = {
-    light: {maxRps: 2, maxConcurrency:  5}, //this was good with helius but you guys can maintain it
-    medium: {maxRps: 50, maxConcurrency: 50},
-    heavy: {maxRps: 100, maxConcurrency: 100},
-    extreme: {maxRps: 250, maxConcurrency: 250},
+    light: {maxRps: 2, maxConcurrency:  5, maxConcurrencyUpload: 1}, //this was good with helius but you guys can maintain it
+    medium: {maxRps: 50, maxConcurrency: 50, maxConcurrencyUpload: 5},
+    heavy: {maxRps: 100, maxConcurrency: 100, maxConcurrencyUpload: 50},
+    extreme: {maxRps: 250, maxConcurrency: 250, maxConcurrencyUpload: 100},
 
-} satisfies Record<string, { maxRps: number; maxConcurrency: number }>;
+} satisfies Record<string, { maxRps: number; maxConcurrency: number, maxConcurrencyUpload: number }>;
 
 export type SessionSpeedKey = keyof typeof SESSION_SPEED_PROFILES;
 
