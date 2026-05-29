@@ -119,6 +119,9 @@ export async function createTable(
 
     const dbRootInfo = await connection.getAccountInfo(dbRoot);
     if (!dbRootInfo) throw new Error("db_root not found");
+    const dbRootCreator = new PublicKey(
+        (ACCOUNT_CODER.decode("DbRoot", dbRootInfo.data) as {creator: PublicKey}).creator,
+    );
 
     const ixs: TransactionInstruction[] = [];
 
@@ -132,6 +135,7 @@ export async function createTable(
         {
             db_root: dbRoot,
             receiver: new PublicKey(DEFAULT_WRITE_FEE_RECEIVER),
+            db_root_creator: dbRootCreator,
             signer: signer.publicKey,
             table,
             instruction_table: instructionTable,

@@ -8,6 +8,102 @@
   },
   "instructions": [
     {
+      "name": "clear_root_table_creation_fee",
+      "discriminator": [
+        114,
+        194,
+        217,
+        9,
+        48,
+        197,
+        130,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
       "name": "create_admin_table",
       "discriminator": [
         21,
@@ -1257,6 +1353,14 @@
           "name": "receiver",
           "writable": true,
           "address": "EWNSTD8tikwqHMcRNuuNbZrnYJUiJdKq9UXLXSEU4wZ1"
+        },
+        {
+          "name": "db_root_creator",
+          "docs": [
+            "Receives the dbRoot owner share of tableCreationFee. The instruction",
+            "requires this to equal db_root.creator."
+          ],
+          "writable": true
         },
         {
           "name": "signer",
@@ -2559,6 +2663,107 @@
       ]
     },
     {
+      "name": "migrate_db_root_v2",
+      "discriminator": [
+        25,
+        230,
+        98,
+        53,
+        86,
+        2,
+        144,
+        250
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "docs": [
+            "which would fail on legacy roots with stale trailing bytes. The handler",
+            "validates the owner is our program before touching the data."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
       "name": "onboard_table",
       "discriminator": [
         39,
@@ -3558,6 +3763,206 @@
           "type": {
             "option": "pubkey"
           }
+        }
+      ]
+    },
+    {
+      "name": "set_root_table_creation_fee",
+      "discriminator": [
+        156,
+        195,
+        186,
+        255,
+        92,
+        167,
+        52,
+        241
+      ],
+      "accounts": [
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "new_fee",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "transfer_db_root_creator",
+      "discriminator": [
+        247,
+        152,
+        201,
+        157,
+        250,
+        79,
+        176,
+        88
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "db_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  111,
+                  116,
+                  109,
+                  89,
+                  125,
+                  65,
+                  71,
+                  66,
+                  74,
+                  105,
+                  113,
+                  76,
+                  97,
+                  98,
+                  115
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  2,
+                  33,
+                  96,
+                  74,
+                  73,
+                  58,
+                  64,
+                  41,
+                  140,
+                  191,
+                  64,
+                  41,
+                  80,
+                  96,
+                  116,
+                  124,
+                  105,
+                  110,
+                  162,
+                  48,
+                  210,
+                  121,
+                  142,
+                  219,
+                  78,
+                  36,
+                  252,
+                  115,
+                  23,
+                  38,
+                  118,
+                  210
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "db_root_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "db_root_id",
+          "type": "bytes"
+        },
+        {
+          "name": "new_creator",
+          "type": "pubkey"
         }
       ]
     },
@@ -5223,6 +5628,18 @@
             "type": {
               "vec": "pubkey"
             }
+          },
+          {
+            "name": "table_creation_fee_override",
+            "docs": [
+              "Per-root tableCreationFee override (lamports). Used only when",
+              "table_creation_fee_is_set is true; otherwise TABLE_CREATION_FEE_LAMPORTS applies."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "table_creation_fee_is_set",
+            "type": "bool"
           }
         ]
       }

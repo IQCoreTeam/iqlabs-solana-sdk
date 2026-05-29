@@ -55,7 +55,9 @@ export type InstructionName =
     | "update_user_metadata"
     | "user_initialize"
     | "write_connection_data"
-    | "write_data";
+    | "write_data"
+    | "set_root_table_creation_fee"
+    | "clear_root_table_creation_fee";
 
 export type SessionFinalize = {
     seq: BN;
@@ -197,6 +199,7 @@ export const createTableInstruction = (
     accounts: {
         db_root: PublicKey;
         receiver: PublicKey;
+        db_root_creator: PublicKey;
         signer: PublicKey;
         table: PublicKey;
         instruction_table: PublicKey;
@@ -205,6 +208,28 @@ export const createTableInstruction = (
     args: TableCreateArgs,
 ) => builder.build("create_table", accounts, args);
 
+export const setRootTableCreationFeeInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        db_root: PublicKey;
+        signer: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        new_fee: BN;
+    },
+) => builder.build("set_root_table_creation_fee", accounts, args);
+
+export const clearRootTableCreationFeeInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        db_root: PublicKey;
+        signer: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+    },
+) => builder.build("clear_root_table_creation_fee", accounts, args);
 
 export const userInventoryCodeInInstruction = (
     builder: InstructionBuilder,
