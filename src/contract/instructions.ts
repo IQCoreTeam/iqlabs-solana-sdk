@@ -57,7 +57,8 @@ export type InstructionName =
     | "write_connection_data"
     | "write_data"
     | "set_root_table_creation_fee"
-    | "clear_root_table_creation_fee";
+    | "clear_root_table_creation_fee"
+    | "transfer_db_root_creator";
 
 export type SessionFinalize = {
     seq: BN;
@@ -317,6 +318,18 @@ export const manageTableCreatorsInstruction = (
         ext_creators: PublicKey[];
     },
 ) => builder.build("manage_table_creators", accounts, args);
+
+export const transferDbRootCreatorInstruction = (
+    builder: InstructionBuilder,
+    accounts: {
+        signer: PublicKey;
+        db_root: PublicKey;
+    },
+    args: {
+        db_root_id: Bytes;
+        new_creator: PublicKey;
+    },
+) => builder.build("transfer_db_root_creator", accounts, args);
 
 export const onboardTableInstruction = (
     builder: InstructionBuilder,
