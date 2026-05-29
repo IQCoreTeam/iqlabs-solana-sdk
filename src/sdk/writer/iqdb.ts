@@ -3,7 +3,6 @@ import {
     Connection,
     PublicKey,
     SystemProgram,
-    type Signer,
     type TransactionInstruction,
 } from "@solana/web3.js";
 import {type SignerInput} from "../utils/wallet";
@@ -90,7 +89,7 @@ function buildReallocIxIfNeeded(
 
 export async function createTable(
     connection: Connection,
-    signer: Signer,
+    signer: SignerInput,
     dbRootId: Uint8Array | string,
     tableSeed: Uint8Array | string,
     tableName: Uint8Array | string,
