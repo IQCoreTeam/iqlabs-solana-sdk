@@ -5,5 +5,8 @@ export {
     SESSION_SPEED_PROFILES,
     DEFAULT_SESSION_SPEED,
     resolveSessionSpeed,
+    resolveSessionConfig,
     type SessionSpeedKey,
+    type SessionSpeedConfig,
+    type SessionSpeedOption,
 } from "./session_speed";

@@ -21,6 +21,7 @@ import {resolveAssociatedTokenAccount} from "../utils/ata";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {ensureUserInitialized, readMagicBytes, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
+import {type SessionSpeedOption} from "../utils/session_speed";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
@@ -54,7 +55,7 @@ export async function prepareCodeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
-    speed?: string,
+    speed?: SessionSpeedOption,
 ) {
     const chunks = toChunks(data);
     const totalChunks = chunks.length;
@@ -184,7 +185,7 @@ export async function codeIn(
     method = 0,
     filetype = "",
     onProgress?: (percent: number) => void,
-    speed?: string,
+    speed?: SessionSpeedOption,
 ) {
     const {
         builder,

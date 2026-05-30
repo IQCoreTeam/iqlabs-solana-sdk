@@ -17,6 +17,7 @@ import {
 } from "./reader_utils";
 
 import {SIG_MIN_LEN} from "../constants";
+import {type SessionSpeedOption} from "../utils/session_speed";
 
 const {accountCoder} = readerContext;
 
@@ -65,7 +66,7 @@ export const fetchInventoryTransactions = async (
 export async function readSession(
     sessionPubkey: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
-    speed?: string,
+    speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string | null }> {
     const connection = getReaderConnection(readOption.freshness);
@@ -99,7 +100,7 @@ export async function readLinkedListFromTail(
 
 export async function readUserInventoryCodeInFromTx(
     tx: VersionedTransactionResponse,
-    speed?: string,
+    speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
 ): Promise<{ metadata: string; data: string | null }> {
     const blockTime = tx.blockTime;

@@ -1,9 +1,10 @@
 import {getConnection} from "../utils/connection_helper";
 import {readUserInventoryCodeInFromTx} from "./reading_flow";
+import {type SessionSpeedOption} from "../utils/session_speed";
 
 export async function readCodeIn(
     txSignature: string,
-    speed?: string,
+    speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
 ): Promise<{ metadata: string; data: string | null }> {
     const connection = getConnection();

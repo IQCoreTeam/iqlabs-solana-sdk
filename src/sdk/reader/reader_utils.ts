@@ -10,7 +10,7 @@ import {
 } from "../../contract";
 import {getConnection} from "../utils/connection_helper";
 import {createRateLimiter} from "../utils/rate_limiter";
-import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
+import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
 
 import {readerContext} from "./reader_context";
 
@@ -133,7 +133,7 @@ export async function fetchUserConnections(
     options?: {
         limit?: number;
         before?: string;
-        speed?: "light" | "medium" | "heavy" | "extreme";
+        speed?: SessionSpeedOption;
     },
 ): Promise<
     Array<{
@@ -159,8 +159,7 @@ export async function fetchUserConnections(
     const signatures = await fetchAccountTransactions(userState, {before, limit});
 
     // 3. Create rate limiter based on speed profile
-    const speedKey = resolveSessionSpeed(options?.speed);
-    const profile = SESSION_SPEED_PROFILES[speedKey];
+    const profile = resolveSessionConfig(options?.speed);
     const rateLimiter = createRateLimiter(profile.maxRps);
 
     // 4. Filter request_connection instructions and collect Connection PDA addresses

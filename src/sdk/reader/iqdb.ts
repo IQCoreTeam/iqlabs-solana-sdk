@@ -7,7 +7,7 @@ import {
 import {getConnection} from "../utils/connection_helper";
 import {decodeConnectionMeta, resolveConnectionStatus} from "../utils/global_fetch";
 import {createRateLimiter} from "../utils/rate_limiter";
-import {resolveSessionSpeed, SESSION_SPEED_PROFILES} from "../utils/session_speed";
+import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import {readCodeIn} from "./read_code_in";
 import {readerContext} from "./reader_context";
@@ -106,14 +106,13 @@ export async function getTablelistFromRoot(
 // TODO: Add a variant that reads both table rows and instructions, with optional sorting.
 export async function readTableRows(
     account: PublicKey | string,
-    options: { before?: string; limit?: number; signatures?: string[]; speed?: string } = {},
+    options: { before?: string; limit?: number; signatures?: string[]; speed?: SessionSpeedOption } = {},
 ): Promise<Array<Record<string, unknown>>> {
     const {before, limit, signatures: preloadedSigs, speed} = options;
     const signatures = preloadedSigs
         ? preloadedSigs.map(s => ({signature: s}))
         : await fetchAccountTransactions(account, {before, limit});
-    const speedKey = resolveSessionSpeed(speed);
-    const limiter = createRateLimiter(SESSION_SPEED_PROFILES[speedKey].maxRps);
+    const limiter = createRateLimiter(resolveSessionConfig(speed).maxRps);
     const rows: Array<Record<string, unknown>> = [];
 
     for (const sig of signatures) {

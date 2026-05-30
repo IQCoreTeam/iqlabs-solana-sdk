@@ -9,7 +9,7 @@
 //    Input:
 //      - sessionPubkey: string (base58)
 //      - readOption: ReadOption
-//      - speed?: string
+//      - speed?: SessionSpeedOption
 //    Output:
 //      - { result }
 //    Steps:
@@ -41,13 +41,8 @@ import {PublicKey, type VersionedTransactionResponse} from "@solana/web3.js";
 import {getReaderConnection, getRpcUrl} from "../utils/connection_helper";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
-import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
+import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
 import {decodeReaderInstruction} from "./reader_utils";
-
-const resolveSessionConfig = (speed?: string) => {
-    const resolvedSpeed = resolveSessionSpeed(speed);
-    return SESSION_SPEED_PROFILES[resolvedSpeed];
-};
 
 const extractAnchorInstruction = (
     tx: VersionedTransactionResponse,
@@ -183,7 +178,7 @@ async function readSessionViaGtfa(
 export async function readSessionResult(
     sessionPubkey: string,
     readOption: { freshness?: "fresh" | "recent" | "archive" },
-    speed?: string,
+    speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string }> {
     // try bulk read first, fall back to sequential

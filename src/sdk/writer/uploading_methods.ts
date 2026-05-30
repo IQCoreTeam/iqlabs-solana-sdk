@@ -9,19 +9,11 @@ import {
 } from "../../contract";
 import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
-import {SESSION_SPEED_PROFILES, resolveSessionSpeed} from "../utils/session_speed";
+import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
 import type {SignerInput} from "../utils/wallet";
 import {sendTx, sendTxWithRetries} from "./writer_utils";
 
-const resolveUploadConfig = (options?: { speed?: string }) => {
-    const resolvedSpeed = resolveSessionSpeed(options?.speed);
-    const profile = SESSION_SPEED_PROFILES[resolvedSpeed];
-    return {
-        maxConcurrency: profile.maxConcurrency,
-        maxConcurrencyUpload: profile.maxConcurrencyUpload,
-        maxRps: profile.maxRps,
-    };
-};
+const resolveUploadConfig = (options?: { speed?: SessionSpeedOption }) => resolveSessionConfig(options?.speed);
 //------------------------------------------------------------------------------------------------------------
 export async function uploadLinkedList(
     connection: Connection,
@@ -32,7 +24,7 @@ export async function uploadLinkedList(
     chunks: string[],
     method: number,
     onProgress?: (percent: number) => void,
-    options?: {speed?: string},
+    options?: {speed?: SessionSpeedOption},
 ) {
     const totalChunks = chunks.length;
     let lastPercent = -1;
@@ -84,7 +76,7 @@ export async function uploadSession(
     seq: bigint,
     chunks: string[],
     method: number,
-    options?: {speed?: string; onProgress?: (percent: number) => void},
+    options?: {speed?: SessionSpeedOption; onProgress?: (percent: number) => void},
 ) {
     const config = resolveUploadConfig(options);
     const totalChunks = chunks.length;
