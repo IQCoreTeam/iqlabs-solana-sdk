@@ -9,7 +9,7 @@ export async function readCodeIn(
 ): Promise<{ metadata: string; data: string | null }> {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
     });
     if (!tx) {
         throw new Error("transaction not found");

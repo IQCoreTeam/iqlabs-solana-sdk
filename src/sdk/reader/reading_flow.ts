@@ -29,7 +29,7 @@ export async function readInventoryMetadata(
 }> {
     const connection = getConnection();
     const tx = await connection.getTransaction(txSignature, {
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
     });
     if (!tx) {
         throw new Error("transaction not found");
@@ -85,7 +85,7 @@ export async function readLinkedListFromTail(
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const tx = await connection.getTransaction(tailTx, {
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
     });
     if (!tx) {
         throw new Error("tail transaction not found");

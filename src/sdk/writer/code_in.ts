@@ -11,13 +11,11 @@ import {
     getUserPda,
 } from "../../contract";
 import {
-    DEFAULT_LINKED_LIST_THRESHOLD,
-    DIRECT_METADATA_MAX_BYTES,
     DEFAULT_IQ_MINT,
     DEFAULT_WRITE_FEE_RECEIVER,
-    CHUNK_SIZE,
 } from "../constants";
 import {resolveAssociatedTokenAccount} from "../utils/ata";
+import {resolveTxProfile} from "../utils/tx_profile";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {ensureUserInitialized, readMagicBytes, sendTx} from "./writer_utils";
 import {uploadLinkedList, uploadSession} from "./uploading_methods";
@@ -25,15 +23,15 @@ import {type SessionSpeedOption} from "../utils/session_speed";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 
-function toChunks(data: string | string[]): string[] {
+function toChunks(data: string | string[], chunkSize: number): string[] {
     if (Array.isArray(data)) return data;
-    if (Buffer.byteLength(data, "utf8") <= CHUNK_SIZE) return [data];
+    if (Buffer.byteLength(data, "utf8") <= chunkSize) return [data];
     const chunks: string[] = [];
     let chunk = "";
     let chunkBytes = 0;
     for (const char of data) {
         const charBytes = Buffer.byteLength(char, "utf8");
-        if (chunkBytes + charBytes > CHUNK_SIZE) {
+        if (chunkBytes + charBytes > chunkSize) {
             chunks.push(chunk);
             chunk = char;
             chunkBytes = charBytes;
@@ -57,12 +55,13 @@ export async function prepareCodeIn(
     onProgress?: (percent: number) => void,
     speed?: SessionSpeedOption,
 ) {
-    const chunks = toChunks(data);
+    const {connection, signer} = input;
+    const profile = await resolveTxProfile(connection, signer);
+    const chunks = toChunks(data, profile.chunkSize);
     const totalChunks = chunks.length;
     if (totalChunks === 0) {
         throw new Error("chunks is empty");
     }
-    const {connection, signer} = input;
     const wallet = toWalletSigner(signer);
 
     // Program context + PDAs
@@ -74,7 +73,7 @@ export async function prepareCodeIn(
     const codeAccount = getCodeAccountPda(user, programId);
     const userInventory = getUserInventoryPda(user, programId);
 
-    // Ensure user/db accounts exist
+    // Ensure user/db accounts exist and are big enough for the active profile
     await ensureUserInitialized(connection, signer, builder, {
         user,
         code_account: codeAccount,
@@ -110,17 +109,17 @@ export async function prepareCodeIn(
             : "";
     const useInline =
         inlineMetadata.length > 0 &&
-        Buffer.byteLength(inlineMetadata, "utf8") <= DIRECT_METADATA_MAX_BYTES;
+        Buffer.byteLength(inlineMetadata, "utf8") <= profile.inlineMaxBytes;
     const metadata = useInline ? inlineMetadata : JSON.stringify(baseMetadata);
 
     // Upload chunks (linked-list vs session)
     let onChainPath = "";
-    const useSession = !useInline && totalChunks >= DEFAULT_LINKED_LIST_THRESHOLD;
+    const useSession = !useInline && totalChunks >= profile.linkedListThreshold;
     let sessionAccount: PublicKey | undefined;
     let sessionFinalize: { seq: BN; total_chunks: number } | null = null;
 
-    if (!useInline) { // useInline =  data + metadata < 900 bytes
-        if (!useSession) { //useSession = data>8500 bytes
+    if (!useInline) { // useInline = data + metadata fits profile.inlineMaxBytes
+        if (!useSession) { // useSession = chunk count >= profile.linkedListThreshold
             onChainPath = await uploadLinkedList(
                 connection,
                 signer,

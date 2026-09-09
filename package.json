@@ -52,7 +52,7 @@
     "@coral-xyz/anchor": "^0.32.1",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^1.8.0",
-    "@solana/web3.js": "^1.98.0"
+    "@solana/web3.js": "^1.99.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

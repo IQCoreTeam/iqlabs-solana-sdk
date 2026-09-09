@@ -225,7 +225,7 @@ export async function readSessionResult(
             await limiter.wait();
         }
         const tx = await connection.getTransaction(entry.signature, {
-            maxSupportedTransactionVersion: 0,
+            maxSupportedTransactionVersion: 1,
         });
 
         if (!tx) {
@@ -283,7 +283,7 @@ export async function readLinkedListResult(
         visited.add(cursor);
 
         const tx = await connection.getTransaction(cursor, {
-            maxSupportedTransactionVersion: 0,
+            maxSupportedTransactionVersion: 1,
         });
         if (!tx) {
             throw new Error("linked list transaction not found");

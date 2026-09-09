@@ -177,7 +177,7 @@ export async function fetchUserConnections(
         let tx: VersionedTransactionResponse | null;
         try {
             tx = await connection.getTransaction(sig.signature, {
-                maxSupportedTransactionVersion: 0,
+                maxSupportedTransactionVersion: 1,
             });
         } catch {
             continue;
