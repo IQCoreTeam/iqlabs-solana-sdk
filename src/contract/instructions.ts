@@ -136,7 +136,23 @@ export const createInstructionBuilder = (
         const keys = instruction.accounts.map((account) =>
             toAccountMeta(account, accounts, programId),
         );
-        const data = coder.encode(name, args ?? {});
+        // anchor's BorshInstructionCoder.encode() serializes into a fixed
+        // Buffer.alloc(1000), which overruns for v1-profile payloads (inline
+        // metadata up to ~3400B, send_code/post_chunk chunks up to 3600B).
+        // Reuse anchor's own per-instruction layout + discriminator but encode
+        // into a wide buffer so large args fit. Falls back to coder.encode()
+        // if the internal layout map is unavailable (anchor version change).
+        const encoder = (coder as unknown as {
+            ixLayouts?: Map<string, {discriminator: number[]; layout: {encode: (src: unknown, b: Buffer) => number}}>;
+        }).ixLayouts?.get(name);
+        let data: Buffer;
+        if (encoder) {
+            const buf = Buffer.alloc(1 << 16); // 64KB: any single v1 instruction fits with headroom
+            const len = encoder.layout.encode(args ?? {}, buf);
+            data = Buffer.concat([Buffer.from(encoder.discriminator), buf.subarray(0, len)]);
+        } else {
+            data = coder.encode(name, args ?? {});
+        }
 
         return new TransactionInstruction({programId, keys, data});
     };
