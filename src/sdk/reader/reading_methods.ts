@@ -113,6 +113,7 @@ async function readSessionViaGtfa(
                     params: [sessionPubkey, {
                         limit: 100,
                         transactionDetails: "full",
+                        maxSupportedTransactionVersion: 1,
                         ...(paginationToken ? {paginationToken} : {}),
                     }],
                 }),
