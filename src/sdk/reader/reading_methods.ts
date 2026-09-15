@@ -89,10 +89,23 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
     return {code: data.code, beforeTx: data.before_tx};
 };
 
+function joinSessionChunks(chunks: Map<number, string>, expectedTotalChunks?: number): string {
+    const ordered = Array.from(chunks.entries()).sort(([a], [b]) => a - b);
+    if (
+        ordered.length === 0 ||
+        (expectedTotalChunks !== undefined && ordered.length !== expectedTotalChunks) ||
+        ordered.some(([index], position) => index !== position)
+    ) {
+        throw new Error("incomplete session: missing or unexpected chunks");
+    }
+    return ordered.map(([, chunk]) => chunk).join("");
+}
+
 // bulk session read via helius getTransactionsForAddress — returns null if unavailable
 async function readSessionViaGtfa(
     sessionPubkey: string,
     onProgress?: (percent: number) => void,
+    expectedTotalChunks?: number,
 ): Promise<{ result: string } | null> {
     const rpcUrl = getRpcUrl();
     if (!rpcUrl.includes("helius-rpc.com") && !rpcUrl.includes("helius.dev")) return null;
@@ -147,6 +160,7 @@ async function readSessionViaGtfa(
     const chunkMap = new Map<number, string>();
     for (let i = 0; i < allTxs.length; i++) {
         const tx = allTxs[i] as any;
+        if (tx.meta?.err) continue;
         const msg = tx.transaction?.message;
         if (!msg) continue;
         const keys: string[] = msg.accountKeys ?? [];
@@ -167,13 +181,9 @@ async function readSessionViaGtfa(
     }
 
     if (chunkMap.size === 0) return null;
+    const result = joinSessionChunks(chunkMap, expectedTotalChunks);
     if (onProgress) onProgress(100);
-    return {
-        result: Array.from(chunkMap.entries())
-            .sort(([a], [b]) => a - b)
-            .map(([, chunk]) => chunk)
-            .join(""),
-    };
+    return {result};
 }
 
 export async function readSessionResult(
@@ -181,9 +191,10 @@ export async function readSessionResult(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
+    expectedTotalChunks?: number,
 ): Promise<{ result: string }> {
     // try bulk read first, fall back to sequential
-    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress);
+    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks);
     if (bulk) return bulk;
 
     const connection = getReaderConnection(readOption.freshness);
@@ -229,7 +240,7 @@ export async function readSessionResult(
             maxSupportedTransactionVersion: 1,
         });
 
-        if (!tx) {
+        if (!tx || tx.meta?.err) {
             return;
         }
         const chunks = extractPostChunk(tx);
@@ -248,10 +259,7 @@ export async function readSessionResult(
     if (chunkMap.size === 0) {
         throw new Error("no session chunks found");
     }
-    const result = Array.from(chunkMap.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([, chunk]) => chunk)
-        .join("");
+    const result = joinSessionChunks(chunkMap, expectedTotalChunks);
     if (onProgress && totalSignatures > 0 && lastPercent < 100) {
         onProgress(100);
     }
