@@ -68,13 +68,14 @@ export async function readSession(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
+    expectedTotalChunks?: number,
 ): Promise<{ result: string | null }> {
     const connection = getReaderConnection(readOption.freshness);
     const info = await connection.getAccountInfo(new PublicKey(sessionPubkey));
     if (!info) {
         throw new Error("session account not found");
     }
-    return readSessionResult(sessionPubkey, readOption, speed, onProgress);
+    return readSessionResult(sessionPubkey, readOption, speed, onProgress, expectedTotalChunks);
 }
 
 export async function readLinkedListFromTail(
@@ -135,6 +136,7 @@ export async function readUserInventoryCodeInFromTx(
             readOption,
             speed,
             onProgress,
+            totalChunks,
         );
         return {metadata, data: result};
     }
