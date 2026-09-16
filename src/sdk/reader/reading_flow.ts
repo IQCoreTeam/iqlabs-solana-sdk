@@ -69,11 +69,6 @@ export async function readSession(
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
 ): Promise<{ result: string | null }> {
-    const connection = getReaderConnection(readOption.freshness);
-    const info = await connection.getAccountInfo(new PublicKey(sessionPubkey));
-    if (!info) {
-        throw new Error("session account not found");
-    }
     return readSessionResult(sessionPubkey, readOption, speed, onProgress);
 }
 
