@@ -191,14 +191,21 @@ export async function readSessionResult(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
-    expectedTotalChunks?: number,
 ): Promise<{ result: string }> {
+    const connection = getReaderConnection(readOption.freshness);
+    const sessionKey = new PublicKey(sessionPubkey);
+    const info = await connection.getAccountInfo(sessionKey);
+    if (!info) {
+        throw new Error("session account not found");
+    }
+    // SessionAccount layout: 8 discriminator + u8 bump + u32 LE total_chunks + u8 status.
+    // finalize_bundle stores the authoritative chunk count; unfinalized sessions keep 0.
+    const expectedTotalChunks =
+        info.data[13] === 1 ? info.data.readUInt32LE(9) : undefined;
+
     // try bulk read first, fall back to sequential
     const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks);
     if (bulk) return bulk;
-
-    const connection = getReaderConnection(readOption.freshness);
-    const sessionKey = new PublicKey(sessionPubkey);
     const signatures = [];
     let before: string | undefined;
     //TODO make this pagination well if we need to pagination, or make this bringing all function to the helper function and reuse for needs
