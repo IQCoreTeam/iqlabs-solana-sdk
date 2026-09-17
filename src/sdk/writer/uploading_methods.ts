@@ -168,13 +168,17 @@ export async function uploadSession(
 }
 
 /**
- * Keypair fast path for session chunks: sign every chunk tx up front on one
- * shared blockhash, blast them in parallel with skipPreflight, and track
- * landing per chunk index via getSignatureStatuses. Chunks that miss the
- * blockhash window can never land from a resend of the same bytes, so once
- * the window expires only the missing indexes are re-signed on a fresh
- * blockhash. Throws when chunks still have not landed after the round budget,
- * so callers never finalize an incomplete session.
+ * Keypair fast path for session chunks. A blockhash only lives ~60-90s, so
+ * signing every chunk on one shared blockhash breaks when the send rate can't
+ * push them all out before it expires — late chunks are born already expired.
+ * Instead this signs and sends in windows sized to what maxRps can deliver
+ * inside one blockhash's life: each window signs on a fresh blockhash, blasts
+ * with skipPreflight, and rebroadcasts stragglers until they land or the
+ * blockhash expires; unlanded chunks roll into the next window on a new
+ * blockhash. Landing is tracked per chunk index via getSignatureStatuses
+ * (searchTransactionHistory so a chunk confirmed early in a slow window isn't
+ * missed once it ages out of the recent-status cache). Throws when chunks
+ * still have not landed, so callers never finalize an incomplete session.
  */
 async function uploadSessionBatch(
     connection: Connection,
@@ -190,15 +194,14 @@ async function uploadSessionBatch(
     const useV1 = await shouldSendV1(connection, signer);
     // reassigned by rotateRpcConnection when a configured failover pool exists
     let activeConnection = connection;
-    const pending: Array<{chunk: string; index: number; raw: Buffer; signature: string; sent: boolean}> =
+    const pending: Array<{chunk: string; index: number; raw: Buffer; signature: string}> =
         payloads.map((payload) => ({
             ...payload,
             raw: Buffer.alloc(0),
             signature: "",
-            sent: false,
         }));
 
-    const signAllOnFreshBlockhash = async (items: typeof pending) => {
+    const signOnFreshBlockhash = async (items: typeof pending) => {
         const {blockhash, lastValidBlockHeight} = await activeConnection.getLatestBlockhash();
         for (const item of items) {
             const ix = postChunkInstruction(
@@ -221,7 +224,6 @@ async function uploadSessionBatch(
                 item.raw = tx.serialize();
                 item.signature = utils.bytes.bs58.encode(tx.signature as Buffer);
             }
-            item.sent = false;
         }
         return lastValidBlockHeight;
     };
@@ -235,10 +237,8 @@ async function uploadSessionBatch(
             }
             try {
                 await activeConnection.sendRawTransaction(item.raw, {skipPreflight: true});
-                item.sent = true;
             } catch (error) {
-                // stays unsent; re-blasted next round and surfaced by the
-                // completeness check if it never lands
+                // rebroadcast next poll; surfaced by the completeness check if it never lands
                 lastSendError = error;
                 if (/429|Too Many Requests/i.test(String(error))) {
                     limiter?.throttle();
@@ -247,37 +247,55 @@ async function uploadSessionBatch(
             }
         });
 
-    let lastValidBlockHeight = await signAllOnFreshBlockhash(pending);
-    await blast(pending);
-
     const landed = new Set<number>();
-    // A shared blockhash lives ~150 blocks (roughly 60-90s); 30 rounds of 2s
-    // polling spans several re-sign windows before giving up.
-    for (let round = 0; round < 30 && landed.size < pending.length; round++) {
-        const unsent = pending.filter((item) => !item.sent);
-        if (unsent.length > 0) {
-            await blast(unsent);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const awaiting = pending.filter((item) => item.sent && !landed.has(item.index));
+    const markLanded = async (items: typeof pending) => {
         // getSignatureStatuses caps at 256 signatures per call
-        for (let i = 0; i < awaiting.length; i += 256) {
-            const batch = awaiting.slice(i, i + 256);
-            const {value} = await activeConnection.getSignatureStatuses(batch.map((item) => item.signature));
+        for (let i = 0; i < items.length; i += 256) {
+            const batch = items.slice(i, i + 256);
+            const {value} = await activeConnection.getSignatureStatuses(
+                batch.map((item) => item.signature),
+                {searchTransactionHistory: true},
+            );
             value.forEach((status, j) => {
                 if (status && !status.err) {
                     landed.add(batch[j].index);
                 }
             });
         }
-        onLanded(landed.size);
-        if (landed.size === pending.length) {
-            break;
+    };
+
+    // Cap chunks per blockhash to what maxRps can push out before the ~60s
+    // window closes, so no chunk is signed onto a blockhash that dies mid-send.
+    const windowSize = Math.max(1, Math.floor(config.maxRps * 30));
+    // Room for each window plus retry passes over stragglers rolled forward.
+    const maxWindows = Math.ceil(pending.length / windowSize) * 3 + 5;
+
+    let dryStreak = 0;
+    for (let w = 0; w < maxWindows && landed.size < pending.length; w++) {
+        const batch = pending.filter((item) => !landed.has(item.index)).slice(0, windowSize);
+        const lastValidBlockHeight = await signOnFreshBlockhash(batch);
+        await blast(batch);
+
+        const landedBefore = landed.size;
+        for (;;) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const missing = batch.filter((item) => !landed.has(item.index));
+            await markLanded(missing);
+            onLanded(landed.size);
+            const stillMissing = batch.filter((item) => !landed.has(item.index));
+            if (stillMissing.length === 0) {
+                break;
+            }
+            // blockhash expired: roll the rest into the next window on a new one
+            if ((await activeConnection.getBlockHeight()) > lastValidBlockHeight) {
+                break;
+            }
+            await blast(stillMissing);
         }
-        if ((await activeConnection.getBlockHeight()) > lastValidBlockHeight) {
-            const missing = pending.filter((item) => !landed.has(item.index));
-            lastValidBlockHeight = await signAllOnFreshBlockhash(missing);
-            await blast(missing);
+
+        dryStreak = landed.size > landedBefore ? 0 : dryStreak + 1;
+        if (dryStreak >= 3) {
+            break;
         }
     }
 
