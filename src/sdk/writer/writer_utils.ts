@@ -2,6 +2,7 @@ import {BN} from "@coral-xyz/anchor";
 import {Connection, Transaction, TransactionInstruction, type PublicKey} from "@solana/web3.js";
 import {reallocAccountInstruction, userInitializeInstruction, type InstructionBuilder} from "../../contract";
 import {CODE_ACCOUNT_SPACE, USER_INVENTORY_SPACE} from "../constants";
+import {rotateRpcConnection} from "../utils/connection_helper";
 import {resolveTxProfile, shouldSendV1} from "../utils/tx_profile";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
 import {sendTxV1} from "./v1_tx";
@@ -237,6 +238,7 @@ export async function sendTxWithRetries(
                 break;
             }
 
+            connection = rotateRpcConnection(connection.rpcEndpoint) ?? connection;
             const delay = retryDelayMs * (attempt + 1);
             console.warn(`[sendTxWithRetry] Attempt ${attempt + 1}/${maxRetries + 1} failed. Retrying in ${delay}ms...`, error?.message)
 
