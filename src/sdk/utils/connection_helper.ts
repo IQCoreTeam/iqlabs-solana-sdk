@@ -1,11 +1,40 @@
 import {Connection, type Commitment} from "@solana/web3.js";
 
-// Runtime config that can be set by the consuming app
-let runtimeRpcUrl: string | undefined;
+// Runtime config that can be set by the consuming app. Multiple urls act as a
+// failover pool: calls start on the first and rotate on rate limits/outages.
+let runtimeRpcUrls: string[] = [];
+let rpcCursor = 0;
 
-export function setRpcUrl(url: string) {
-    runtimeRpcUrl = url;
-    // console.log(`[SDK] setRpcUrl(${url})`);
+export function setRpcUrl(url: string | string[]) {
+    const urls = (Array.isArray(url) ? url : [url])
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+    if (urls.length === 0) {
+        throw new Error("setRpcUrl requires at least one non-empty url");
+    }
+    runtimeRpcUrls = urls;
+    rpcCursor = 0;
+}
+
+/**
+ * Fail over to the next url in the configured pool. Returns a Connection on
+ * the new endpoint, or null when there is nothing to rotate to — either a
+ * single url is configured, or the failing connection was caller-built (its
+ * endpoint is not in the pool) and the SDK must not silently replace it.
+ */
+export function rotateRpcConnection(
+    failedEndpoint: string,
+    commitment: Commitment = "confirmed",
+): Connection | null {
+    if (runtimeRpcUrls.length < 2) {
+        return null;
+    }
+    const failedIndex = runtimeRpcUrls.indexOf(failedEndpoint);
+    if (failedIndex === -1) {
+        return null;
+    }
+    rpcCursor = (failedIndex + 1) % runtimeRpcUrls.length;
+    return new Connection(runtimeRpcUrls[rpcCursor], commitment);
 }
 
 const env = (key: string) => {
@@ -34,7 +63,7 @@ export function detectConnectionSettings(): {
 } {
     const nextPublic = getNextPublicEnvVars();
     const rpcUrl =
-        runtimeRpcUrl ??
+        runtimeRpcUrls[rpcCursor] ??
         env("IQLABS_RPC_ENDPOINT") ??
         env("SOLANA_RPC_ENDPOINT") ??
         nextPublic.rpcEndpoint ??
@@ -42,8 +71,6 @@ export function detectConnectionSettings(): {
         env("RPC_ENDPOINT") ??
         env("RPC_URL") ??
         "https://api.mainnet-beta.solana.com";
-
-    // console.log(`[SDK] detectConnectionSettings: runtimeRpcUrl=${runtimeRpcUrl}, nextPublic.rpcEndpoint=${nextPublic.rpcEndpoint}, final=${rpcUrl}`);
 
     return {
         rpcUrl,

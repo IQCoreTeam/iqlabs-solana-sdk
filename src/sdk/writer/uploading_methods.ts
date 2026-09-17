@@ -1,5 +1,5 @@
-import {BN} from "@coral-xyz/anchor";
-import {Connection, SystemProgram, type PublicKey} from "@solana/web3.js";
+import {BN, utils} from "@coral-xyz/anchor";
+import {Connection, SystemProgram, Transaction, type PublicKey, type Signer} from "@solana/web3.js";
 import {
     createSessionInstruction,
     getSessionPda,
@@ -8,9 +8,12 @@ import {
     type InstructionBuilder,
 } from "../../contract";
 import {runWithConcurrency} from "../utils/concurrency";
+import {rotateRpcConnection} from "../utils/connection_helper";
 import {createRateLimiter} from "../utils/rate_limiter";
-import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
+import {resolveSessionConfig, type SessionSpeedConfig, type SessionSpeedOption} from "../utils/session_speed";
+import {shouldSendV1} from "../utils/tx_profile";
 import type {SignerInput} from "../utils/wallet";
+import {buildV1Transaction} from "./v1_tx";
 import {sendTx, sendTxWithRetries} from "./writer_utils";
 
 const resolveUploadConfig = (options?: { speed?: SessionSpeedOption }) => resolveSessionConfig(options?.speed);
@@ -83,10 +86,18 @@ export async function uploadSession(
     let completed = 0;
     let lastPercent = -1;
     const onProgress = options?.onProgress;
-    if (onProgress) {
-        onProgress(0);
-        lastPercent = 0;
-    }
+    const reportProgress = (completedCount: number) => {
+        completed = completedCount;
+        if (!onProgress || totalChunks === 0) {
+            return;
+        }
+        const percent = Math.floor((completed / totalChunks) * 100);
+        if (percent !== lastPercent) {
+            lastPercent = percent;
+            onProgress(percent);
+        }
+    };
+    reportProgress(0);
     const session = getSessionPda(user, seq, programId);
     const sessionInfo = await connection.getAccountInfo(session);
     if (!sessionInfo) {
@@ -116,9 +127,25 @@ export async function uploadSession(
         completed = 1;
     }
 
-    const limiter = createRateLimiter(config.maxRps);
     const payloads = chunks.slice(1).map((chunk, i) => ({ chunk, index: i + 1 }))
+    const baseCompleted = completed;
 
+    if (signer instanceof Object && "secretKey" in signer) {
+        await uploadSessionBatch(
+            connection,
+            signer as Signer,
+            builder,
+            user,
+            session,
+            payloads,
+            method,
+            config,
+            (landedCount) => reportProgress(baseCompleted + landedCount),
+        );
+        return session.toBase58();
+    }
+
+    const limiter = createRateLimiter(config.maxRps);
     await runWithConcurrency(payloads, config.maxConcurrencyUpload, async (payload) => {
         if (limiter) {
             await limiter.wait();
@@ -134,15 +161,148 @@ export async function uploadSession(
             },
         );
         await sendTxWithRetries(connection, signer, ix, true);
-        completed += 1;
-        if (onProgress && totalChunks > 0) {
-            const percent = Math.floor((completed / totalChunks) * 100);
-            if (percent !== lastPercent) {
-                lastPercent = percent;
-                onProgress(percent);
-            }
-        }
+        reportProgress(completed + 1);
     });
 
     return session.toBase58();
+}
+
+/**
+ * Keypair fast path for session chunks. A blockhash only lives ~60-90s, so
+ * signing every chunk on one shared blockhash breaks when the send rate can't
+ * push them all out before it expires — late chunks are born already expired.
+ * Instead this signs and sends in windows sized to what maxRps can deliver
+ * inside one blockhash's life: each window signs on a fresh blockhash, blasts
+ * with skipPreflight, and rebroadcasts stragglers until they land or the
+ * blockhash expires; unlanded chunks roll into the next window on a new
+ * blockhash. Landing is tracked per chunk index via getSignatureStatuses
+ * (searchTransactionHistory so a chunk confirmed early in a slow window isn't
+ * missed once it ages out of the recent-status cache). Throws when chunks
+ * still have not landed, so callers never finalize an incomplete session.
+ */
+async function uploadSessionBatch(
+    connection: Connection,
+    signer: Signer,
+    builder: InstructionBuilder,
+    user: PublicKey,
+    session: PublicKey,
+    payloads: Array<{chunk: string; index: number}>,
+    method: number,
+    config: SessionSpeedConfig,
+    onLanded: (landedCount: number) => void,
+) {
+    const useV1 = await shouldSendV1(connection, signer);
+    // reassigned by rotateRpcConnection when a configured failover pool exists
+    let activeConnection = connection;
+    const pending: Array<{chunk: string; index: number; raw: Buffer; signature: string}> =
+        payloads.map((payload) => ({
+            ...payload,
+            raw: Buffer.alloc(0),
+            signature: "",
+        }));
+
+    const signOnFreshBlockhash = async (items: typeof pending) => {
+        const {blockhash, lastValidBlockHeight} = await activeConnection.getLatestBlockhash();
+        for (const item of items) {
+            const ix = postChunkInstruction(
+                builder,
+                {user, session},
+                {
+                    index: item.index,
+                    chunk: item.chunk,
+                    method,
+                    decode_break: 0,
+                },
+            );
+            if (useV1) {
+                const {raw, signature} = buildV1Transaction(signer, [ix], blockhash);
+                item.raw = raw;
+                item.signature = signature;
+            } else {
+                const tx = new Transaction({recentBlockhash: blockhash, feePayer: signer.publicKey}).add(ix);
+                tx.sign(signer);
+                item.raw = tx.serialize();
+                item.signature = utils.bytes.bs58.encode(tx.signature as Buffer);
+            }
+        }
+        return lastValidBlockHeight;
+    };
+
+    const limiter = createRateLimiter(config.maxRps);
+    let lastSendError: unknown;
+    const blast = (items: typeof pending) =>
+        runWithConcurrency(items, config.maxConcurrencyUpload, async (item) => {
+            if (limiter) {
+                await limiter.wait();
+            }
+            try {
+                await activeConnection.sendRawTransaction(item.raw, {skipPreflight: true});
+            } catch (error) {
+                // rebroadcast next poll; surfaced by the completeness check if it never lands
+                lastSendError = error;
+                if (/429|Too Many Requests/i.test(String(error))) {
+                    limiter?.throttle();
+                }
+                activeConnection = rotateRpcConnection(activeConnection.rpcEndpoint) ?? activeConnection;
+            }
+        });
+
+    const landed = new Set<number>();
+    const markLanded = async (items: typeof pending) => {
+        // getSignatureStatuses caps at 256 signatures per call
+        for (let i = 0; i < items.length; i += 256) {
+            const batch = items.slice(i, i + 256);
+            const {value} = await activeConnection.getSignatureStatuses(
+                batch.map((item) => item.signature),
+                {searchTransactionHistory: true},
+            );
+            value.forEach((status, j) => {
+                if (status && !status.err) {
+                    landed.add(batch[j].index);
+                }
+            });
+        }
+    };
+
+    // Cap chunks per blockhash to what maxRps can push out before the ~60s
+    // window closes, so no chunk is signed onto a blockhash that dies mid-send.
+    const windowSize = Math.max(1, Math.floor(config.maxRps * 30));
+    // Room for each window plus retry passes over stragglers rolled forward.
+    const maxWindows = Math.ceil(pending.length / windowSize) * 3 + 5;
+
+    let dryStreak = 0;
+    for (let w = 0; w < maxWindows && landed.size < pending.length; w++) {
+        const batch = pending.filter((item) => !landed.has(item.index)).slice(0, windowSize);
+        const lastValidBlockHeight = await signOnFreshBlockhash(batch);
+        await blast(batch);
+
+        const landedBefore = landed.size;
+        for (;;) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const missing = batch.filter((item) => !landed.has(item.index));
+            await markLanded(missing);
+            onLanded(landed.size);
+            const stillMissing = batch.filter((item) => !landed.has(item.index));
+            if (stillMissing.length === 0) {
+                break;
+            }
+            // blockhash expired: roll the rest into the next window on a new one
+            if ((await activeConnection.getBlockHeight()) > lastValidBlockHeight) {
+                break;
+            }
+            await blast(stillMissing);
+        }
+
+        dryStreak = landed.size > landedBefore ? 0 : dryStreak + 1;
+        if (dryStreak >= 3) {
+            break;
+        }
+    }
+
+    if (landed.size < pending.length) {
+        const cause = lastSendError instanceof Error ? ` (last send error: ${lastSendError.message})` : "";
+        throw new Error(
+            `session upload incomplete: ${pending.length - landed.size}/${pending.length} chunks did not land${cause}`,
+        );
+    }
 }
