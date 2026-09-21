@@ -36,6 +36,7 @@ import {
     fetchTableMeta,
 } from "../utils/global_fetch";
 import {deriveDmSeed, toSeedBytes} from "../utils/seed";
+import type {SessionSpeedOption} from "../utils/session_speed";
 import {DEFAULT_WRITE_FEE_RECEIVER} from "../constants";
 import {prepareCodeIn} from "./code_in";
 import {sendTx} from "./writer_utils";
@@ -253,6 +254,10 @@ export async function writeRow(
     rowJson: string,
     skipConfirmation = false,
     remainingAccounts?: PublicKey[],
+    // Upload speed profile and chunk progress, forwarded to the code-in session.
+    // Callers on a rate-limited RPC keep the default light profile; callers with
+    // their own RPC pass a faster one.
+    options: {speed?: SessionSpeedOption; onProgress?: (percent: number) => void} = {},
 ) {
     const programId = PROGRAM_ID;
     const dbRootSeed = toSeedBytes(dbRootId);
@@ -294,7 +299,7 @@ export async function writeRow(
         sessionFinalize,
         feeReceiver,
         iqAta,
-    } = await prepareCodeIn({connection, signer}, rowJson);
+    } = await prepareCodeIn({connection, signer}, rowJson, undefined, undefined, undefined, options.onProgress, options.speed);
     const ix = dbCodeInInstruction(
         builder,
         {
