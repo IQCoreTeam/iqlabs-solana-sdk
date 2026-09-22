@@ -32,9 +32,15 @@ const SEED_USER_INVENTORY_BYTES = Buffer.from(SEED_USER_INVENTORY);
 const encodeBytesSeed = (value: Bytes) => Buffer.from(value);
 
 const encodeU64Seed = (value: bigint | number) => {
+    // Written byte-by-byte instead of writeBigUInt64LE: browser Buffer
+    // polyfills (e.g. the one jsdelivr +esm bundles) do not all implement the
+    // BigInt methods, and this runs on every session PDA derivation.
     const data = Buffer.alloc(8);
-    const numberValue = typeof value === "bigint" ? value : BigInt(value);
-    data.writeBigUInt64LE(numberValue, 0);
+    let rest = typeof value === "bigint" ? value : BigInt(value);
+    for (let i = 0; i < 8; i += 1) {
+        data[i] = Number(rest & BigInt(0xff));
+        rest >>= BigInt(8);
+    }
     return data;
 };
 
