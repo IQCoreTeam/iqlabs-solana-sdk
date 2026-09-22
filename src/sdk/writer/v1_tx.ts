@@ -121,7 +121,10 @@ export async function confirmLanded(
     lastValidBlockHeight: number,
 ) {
     try {
-        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "finalized");
+        // "confirmed", not "finalized": a mainnet timing trace showed the
+        // finalized wait eating 47.7s of a 51s write on a public RPC, while
+        // the tx is on chain (and gateway-readable) at confirmed in ~2s.
+        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "confirmed");
     } catch (e: any) {
         if (!e || e.name !== "TransactionExpiredBlockheightExceededError") throw e;
         for (let i = 0; i < 5; i++) {
