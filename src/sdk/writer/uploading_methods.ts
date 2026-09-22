@@ -1,5 +1,13 @@
 import {BN, utils} from "@coral-xyz/anchor";
-import {Connection, SystemProgram, Transaction, type PublicKey, type Signer} from "@solana/web3.js";
+import {
+    Connection,
+    SystemProgram,
+    Transaction,
+    type PublicKey,
+    type Signer,
+    type VersionedTransactionResponse,
+} from "@solana/web3.js";
+import {decodeReaderInstruction} from "../reader/reader_utils";
 import {
     createSessionInstruction,
     getSessionPda,
@@ -129,7 +137,20 @@ export async function uploadSession(
         completed = 1;
     }
 
-    const payloads = chunks.slice(1).map((chunk, i) => ({ chunk, index: i + 1 }))
+    // Resume: seq only advances on finalize, so a retry of an interrupted
+    // upload re-derives the SAME session, whose landed chunks live in its tx
+    // history. Skip a chunk only when the landed content matches exactly, so a
+    // different payload reusing the seq re-sends and overwrites its index
+    // instead of mixing with the stale session.
+    let landedMap = new Map<number, string>();
+    if (sessionInfo) {
+        landedMap = await collectLandedChunks(connection, session, config);
+    }
+    const payloads = chunks
+        .map((chunk, index) => ({chunk, index}))
+        .filter((p) => (sessionInfo ? landedMap.get(p.index) !== p.chunk : p.index > 0));
+    completed = totalChunks - payloads.length;
+    reportProgress(completed);
     const baseCompleted = completed;
 
     if (signer instanceof Object && "secretKey" in signer) {
@@ -307,4 +328,51 @@ async function uploadSessionBatch(
             `session upload incomplete: ${pending.length - landed.size}/${pending.length} chunks did not land${cause}`,
         );
     }
+}
+const extractPostChunks = (tx: VersionedTransactionResponse) => {
+    const message = tx.transaction.message;
+    const accountKeys = message.getAccountKeys();
+    const out: Array<{index: number; chunk: string}> = [];
+    for (const ix of message.compiledInstructions) {
+        const decoded = decodeReaderInstruction(ix, accountKeys);
+        if (decoded && decoded.name === "post_chunk") {
+            const data = decoded.data as {index: number; chunk: string};
+            out.push({index: data.index, chunk: data.chunk});
+        }
+    }
+    return out;
+};
+
+/** Rebuild which chunk indexes already landed in an existing session by
+ *  scanning its tx history (the same source the reader joins chunks from),
+ *  paced by the active speed profile so a resume cannot rate-limit itself. */
+async function collectLandedChunks(
+    connection: Connection,
+    session: PublicKey,
+    config: SessionSpeedConfig,
+): Promise<Map<number, string>> {
+    const map = new Map<number, string>();
+    const sigs: Array<{signature: string; err: unknown}> = [];
+    let before: string | undefined;
+    while (true) {
+        const page = await connection.getSignaturesForAddress(session, {limit: 1000, before});
+        if (page.length === 0) break;
+        sigs.push(...page);
+        if (page.length < 1000) break;
+        before = page[page.length - 1]!.signature;
+    }
+    const limiter = createRateLimiter(config.maxRps);
+    await runWithConcurrency(sigs.filter((s) => !s.err), config.maxConcurrency, async (s) => {
+        if (limiter) {
+            await limiter.wait();
+        }
+        const tx = await connection.getTransaction(s.signature, {maxSupportedTransactionVersion: 1});
+        if (!tx || tx.meta?.err) {
+            return;
+        }
+        for (const c of extractPostChunks(tx)) {
+            map.set(c.index, c.chunk);
+        }
+    });
+    return map;
 }
