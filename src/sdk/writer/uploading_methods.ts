@@ -301,7 +301,7 @@ async function uploadSessionBatch(
 
         const landedBefore = landed.size;
         for (;;) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 800));
             const missing = batch.filter((item) => !landed.has(item.index));
             await markLanded(missing);
             onLanded(landed.size);

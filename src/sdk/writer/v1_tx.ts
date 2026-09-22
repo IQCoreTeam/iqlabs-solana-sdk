@@ -127,10 +127,14 @@ export async function confirmLanded(
         await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "confirmed");
     } catch (e: any) {
         if (!e || e.name !== "TransactionExpiredBlockheightExceededError") throw e;
-        for (let i = 0; i < 5; i++) {
+        // Escalating poll: on some RPCs (publicnode) confirmTransaction gives up
+        // instantly, so this fallback runs on EVERY tx and its interval is the
+        // effective confirm latency. Short first steps track the real ~1s
+        // confirmation instead of a flat 2.5s; the total budget stays ~14s.
+        for (const delay of [300, 500, 800, 1200, 1600, 2000, 2500, 2500, 2500]) {
             const st = (await connection.getSignatureStatuses([signature])).value[0];
             if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) return;
-            await new Promise((r) => setTimeout(r, 2500));
+            await new Promise((r) => setTimeout(r, delay));
         }
         throw e;
     }
