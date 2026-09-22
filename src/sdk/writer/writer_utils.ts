@@ -5,7 +5,7 @@ import {CODE_ACCOUNT_SPACE, USER_INVENTORY_SPACE} from "../constants";
 import {rotateRpcConnection} from "../utils/connection_helper";
 import {resolveTxProfile, shouldSendV1} from "../utils/tx_profile";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
-import {sendTxV1} from "./v1_tx";
+import {confirmLanded, sendTxV1} from "./v1_tx";
 import type {Signer} from "@solana/web3.js";
 
 const ACCOUNT_CACHE_TTL_MS = 120_000;
@@ -212,7 +212,7 @@ export async function sendTx(
     const signature = await connection.sendRawTransaction(raw);
 
     if (!skipConfirmation) {
-        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "finalized");
+        await confirmLanded(connection, signature, blockhash, lastValidBlockHeight);
     }
 
     return signature;

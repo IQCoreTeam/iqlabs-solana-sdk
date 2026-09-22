@@ -100,10 +100,35 @@ export async function sendTxV1(
     const signature = await connection.sendRawTransaction(raw);
 
     if (!skipConfirmation) {
-        await connection.confirmTransaction(
-            {signature, blockhash, lastValidBlockHeight},
-            "finalized",
-        );
+        await confirmLanded(connection, signature, blockhash, lastValidBlockHeight);
     }
     return signature;
+}
+
+/**
+ * Confirm without trusting blockheight expiry blindly. While waiting for
+ * "finalized" the chain height can pass lastValidBlockHeight even though the
+ * tx already landed, so the checker throws a false
+ * TransactionExpiredBlockheightExceededError. On expiry, poll the signature
+ * status a few times (gently, to stay under rate limits) and accept
+ * confirmed/finalized before rethrowing. After a genuine expiry the tx can
+ * never land, so callers may safely re-send.
+ */
+export async function confirmLanded(
+    connection: Connection,
+    signature: string,
+    blockhash: string,
+    lastValidBlockHeight: number,
+) {
+    try {
+        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "finalized");
+    } catch (e: any) {
+        if (!e || e.name !== "TransactionExpiredBlockheightExceededError") throw e;
+        for (let i = 0; i < 5; i++) {
+            const st = (await connection.getSignatureStatuses([signature])).value[0];
+            if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) return;
+            await new Promise((r) => setTimeout(r, 2500));
+        }
+        throw e;
+    }
 }

@@ -123,7 +123,9 @@ export async function uploadSession(
             }
         );
 
-        await sendTx(connection, signer, [createIx, firstIx]);
+        // Session create must survive a genuine blockhash expiry on congested
+        // RPCs; confirmLanded inside sendTx already absorbs false expiries.
+        await sendTxWithRetries(connection, signer, [createIx, firstIx], false, 2, 1500);
         completed = 1;
     }
 

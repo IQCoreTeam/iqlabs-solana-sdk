@@ -39,7 +39,7 @@ import {deriveDmSeed, toSeedBytes} from "../utils/seed";
 import type {SessionSpeedOption} from "../utils/session_speed";
 import {DEFAULT_WRITE_FEE_RECEIVER} from "../constants";
 import {prepareCodeIn} from "./code_in";
-import {sendTx} from "./writer_utils";
+import {sendTx, sendTxWithRetries} from "./writer_utils";
 
 const IDL = require("../../../idl/code_in.json") as Idl;
 const ACCOUNT_CODER = new BorshAccountsCoder(IDL);
@@ -324,7 +324,11 @@ export async function writeRow(
         },
         remainingAccounts,
     );
-    return sendTx(connection, signer, ix, skipConfirmation);
+    // The finalize preflight can run on a node that has not yet seen the chunks
+    // just uploaded to a shared/load-balanced RPC, failing simulation. A few
+    // spaced retries let the chunks propagate; on a single-endpoint RPC no
+    // rotation happens, so it just re-simulates the same node moments later.
+    return sendTxWithRetries(connection, signer, ix, skipConfirmation, 3, 1200);
 }
 
 export async function writeConnectionRow(
