@@ -677,5 +677,6 @@ These functions are advanced/internal, so this doc lists them only. If you are l
 ---
 
 ## Additional Resources
+- [Local SDK testing with Surfpool](docs/surfpool-testing.md)
 - [IQLabs Official X](https://x.com/IQLabsOfficial)
 - [IQLabs Official Website](https://iqlabs.dev)
