@@ -7,7 +7,6 @@ import {
     getCodeAccountPda,
     getUserInventoryPda,
     PROGRAM_ID,
-    getSessionPda,
     getUserPda,
 } from "../../contract";
 import {
@@ -132,7 +131,7 @@ export async function prepareCodeIn(
                 {speed}
             );
         } else {
-            onChainPath = await uploadSession(
+            const uploaded = await uploadSession(
                 connection,
                 signer,
                 builder,
@@ -144,9 +143,10 @@ export async function prepareCodeIn(
                 method,
                 {onProgress, speed},
             );
-            sessionAccount = getSessionPda(user, seq, programId);
+            onChainPath = uploaded.session.toBase58();
+            sessionAccount = uploaded.session;
             sessionFinalize = {
-                seq: new BN(seq.toString()),
+                seq: new BN(uploaded.seq.toString()),
                 total_chunks: totalChunks,
             };
         }
