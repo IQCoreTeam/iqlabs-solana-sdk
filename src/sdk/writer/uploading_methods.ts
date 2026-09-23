@@ -1,4 +1,4 @@
-import {BN, utils} from "@coral-xyz/anchor";
+import {BN, BorshAccountsCoder, utils} from "@coral-xyz/anchor";
 import {
     Connection,
     SystemProgram,
@@ -106,8 +106,38 @@ export async function uploadSession(
         }
     };
     reportProgress(0);
-    const session = getSessionPda(user, seq, programId);
-    const sessionInfo = await connection.getAccountInfo(session);
+    let session = getSessionPda(user, seq, programId);
+    let sessionInfo = await connection.getAccountInfo(session);
+    let landedMap: Awaited<ReturnType<typeof collectLandedChunks>> | undefined;
+    const accountCoder = new BorshAccountsCoder(require("../../../idl/code_in.json"));
+    const matchesUpload = (landed: Awaited<ReturnType<typeof collectLandedChunks>>) =>
+        [...landed].every(([index, value]) => value !== null &&
+            value.chunk === chunks[index] && value.method === method && value.decode_break === 0);
+    // create_session increments the counter. The latest unfinished session is
+    // therefore at seq - 1, not seq. Never reuse a different payload: readers
+    // reconstruct chunks from history, so overwriting indexes is ambiguous.
+    if (!sessionInfo && seq > 0n) {
+        const previous = getSessionPda(user, seq - 1n, programId);
+        const info = await connection.getAccountInfo(previous);
+        if (info?.owner.equals(programId) && accountCoder.decode("SessionAccount", info.data).status === 0) {
+            const landed = await collectLandedChunks(connection, previous, config);
+            if (landed.size > 0 && matchesUpload(landed)) {
+                seq -= 1n;
+                session = previous;
+                sessionInfo = info;
+                landedMap = landed;
+            }
+        }
+    }
+    if (sessionInfo) {
+        if (!sessionInfo.owner.equals(programId) || accountCoder.decode("SessionAccount", sessionInfo.data).status !== 0) {
+            throw new Error("session is not an unfinished upload");
+        }
+        landedMap ??= await collectLandedChunks(connection, session, config);
+        if (!matchesUpload(landedMap)) {
+            throw new Error("session content differs; start a new session instead of overwriting chunks");
+        }
+    }
     if (!sessionInfo) {
         const createIx = createSessionInstruction(
             builder,
@@ -137,18 +167,9 @@ export async function uploadSession(
         completed = 1;
     }
 
-    // Resume: seq only advances on finalize, so a retry of an interrupted
-    // upload re-derives the SAME session, whose landed chunks live in its tx
-    // history. Skip a chunk only when the landed content matches exactly, so a
-    // different payload reusing the seq re-sends and overwrites its index
-    // instead of mixing with the stale session.
-    let landedMap = new Map<number, string>();
-    if (sessionInfo) {
-        landedMap = await collectLandedChunks(connection, session, config);
-    }
     const payloads = chunks
         .map((chunk, index) => ({chunk, index}))
-        .filter((p) => (sessionInfo ? landedMap.get(p.index) !== p.chunk : p.index > 0));
+        .filter((p) => (sessionInfo ? !landedMap!.has(p.index) : p.index > 0));
     completed = totalChunks - payloads.length;
     reportProgress(completed);
     const baseCompleted = completed;
@@ -165,7 +186,7 @@ export async function uploadSession(
             config,
             (landedCount) => reportProgress(baseCompleted + landedCount),
         );
-        return session.toBase58();
+        return {session, seq};
     }
 
     const limiter = createRateLimiter(config.maxRps);
@@ -187,7 +208,7 @@ export async function uploadSession(
         reportProgress(completed + 1);
     });
 
-    return session.toBase58();
+    return {session, seq};
 }
 
 /**
@@ -332,12 +353,12 @@ async function uploadSessionBatch(
 const extractPostChunks = (tx: VersionedTransactionResponse) => {
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys();
-    const out: Array<{index: number; chunk: string}> = [];
+    const out: Array<{index: number; chunk: string; method: number; decode_break: number}> = [];
     for (const ix of message.compiledInstructions) {
         const decoded = decodeReaderInstruction(ix, accountKeys);
         if (decoded && decoded.name === "post_chunk") {
-            const data = decoded.data as {index: number; chunk: string};
-            out.push({index: data.index, chunk: data.chunk});
+            const data = decoded.data as (typeof out)[number];
+            out.push(data);
         }
     }
     return out;
@@ -350,8 +371,10 @@ async function collectLandedChunks(
     connection: Connection,
     session: PublicKey,
     config: SessionSpeedConfig,
-): Promise<Map<number, string>> {
-    const map = new Map<number, string>();
+) {
+    // null marks conflicting versions of an index. Such a session cannot be
+    // safely reused: readers may pick either historical version.
+    const map = new Map<number, ReturnType<typeof extractPostChunks>[number] | null>();
     const sigs: Array<{signature: string; err: unknown}> = [];
     let before: string | undefined;
     while (true) {
@@ -367,11 +390,16 @@ async function collectLandedChunks(
             await limiter.wait();
         }
         const tx = await connection.getTransaction(s.signature, {maxSupportedTransactionVersion: 1});
-        if (!tx || tx.meta?.err) {
+        if (!tx) throw new Error(`cannot verify resume history: transaction ${s.signature} is unavailable`);
+        if (tx.meta?.err) {
             return;
         }
-        for (const c of extractPostChunks(tx)) {
-            map.set(c.index, c.chunk);
+        for (const chunk of extractPostChunks(tx)) {
+            const existing = map.get(chunk.index);
+            if (!map.has(chunk.index)) map.set(chunk.index, chunk);
+            else if (!existing || existing.chunk !== chunk.chunk || existing.method !== chunk.method || existing.decode_break !== chunk.decode_break) {
+                map.set(chunk.index, null);
+            }
         }
     });
     return map;
