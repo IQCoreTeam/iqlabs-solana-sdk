@@ -18,3 +18,7 @@ export {
     getSessionPdaList,
     fetchUserConnections,
 } from "./reader_utils";
+
+export type {ReadLimits} from "./read_limits";
+
+export {ReadLimitError} from "./read_limits";

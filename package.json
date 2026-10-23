@@ -46,7 +46,7 @@
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "test:contract": "tsx tests/contract/smoke.ts",
-    "test:sdk": "tsx tests/sdk/smoke.ts && tsx tests/sdk/session_completeness.ts"
+    "test:sdk": "tsx tests/sdk/smoke.ts && tsx tests/sdk/session_completeness.ts && tsx tests/sdk/read_limits.ts && tsx tests/sdk/session_writer.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

@@ -4,11 +4,12 @@ import {
     getUserInventoryPda,
     getUserPda,
 } from "../../contract";
-import {getConnection, getReaderConnection} from "../utils/connection_helper";
+import {getConnection} from "../utils/connection_helper";
 import {resolveReadMode} from "./reader_profile";
 import {readLinkedListResult, readSessionResult} from "./reading_methods";
 
 import {readerContext} from "./reader_context";
+import {ReadBudget, type ReadLimits} from "./read_limits";
 
 import {
     decodeUserInventoryCodeIn,
@@ -63,42 +64,15 @@ export const fetchInventoryTransactions = async (
     return withMetadata;
 };
 
-export async function readSession(
-    sessionPubkey: string,
-    readOption: { freshness?: "fresh" | "recent" | "archive" },
-    speed?: SessionSpeedOption,
-    onProgress?: (percent: number) => void,
-    writer?: string,
-): Promise<{ result: string | null }> {
-    return readSessionResult(sessionPubkey, readOption, speed, onProgress, writer);
-}
-
-export async function readLinkedListFromTail(
-    tailTx: string,
-    readOption: { freshness?: "fresh" | "recent" | "archive" },
-    onProgress?: (percent: number) => void,
-    expectedTotalChunks?: number,
-): Promise<{ result: string }> {
-    const connection = getReaderConnection(readOption.freshness);
-    const tx = await connection.getTransaction(tailTx, {
-        maxSupportedTransactionVersion: 1,
-    });
-    if (!tx) {
-        throw new Error("tail transaction not found");
-    }
-    return readLinkedListResult(
-        tailTx,
-        readOption,
-        onProgress,
-        expectedTotalChunks,
-    );
-}
+export {readSessionResult as readSession} from "./reading_methods";
 
 export async function readUserInventoryCodeInFromTx(
     tx: VersionedTransactionResponse,
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
+    limits?: ReadLimits,
 ): Promise<{ metadata: string; data: string | null }> {
+    const budget = new ReadBudget(limits);
     const blockTime = tx.blockTime;
     const {onChainPath, metadata, inlineData} = extractCodeInPayload(tx);
     let totalChunks: number | undefined;
@@ -116,7 +90,9 @@ export async function readUserInventoryCodeInFromTx(
     } catch {
         // ignore malformed metadata
     }
+    if (totalChunks !== undefined) budget.checkChunkCount(totalChunks);
     if (onChainPath.length === 0) {
+        if (inlineData !== null) budget.addChunk(inlineData);
         if (onProgress) {
             onProgress(100);
         }
@@ -131,20 +107,22 @@ export async function readUserInventoryCodeInFromTx(
         const writer = (tx.transaction.message as unknown as {
             staticAccountKeys?: Array<{ toBase58(): string }>;
         }).staticAccountKeys?.[0]?.toBase58();
-        const {result} = await readSession(
+        const {result} = await readSessionResult(
             onChainPath,
             readOption,
             speed,
             onProgress,
             writer,
+            budget,
         );
         return {metadata, data: result};
     }
-    const {result} = await readLinkedListFromTail(
+    const {result} = await readLinkedListResult(
         onChainPath,
         readOption,
         onProgress,
         totalChunks,
+        budget,
     );
     return {metadata, data: result};
 }
