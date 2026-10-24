@@ -89,6 +89,22 @@ const extractSendCode = (tx: VersionedTransactionResponse) => {
     return {code: data.code, beforeTx: data.before_tx};
 };
 
+// Signer pubkeys of a tx (first numRequiredSignatures static keys). Used to keep
+// only chunks posted by the inscription's own writer.
+const txSignerSet = (tx: VersionedTransactionResponse): Set<string> => {
+    const message = tx.transaction.message as unknown as {
+        header?: { numRequiredSignatures?: number };
+        staticAccountKeys?: Array<{ toBase58(): string }>;
+    };
+    const n = message.header?.numRequiredSignatures ?? 0;
+    const keys = message.staticAccountKeys ?? [];
+    const signers = new Set<string>();
+    for (let i = 0; i < n && i < keys.length; i += 1) {
+        signers.add(keys[i].toBase58());
+    }
+    return signers;
+};
+
 function joinSessionChunks(chunks: Map<number, string>, expectedTotalChunks?: number): string {
     const ordered = Array.from(chunks.entries()).sort(([a], [b]) => a - b);
     if (
@@ -106,6 +122,7 @@ async function readSessionViaGtfa(
     sessionPubkey: string,
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
+    writer?: string,
 ): Promise<{ result: string } | null> {
     const rpcUrl = getRpcUrl();
     if (!rpcUrl.includes("helius-rpc.com") && !rpcUrl.includes("helius.dev")) return null;
@@ -164,6 +181,10 @@ async function readSessionViaGtfa(
         const msg = tx.transaction?.message;
         if (!msg) continue;
         const keys: string[] = msg.accountKeys ?? [];
+        if (writer) {
+            const nSig = msg.header?.numRequiredSignatures ?? 0;
+            if (!new Set(keys.slice(0, nSig)).has(writer)) continue;
+        }
         for (const ix of msg.instructions ?? []) {
             if (keys[ix.programIdIndex] !== programId) continue;
             try {
@@ -191,6 +212,7 @@ export async function readSessionResult(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
+    writer?: string,
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const sessionKey = new PublicKey(sessionPubkey);
@@ -204,7 +226,7 @@ export async function readSessionResult(
         info.data[13] === 1 ? info.data.readUInt32LE(9) : undefined;
 
     // try bulk read first, fall back to sequential
-    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks);
+    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks, writer);
     if (bulk) return bulk;
     const signatures = [];
     let before: string | undefined;
@@ -248,6 +270,9 @@ export async function readSessionResult(
         });
 
         if (!tx || tx.meta?.err) {
+            return;
+        }
+        if (writer && !txSignerSet(tx).has(writer)) {
             return;
         }
         const chunks = extractPostChunk(tx);

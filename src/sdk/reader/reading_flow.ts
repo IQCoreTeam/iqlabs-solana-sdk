@@ -68,8 +68,9 @@ export async function readSession(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
+    writer?: string,
 ): Promise<{ result: string | null }> {
-    return readSessionResult(sessionPubkey, readOption, speed, onProgress);
+    return readSessionResult(sessionPubkey, readOption, speed, onProgress, writer);
 }
 
 export async function readLinkedListFromTail(
@@ -125,11 +126,17 @@ export async function readUserInventoryCodeInFromTx(
     const readOption = resolveReadMode(onChainPath, blockTime);
     const kind = onChainPath.length >= SIG_MIN_LEN ? "linked_list" : "session";
     if (kind === "session") {
+        // Reconstruct only from chunks posted by this code-in's own writer
+        // (fee payer of this tx), ignoring any chunks a third party injected.
+        const writer = (tx.transaction.message as unknown as {
+            staticAccountKeys?: Array<{ toBase58(): string }>;
+        }).staticAccountKeys?.[0]?.toBase58();
         const {result} = await readSession(
             onChainPath,
             readOption,
             speed,
             onProgress,
+            writer,
         );
         return {metadata, data: result};
     }
