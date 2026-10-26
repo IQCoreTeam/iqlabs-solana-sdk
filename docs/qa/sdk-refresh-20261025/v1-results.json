@@ -1,0 +1,335 @@
+{
+  "scope": "Local Surfpool; synthetic payloads; generated in-memory wallet; no mainnet",
+  "genesis": "2SbNFZh2KfSXQMYVGDU2w91RxqVGPwwMNxSjoG7zmv2B",
+  "owner": "2cyyiUF2Ex9vYCCdDhZTZC97yMdGfPnQGRNJtNEPWt6d",
+  "results": [
+    {
+      "scenario": "resume-after-first-chunk",
+      "writes": 10,
+      "signature": "63aN7QcFa7Ds88GUfZXYqhfRRWnsokmC8r13ezErEofJTbfWwiVnGGsZBiffjus6DLYAqtQF6NP5VgtvbooriJz3"
+    },
+    {
+      "scenario": "resume-finalization-only",
+      "writes": 1,
+      "signature": "2gJxAWco3KMfDeB6AMHKFvYtC6daMEtwtjvSvoKJ2UJcBkpRZERku2TJTDH4DAxvFhCXA5PpqkRKSiBJ48X3j9nA"
+    },
+    {
+      "scenario": "different-content-new-session",
+      "writes": 11,
+      "signature": "2C6w77XcjPM8c54jn1k8jHYsAidHWWvHe2DUc3nq9TvKLJV5yypRUa9giuQmUzpffdBbthq8RgdXE2nWXYuGzHjn"
+    },
+    {
+      "scenario": "writeRow-resume",
+      "writes": 12,
+      "signature": "Ht36y1MjVsNPj9cY7hFtR8C1vE9bfJJAL6SZqRT9QvYfps8GR5hse8n35kizyxieqpdhvAT2ZdC7XFGjHsJy7En"
+    }
+  ],
+  "receipts": [
+    {
+      "signature": "3vxAmnoKtGwdEvNbat2SX4hLWRXM9o2WNmGLXmbbBvr1akSfQiabGfaVZiGWYPjLpv2hJBGCy68Xdj681FsfaV8u",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "FrSVqYrxob3ow7Lh4y26M6mupR78c5Q7ThuNXxBsK96Z2hxuNQ9MZ2MqMVXfgzgXMzcor65VVf9wTYsJjRo23fZ",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4om1Wco1ez1DqrCADHLfH2VzvWycKDG5tbnuaFHeb1vkqGw7mEzPJDhJywmTgoosG3EvMimgCbLLFu7pY5jjE27",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "XZuXK3RmpmSZSmj3Xxm7Vi9v74fWWVWzG6uvi6T2UydNfigYsTxe2e3y4rWyaS2S7MeCEUN2HgTfxPiqz4jebCw",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3Dax2DY9bghdEdtHS1MBjmCHwNSv9uX6ZithMzB6H9tvXePz4ZgS7FcPvcj8QZEcxSWPndkqEb8koW1jNJRhL473",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "613aeLXPeTyFrotYf7wWFqScfhW67pWLVjdzexb6gZS6DjoYxZ1Evi4PkMAXVuHTQC1VB6Zyrjwcx3vrxMgnSppq",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "Wxhh29t6tbHRwfsyLZFEHyAvE7xVbxc5WkGDuogfGdwF2JDxxEsRFDtLj6hX76WvokJzgTJfCf97UFYddHBZjec",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5XCci5Qgk6n7CjdHC2HxkMNu6a6CDv4pLdXZM3fz8MsKJGdy75JvjyHoU5n6DWD1HTq4nAcYakprqEADmXgmy5YJ",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "W4CgLGSN1FiRfZgiSotP8xwq2WXV9fQoJsBjg9eCLcGxtod3YQRF1udaYZNUMdBECkovterTUZSvKK6w5mxF6F6",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "LMnKpBk9bghCbD73Jwti8Avj1PGyBwPLNiggKxoTLit6wCbryX6Q581w7xpRyqvpE9Zh7zYuP9SNEbPptwn51os",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "54EUuS7UyEKUKK8P6No8PTt3BfDvAqEDsrZrthwFUSrhQQXTvQ6ZCxfLYj3PG43HMC8EV5p37RcCgLCbga9pXtC3",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4SMqKC3V1jTa2cpTSxJLJ4Z2oR1s2uH6q43iz6TmkfW5kaaAQVQUAHPuY45iBuU3jevstsfQGF9wiayupiQwpiib",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "63aN7QcFa7Ds88GUfZXYqhfRRWnsokmC8r13ezErEofJTbfWwiVnGGsZBiffjus6DLYAqtQF6NP5VgtvbooriJz3",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5ABv8gq7YrqUaqGbEgP4aVBCh258xw7HCfvdKonoN5iGfRCcrWTcEm8WQhd6Qnrcs6JR15pvXdnKXEzgQ9c3y7z7",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "39eDheGFUBJYv377Hf568LqHAguoYRM8DgaqWom7bUc7bU7YLSBMMKzeXXwzF8QpMRnngzJjUTeacB7Z1cMGCQNe",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2uFN1Anm1fxeJoFiURZUgNUbWsAMQgdesgubmuBZD7XRcQzYNengR5KmXoKSrz6A3t4799hDv81jSzAuUHSGciD4",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5bczDn3zJMhBnvT8PyYzsY9SoZuhVdfrWk5XNCbQaBrTQvXdwfmi8o8SJBSn62h9fqjY61zYbqHY1XbUtFqP1sCc",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3YjQUmkKGs7mcrSSg4TX5vmKTVhSva4UgKcGn1hJEvjMRXXDDhVtd6Fo8jjA8J3bobSZ9o1qto7wta9JRpF8VEyz",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4eenKZMpawHi57m1Exbmt7Jn8e38ZbsPNxDk6Gp6Lt7A8jij3GAd1PxhAbp36SGXKJTXVYpRPYDhCEgupD2ABH7j",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4F2KKRapHoaZTUcKpYA4nFeQLw9Lxorn8uiMCjDSjN9Hy2LPTU14TJPecjd6xJHXSzNNj8Hc7UgiZfm9fZ1iCZ6b",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5HNyfR6rg1zSV6GhhXKtN37cakZEvvpFhBr1fw6ZjCUUGWjughiuE1EVFUyzUrcz1pLv21yT1MgpE2KRjfpnD78C",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4Y7wBhfdCCcjQAy9Mt8ncMU6TP8P1VRJeU3SCtb2xHwXzDVK2TJdSSii8ReE4oFYMiS1yt9uyoX55TQBNr2VEwdd",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5UeDzngpHSnvMpDDt96tazGpGSHD3wQZmxk5htxarmhcKKV2ZmyBzgroiuxWtrfTc67vgNR7Y42PWwaB8mSjsUHJ",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2gJxAWco3KMfDeB6AMHKFvYtC6daMEtwtjvSvoKJ2UJcBkpRZERku2TJTDH4DAxvFhCXA5PpqkRKSiBJ48X3j9nA",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2RoDhxfsEHbPPZsGHpT5EnuYs132ANdDxwThBXjfyV7qczJNTQJHhSscSC8wFti9HPBQEnNosSjUdGndKMAhqFVS",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4dpZ8RFQBwj3gVuaWQ53vBgDYvRskNyRPEVBmUomPNqRAFCv1AKDNeXBusGDQAqt1mpWafAd2zdzf7ZKxE8usUgt",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "51ukZvcU8YpEPfYdjbsT8RyDz3XGNhBmcwPAG5n2Xxk1AnFFLjuEkDDM2us2kyw4BiZjMVrBDvG8CtKrad37fkJF",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "HH9zcYBZm2m65uFzryW4q5ccPtxBhRJCDiv51VMsUkmgipApT4GTMsdPmpfk3brJ3suyHW3Cca5W5JR5RaamBJz",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2CUt1C3WkEiJaNHMSV7Zcqf1wcWHD23LxS7VEo57pVX9yB8ahQE9kBjQPCBbzTbCg7UMv28Hg1ijuQRkDk4G1r3X",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4RKYsRPkXqNy11x4vkrFn3QT5f8TkVfvXmi5t1gVhANrWWseXVp5kXzF8KD2NEhX5jsvT6kzN8pdR96gLWbuQsEq",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "J9spEQsUTSvFhMvpzfBwdqFd3WBxofJABYwYKT8UGn5xYUWGzYpxEBXFtZaPN8FmSuiZPg8WdCZy6HMCQc4ajp3",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5E7LSpAd9GT6cmoxZHQ2ePp1C6EiNf9iRBjHqKtcixgZy53RamzXUssjkmgykr2Gft8viy314ZF11ho6aW1kVJHz",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "43Cga4GfdBMeYE14cPHobk63Py5npWSsZMAvZnvEez5zDtxCFtwJdVBkDVH27mx3qiSX99FnxTmZHnKk9RCL5FFr",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3NmLRdcPxmFYHoGui47wwYpZ5fg2yVvFCSKynyWqorKHWHsZbPPA1mSxBJZe7K6S3yjtkLM7Hnp41t6EWfeiJjbP",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4VPmYobiy8p8eEtvTq2CxZ61HXwKJpxDfVv73Fb8kVfrDqFRM2A25PLtusAQRu1p34Qw2y5exQy4Hxxrs7UEwuPR",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2C6w77XcjPM8c54jn1k8jHYsAidHWWvHe2DUc3nq9TvKLJV5yypRUa9giuQmUzpffdBbthq8RgdXE2nWXYuGzHjn",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5CH8tVeWbow4aVFLmYBDSocRpmB6wZs6tZEwf9j9k5MKHPh65EJoUCvTNLjeoqJ89rJnMZEzAVw6TvBRY1gNuRry",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3vgAtV14z1PfYMAMXTwuhN9ofJXPQVhtM3w9GVLhr8ZaumdPQFMSwrenQAPoDR6zDBnPeAbHmUe9rT3Fz3d81q2W",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3B7nvXffrhjtDRTSdnFzG6xNXumDqkB1QWgGLJEXTp4mnBEQg6Gx9u7bQWbJBTEy5diQfbgbKW8vq1sAyLvTAL38",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4ixdxJK9KHwxyK6ZbMFSNzDxoWgeDdLyKGZN9YHsK74yXzddV3VZswCY7oy2ys659MByvybMtHyeb1kk2J8CVQxX",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "28uE2r61HMRHMwEHPuDePT1SmjUzxakHo1z44HUvd7otJnPaPvLQF4FpnLGi6ZcS94UfRrmBeVjFEpcPp4xbmpSU",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "3r7Bh12VCqtiYL28oWTJG1Yakfdh4CQxEBM4YCk9yqyAvTS3iCCvsYjon3pokhcYxGDwCZM9BM4qhzwiYNHfgfBm",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "476SV1TVdNzKkL8FoBf6Ukfiw4Fsm7mFNVAMi3TvCCb7hpxP3SgNQUxY3vyuFF4oY2LBC8omTWPahR9GaDHFzFSR",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "4Rj44PdH4EjfBtUQY4rEiF8sMFayAzcEvay9tcYD1WZgApuWS6Kij2fz5rZvHVhmepstTAuQS4a13oyj21eJqeWQ",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "29b8DC88k3LKRSwcn1LtdFWSURa61uqbifMVG9LMDxUm16wkUg74cdufWZwGYo869bqJ9Jxz7aMHfGRnArw4c6Ex",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2BnGqxtutdT5ByhQzfUNXsB9iAjKm6EnaiJGgE1sFrGUM18mqWYWky1EeDtX3zAAkdqpKqkJzB7XADU6jYfJgcoG",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "5gBKWvLnNZCmPm5J5LVrcJ8mYWEWJrXPpRkebpLqJPicL7xDdHEVmM2CQksQvFrNcaBL3JH4pvH1iCyn66TAewmc",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2vKGriqWe3yjuwuX8TDk8GXWVVrq9nUyCPcne2q7RM9jPXvbQKC9qy1uLiezxrmWmvetu8MGK3uTtZ8mA22YrDnp",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "r84PmAJrgZNu6bBgeQTsLCcnK9fW7DFZhrQKTK7VbvHYJ9cYRZLUZtDsSSLEDJ3QEpWgzvKXRNh75A3EFy1A8jV",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "2rya3wP2wiycqzSieGXLAAkQasLgrogJAexvBLFVSqsTKPQLCU3bhh1W2KYaA7f1EsykRCwk5eUxad8H11zeZPcL",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    },
+    {
+      "signature": "Ht36y1MjVsNPj9cY7hFtR8C1vE9bfJJAL6SZqRT9QvYfps8GR5hse8n35kizyxieqpdhvAT2ZdC7XFGjHsJy7En",
+      "version": 1,
+      "err": null,
+      "fee": 5000
+    }
+  ]
+}

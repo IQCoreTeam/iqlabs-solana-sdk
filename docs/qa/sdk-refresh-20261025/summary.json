@@ -1,0 +1,33 @@
+{
+  "v1-results.json": {
+    "successfulReceipts": 51,
+    "receiptVersions": {
+      "1": 51
+    },
+    "allReceiptsSuccessful": true
+  },
+  "legacy-results.json": {
+    "successfulReceipts": 87,
+    "receiptVersions": {
+      "legacy": 87
+    },
+    "allReceiptsSuccessful": true
+  },
+  "readers-discovery-results.json": {
+    "successfulReceipts": 7,
+    "receiptVersions": {
+      "1": 7
+    },
+    "allReceiptsSuccessful": true
+  },
+  "totalSuccessfulReceipts": 145,
+  "readerChecks": {
+    "exactBoundedReadbacks": 8,
+    "limitRejections": 24,
+    "connectionDiscoveryChecks": 4
+  },
+  "surfpoolVersion": "surfpool 1.6.1",
+  "surfpoolSha256": "76b3ab8da78f69e75ba0d4092c35296518ddc4ce83fa58de34e2586092055ef3",
+  "stopSignalSent": true,
+  "stoppedAndListenerClosed": true
+}
