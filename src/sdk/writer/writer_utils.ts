@@ -5,7 +5,7 @@ import {CODE_ACCOUNT_SPACE, USER_INVENTORY_SPACE} from "../constants";
 import {rotateRpcConnection} from "../utils/connection_helper";
 import {resolveTxProfile, shouldSendV1} from "../utils/tx_profile";
 import {toWalletSigner, type SignerInput} from "../utils/wallet";
-import {confirmLanded, sendTxV1} from "./v1_tx";
+import {ConfirmedTransactionError, confirmLanded, sendTxV1} from "./v1_tx";
 import type {Signer} from "@solana/web3.js";
 
 const ACCOUNT_CACHE_TTL_MS = 120_000;
@@ -232,6 +232,8 @@ export async function sendTxWithRetries(
         try {
             return await sendTx(connection, signer, instructions, skipConfirmation);
         } catch (error: any) {
+            // A confirmed execution failure is final; sending it again costs another fee.
+            if (error instanceof ConfirmedTransactionError) throw error;
             lastError = error
 
             if (attempt === maxRetries) {

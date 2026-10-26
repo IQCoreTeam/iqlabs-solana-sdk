@@ -5,7 +5,15 @@ import {
     Transaction,
     TransactionInstruction,
     type Signer,
+    type TransactionError,
 } from "@solana/web3.js";
+
+export class ConfirmedTransactionError extends Error {
+    constructor(signature: string, error: TransactionError) {
+        super(`Transaction ${signature} failed: ${JSON.stringify(error)}`);
+        this.name = "ConfirmedTransactionError";
+    }
+}
 
 // v1 transactions execute with a zero compute budget unless the limits are set
 // explicitly, so every v1 tx carries these via the config mask (SIMD-0385).
@@ -124,7 +132,8 @@ export async function confirmLanded(
         // "confirmed", not "finalized": a mainnet timing trace showed the
         // finalized wait eating 47.7s of a 51s write on a public RPC, while
         // the tx is on chain (and gateway-readable) at confirmed in ~2s.
-        await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "confirmed");
+        const result = await connection.confirmTransaction({signature, blockhash, lastValidBlockHeight}, "confirmed");
+        if (result.value.err) throw new ConfirmedTransactionError(signature, result.value.err);
     } catch (e: any) {
         if (!e || e.name !== "TransactionExpiredBlockheightExceededError") throw e;
         // Escalating poll: on some RPCs (publicnode) confirmTransaction gives up
@@ -133,7 +142,10 @@ export async function confirmLanded(
         // confirmation instead of a flat 2.5s; the total budget stays ~14s.
         for (const delay of [300, 500, 800, 1200, 1600, 2000, 2500, 2500, 2500]) {
             const st = (await connection.getSignatureStatuses([signature])).value[0];
-            if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) return;
+            if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) {
+                if (st.err) throw new ConfirmedTransactionError(signature, st.err);
+                return;
+            }
             await new Promise((r) => setTimeout(r, delay));
         }
         throw e;
