@@ -149,6 +149,13 @@ export async function fetchUserConnections(
 > {
     const {decodeConnectionMeta, resolveConnectionStatus} = await import("../utils/global_fetch");
 
+    const connectionAccountIndex = readerContext.idl.instructions
+        .find(ix => ix.name === "request_connection")?.accounts
+        .findIndex(account => account.name === "connection_table");
+    if (connectionAccountIndex === undefined || connectionAccountIndex < 0) {
+        throw new Error("request_connection IDL is missing connection_table");
+    }
+
     // 1. Calculate UserState PDA
     const programId = readerContext.anchorProgramId;
     const pubkey = typeof userPubkey === "string" ? new PublicKey(userPubkey) : userPubkey;
@@ -195,9 +202,8 @@ export async function fetchUserConnections(
                 continue;
             }
 
-            // Extract connection_table PDA from instruction accounts
-            // connection_table is at index 2 in the accounts array
-            const connectionTablePubkey = accountKeys.get(ix.accountKeyIndexes[2]);
+            // Resolve the account position from the same IDL used to decode the instruction.
+            const connectionTablePubkey = accountKeys.get(ix.accountKeyIndexes[connectionAccountIndex]);
             if (!connectionTablePubkey) {
                 continue;
             }
