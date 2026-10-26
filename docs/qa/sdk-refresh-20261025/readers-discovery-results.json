@@ -1,0 +1,140 @@
+{
+  "sdkHead": "d4e4b2f71e45bb317dd0e87110237682373d66f6",
+  "genesis": "2SbNFZh2KfSXQMYVGDU2w91RxqVGPwwMNxSjoG7zmv2B",
+  "reads": [
+    {
+      "profile": "v1-results.json",
+      "scenario": "resume-after-first-chunk",
+      "bytes": 3210,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "v1-results.json",
+      "scenario": "resume-finalization-only",
+      "bytes": 3210,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "v1-results.json",
+      "scenario": "different-content-new-session",
+      "bytes": 3320,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "v1-results.json",
+      "scenario": "writeRow-resume",
+      "bytes": 40028,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "legacy-results.json",
+      "scenario": "resume-after-first-chunk",
+      "bytes": 3210,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "legacy-results.json",
+      "scenario": "resume-finalization-only",
+      "bytes": 3210,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "legacy-results.json",
+      "scenario": "different-content-new-session",
+      "bytes": 3320,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    },
+    {
+      "profile": "legacy-results.json",
+      "scenario": "writeRow-resume",
+      "bytes": 40028,
+      "exactReadback": true,
+      "rejected": [
+        "maxBytes",
+        "maxChunks",
+        "maxHistoryTransactions"
+      ]
+    }
+  ],
+  "discovery": {
+    "wallets": [
+      "6dByb7Vtd9xT3mp16Qhb3kjUGGwm8LhZxRE4VYFQukBL",
+      "Co268E3LS96Pr5K1EMJymuHZxLqivBQjq1qrUB7fyhMA"
+    ],
+    "table": "GT24du26QUJSFM21LPisDxcEe1iNbjEK653nnDXRLj6R",
+    "pendingFromBothWallets": true,
+    "approvedFromBothWallets": true
+  },
+  "receipts": [
+    {
+      "signature": "25JNB676b77ktxwhyhVAj4qX4NE6gauHdPNcBYCpGskUfkqyoRqSkHSoikFocfy2Yu3FjtzxDniF1domcnHZcHaG",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "4qTRCeie2DgXY8aTNLNd5KZzQUkbn4eSkKAQoM22aoGPsw8TWyuNYJV2Pf2EWNx39Y3PvSMj53HH322K5Wt5LHQv",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "bEtZmxmnVJ2LfvDbWLatpbwsGkJFLhN7cbNhi3ykjE5e2ZXPR2in1ECxKwEX9rnnor1DNGezHTDASQgWHHgP74X",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "eRQDmhJ9twKFitkAUZ5p1izqQu5mR1CVKNZSBizASkgQtKi8ir23tQ4ewSdXn34wniczdRk5aZzF8pCJfjYykPH",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "5bw53ocDUvEvVYwNKwnj6V9bzour1YiQBiDjCyFgmnR6WT7tpx1zjGu6YvUcAaM4foV31by3EAUsDQqRFwXJzoQi",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "J54eFnuparxvvMKP9EysZQshBpmjCTN486gpL6CP8P9uuimuKyW9JnNXo53ZFCxkKVgTPFfNqneeSVqnoagiQQP",
+      "version": 1,
+      "err": null
+    },
+    {
+      "signature": "2K9GDSGsDf9ytYAhdbHLBBcN5JVspd6Hy3asN3Pjot6k9HMeX3SikZzJLWtXTXRZz7PHxJYKBZ7zHkFUWuUPEC44",
+      "version": 1,
+      "err": null
+    }
+  ]
+}

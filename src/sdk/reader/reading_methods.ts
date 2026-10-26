@@ -43,6 +43,7 @@ import {runWithConcurrency} from "../utils/concurrency";
 import {createRateLimiter} from "../utils/rate_limiter";
 import {resolveSessionConfig, type SessionSpeedOption} from "../utils/session_speed";
 import {decodeReaderInstruction} from "./reader_utils";
+import {ReadBudget, ReadLimitError} from "./read_limits";
 
 const extractAnchorInstruction = (
     tx: VersionedTransactionResponse,
@@ -123,6 +124,7 @@ async function readSessionViaGtfa(
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
     writer?: string,
+    budget = new ReadBudget(),
 ): Promise<{ result: string } | null> {
     const rpcUrl = getRpcUrl();
     if (!rpcUrl.includes("helius-rpc.com") && !rpcUrl.includes("helius.dev")) return null;
@@ -133,6 +135,7 @@ async function readSessionViaGtfa(
 
     try {
         while (true) {
+            const pageSize = budget.pageSize(100);
             const res = await fetch(rpcUrl, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -141,7 +144,7 @@ async function readSessionViaGtfa(
                     id: 1,
                     method: "getTransactionsForAddress",
                     params: [sessionPubkey, {
-                        limit: 100,
+                        limit: pageSize,
                         transactionDetails: "full",
                         maxSupportedTransactionVersion: 1,
                         ...(paginationToken ? {paginationToken} : {}),
@@ -156,11 +159,13 @@ async function readSessionViaGtfa(
             if (json.error) return null;
             const data = json.result?.data ?? [];
             if (data.length === 0) break;
+            budget.addTransactions(data.length);
             allTxs.push(...data);
             paginationToken = json.result?.paginationToken;
-            if (!paginationToken || data.length < 100) break;
+            if (!paginationToken || data.length < pageSize) break;
         }
-    } catch {
+    } catch (error) {
+        if (error instanceof ReadLimitError) throw error;
         return null;
     }
 
@@ -194,9 +199,12 @@ async function readSessionViaGtfa(
                 );
                 if (decoded?.name === "post_chunk") {
                     const d = decoded.data as { index: number; chunk: string };
+                    budget.addChunk(d.chunk);
                     chunkMap.set(d.index, d.chunk);
                 }
-            } catch {}
+            } catch (error) {
+                if (error instanceof ReadLimitError) throw error;
+            }
         }
         if (onProgress) onProgress(Math.floor(((i + 1) / allTxs.length) * 100));
     }
@@ -213,6 +221,7 @@ export async function readSessionResult(
     speed?: SessionSpeedOption,
     onProgress?: (percent: number) => void,
     writer?: string,
+    budget = new ReadBudget(),
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const sessionKey = new PublicKey(sessionPubkey);
@@ -225,22 +234,26 @@ export async function readSessionResult(
     const expectedTotalChunks =
         info.data[13] === 1 ? info.data.readUInt32LE(9) : undefined;
 
+    if (expectedTotalChunks !== undefined) budget.checkChunkCount(expectedTotalChunks);
+
     // try bulk read first, fall back to sequential
-    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks, writer);
+    const bulk = await readSessionViaGtfa(sessionPubkey, onProgress, expectedTotalChunks, writer, budget);
     if (bulk) return bulk;
     const signatures = [];
     let before: string | undefined;
     //TODO make this pagination well if we need to pagination, or make this bringing all function to the helper function and reuse for needs
     while (true) {
+        const pageSize = budget.pageSize(1000);
         const page = await connection.getSignaturesForAddress(sessionKey, {
-            limit: 1000,
+            limit: pageSize,
             before,
         });
         if (page.length === 0) {
             break;
         }
+        budget.addTransactions(page.length);
         signatures.push(...page);
-        if (page.length < 1000) {
+        if (page.length < pageSize) {
             break;
         }
         const nextBefore = page[page.length - 1]?.signature;
@@ -262,9 +275,11 @@ export async function readSessionResult(
     }
 
     await runWithConcurrency(signatures, maxConcurrency, async (entry) => {
+        budget.assertActive();
         if (limiter) {
             await limiter.wait();
         }
+        budget.assertActive();
         const tx = await connection.getTransaction(entry.signature, {
             maxSupportedTransactionVersion: 1,
         });
@@ -277,6 +292,7 @@ export async function readSessionResult(
         }
         const chunks = extractPostChunk(tx);
         for (const chunk of chunks) {
+            budget.addChunk(chunk.chunk);
             chunkMap.set(chunk.index, chunk.chunk);
         }
         completed += 1;
@@ -304,12 +320,14 @@ export async function readLinkedListResult(
     readOption: { freshness?: "fresh" | "recent" | "archive" },
     onProgress?: (percent: number) => void,
     expectedTotalChunks?: number,
+    budget = new ReadBudget(),
 ): Promise<{ result: string }> {
     const connection = getReaderConnection(readOption.freshness);
     const chunks: string[] = [];
     const visited = new Set<string>();
     let cursor = tailTx;
     const totalChunks = expectedTotalChunks ?? 0;
+    if (expectedTotalChunks !== undefined) budget.checkChunkCount(expectedTotalChunks);
     let processed = 0;
     let lastPercent = -1;
     if (onProgress) {
@@ -321,6 +339,8 @@ export async function readLinkedListResult(
         if (visited.has(cursor)) {
             throw new Error("linked list loop detected");
         }
+        budget.checkChunkCount(chunks.length + 1);
+        budget.addTransactions(1);
         visited.add(cursor);
 
         const tx = await connection.getTransaction(cursor, {
@@ -335,6 +355,7 @@ export async function readLinkedListResult(
             throw new Error("send_code instruction not found");
         }
 
+        budget.addChunk(decoded.code);
         chunks.push(decoded.code);
         processed += 1;
         if (onProgress && totalChunks > 0) {
